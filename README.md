@@ -61,6 +61,13 @@ npm run db:validate
 
 Детали и следующие шаги: [docs/roadmap.md](docs/roadmap.md).
 
+## Telegram
+
+Подготовлены команды подключения группы: `npm run telegram:check`,
+`npm run telegram:chats`, `npm run telegram:test`.
+Порядок настройки секретов и получения ID: [docs/telegram.md](docs/telegram.md).
+Автоматическая отправка объявлений и outbox пока не реализованы.
+
 ## Railway
 
 Целевая площадка — Railway. Конфигурация сборки и health-check: `railway.json`. Настройка GitHub-autodeploy и переменных описана в [docs/railway.md](docs/railway.md).
