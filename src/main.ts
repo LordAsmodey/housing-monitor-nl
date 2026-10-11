@@ -11,6 +11,6 @@ async function bootstrap() {
 }
 
 void bootstrap().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : 'Application startup failed');
+  console.error('Application startup failed; check configuration and database connectivity');
   process.exitCode = 1;
 });

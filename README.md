@@ -4,7 +4,12 @@
 
 ## Текущее состояние
 
-Инициализация проекта: NestJS + TypeScript, проверка конфигурации, `GET /health/live`, начальная Prisma-схема, PostgreSQL/Redis в Docker Compose, тесты конфигурации и CI. Это ещё не рабочий мониторинг: приложение пока не подключает БД/Redis и не собирает объявления, не вызывает LLM и не отправляет Telegram-сообщения. Health endpoint проверяет только работу HTTP-процесса.
+NestJS + TypeScript подключает PostgreSQL через Prisma. Зафиксирована начальная миграция,
+добавлены `/health/live` и `/health/ready`, сохранение валидированных объявлений с baseline,
+дедупликацией и transactional outbox. Worker Telegram включается явно и поддерживает
+ограничение частоты, retries, DEAD_LETTER и UNCERTAIN. Реальные источники, scheduler,
+Redis/BullMQ и LLM пока не подключены. Вход записи объявлений — внутренний
+`ListingsService.recordValidatedRun`, который позже вызовет executor источников.
 
 ## Локальный запуск
 
@@ -15,8 +20,7 @@ cp .env.example .env
 npm ci
 docker compose up -d postgres redis
 npm run db:generate
-# Создать локальную БД по начальной схеме (миграции пока не зафиксированы):
-npm run db:migrate -- --name init
+npm run db:deploy
 npm run build
 node --env-file=.env dist/main.js
 curl http://localhost:3000/health/live
@@ -44,6 +48,8 @@ npm run typecheck
 npm test
 npm run build
 npm run db:validate
+# На отдельной тестовой PostgreSQL с применённой миграцией:
+DATABASE_URL=postgresql://housing:test@localhost:55432/housing npm run test:integration
 ```
 
 Для `db:validate` нужен `DATABASE_URL` из `.env` (доступ к серверу БД не нужен).
@@ -66,7 +72,7 @@ npm run db:validate
 Подготовлены команды подключения группы: `npm run telegram:check`,
 `npm run telegram:chats`, `npm run telegram:test`.
 Порядок настройки секретов и получения ID: [docs/telegram.md](docs/telegram.md).
-Автоматическая отправка объявлений и outbox пока не реализованы.
+Worker и outbox реализованы; включение и диагностика: [docs/outbox.md](docs/outbox.md).
 
 ## Railway
 
