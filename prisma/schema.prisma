@@ -26,6 +26,7 @@ enum DeliveryStatus {
   SENDING
   SENT
   DEAD_LETTER
+  UNCERTAIN
 }
 
 model Source {
@@ -109,9 +110,18 @@ model NotificationOutbox {
   attempts          Int            @default(0)
   nextAttemptAt     DateTime       @default(now())
   lockedUntil       DateTime?
+  lockToken         String?
+  lastErrorCategory String?
+  payload           String
   telegramMessageId String?
   createdAt         DateTime       @default(now())
   sentAt            DateTime?
 
   @@index([status, nextAttemptAt])
+}
+
+// One bot-wide gate: serialized delivery and durable group rate limit.
+model DeliveryGate {
+  id            String   @id
+  nextAttemptAt DateTime @default(now())
 }

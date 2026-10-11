@@ -25,11 +25,14 @@ services:
   app:
     profiles: ["app"]
     build: .
+    env_file: .env
+    command: ["sh", "-c", "npm run db:deploy && exec node dist/main.js"]
     environment:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-housing}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-housing}?schema=public
       REDIS_URL: redis://redis:6379
+      TELEGRAM_DELIVERY_ENABLED: ${TELEGRAM_DELIVERY_ENABLED:-false}
       MONITOR_INTERVAL_SECONDS: ${MONITOR_INTERVAL_SECONDS:-900}
     ports: ["127.0.0.1:3000:3000"]
     depends_on:
