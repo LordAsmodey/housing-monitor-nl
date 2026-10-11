@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceStatus {
+  DISABLED
+  HEALTHY
+  DEGRADED
+  BLOCKED
+}
+
+enum RunStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+  DEGRADED
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  DEAD_LETTER
+}
+
+model Source {
+  id                String           @id @default(cuid())
+  name              String
+  baseUrl           String
+  allowedDomains    String[]
+  status            SourceStatus     @default(DISABLED)
+  intervalSeconds   Int              @default(900)
+  baselineAt        DateTime?
+  lastAttemptAt     DateTime?
+  lastSuccessAt     DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  profile           SiteProfile?
+  runs              MonitoringRun[]
+  listings          HousingListing[]
+}
+
+model SiteProfile {
+  id                String   @id @default(cuid())
+  sourceId          String   @unique
+  source            Source   @relation(fields: [sourceId], references: [id])
+  searchUrls        String[]
+  filters           Json
+  authStrategy      String   @default("none")
+  // References only; never plaintext secrets or browser state.
+  secretsRef        String?
+  browserStateRef   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model MonitoringRun {
+  id                String    @id @default(cuid())
+  sourceId          String
+  source            Source    @relation(fields: [sourceId], references: [id])
+  status            RunStatus @default(RUNNING)
+  startedAt         DateTime  @default(now())
+  finishedAt        DateTime?
+  listingsFound     Int?
+  errorCategory     String?
+  usedLlm           Boolean   @default(false)
+
+  @@index([sourceId, startedAt])
+}
+
+model HousingListing {
+  id                 String               @id @default(cuid())
+  sourceId           String
+  source             Source               @relation(fields: [sourceId], references: [id])
+  externalId         String
+  canonicalUrl       String
+  urlFingerprint     String
+  title              String
+  city               String
+  address            String?
+  rentPrice          Decimal?             @db.Decimal(10, 2)
+  serviceCosts       Decimal?             @db.Decimal(10, 2)
+  areaM2             Decimal?             @db.Decimal(8, 2)
+  rooms              Decimal?             @db.Decimal(4, 1)
+  imageUrl           String?
+  publishedAt        DateTime?
+  detectedAt         DateTime             @default(now())
+  lastSeenAt         DateTime             @default(now())
+  availabilityStatus String               @default("unknown")
+  rawSourceRef       String?
+  notifications      NotificationOutbox[]
+
+  @@unique([sourceId, externalId])
+  @@unique([sourceId, urlFingerprint])
+}
+
+model NotificationOutbox {
+  id                String         @id @default(cuid())
+  listingId         String
+  listing           HousingListing @relation(fields: [listingId], references: [id])
+  destinationRef    String
+  idempotencyKey    String         @unique
+  status            DeliveryStatus @default(PENDING)
+  attempts          Int            @default(0)
+  nextAttemptAt     DateTime       @default(now())
+  lockedUntil       DateTime?
+  telegramMessageId String?
+  createdAt         DateTime       @default(now())
+  sentAt            DateTime?
+
+  @@index([status, nextAttemptAt])
+}
