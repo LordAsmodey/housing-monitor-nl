@@ -26,6 +26,9 @@ MONITOR_INTERVAL_SECONDS=900
 
 Первое развёртывание считается проверенным после успешной сборки, HTTP 200 на публичном `/health/ready` и совпадения deployed commit с `main`. Автодеплой дополнительно проверяется следующим push в `main`.
 
+Wait for CI подтверждён через Railway describe-service: source.checkSuites=true.
+Telegram-переменные уже присутствуют; worker требует TELEGRAM_DELIVERY_ENABLED=true.
+
 ## Текущие ограничения
 
 `/health/live` проверяет HTTP-процесс; `/health/ready` проверяет доступность БД и таблицы outbox.
