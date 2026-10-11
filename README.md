@@ -62,3 +62,7 @@ npm run db:validate
 - Доменные allowlists, SSRF-защита, отсутствие overlap, rate limits, cooldown и бюджет восстановления обязательны до включения реальных источников.
 
 Детали и следующие шаги: [docs/roadmap.md](docs/roadmap.md).
+
+## Railway
+
+Целевая площадка — Railway. Конфигурация сборки и health-check: `railway.json`. Настройка GitHub-autodeploy и переменных описана в [docs/railway.md](docs/railway.md).
