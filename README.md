@@ -76,6 +76,13 @@ DATABASE_URL=postgresql://housing:test@localhost:55432/housing npm run test:inte
 Отдельные сессия и baseline, полная пагинация, существующий Telegram outbox и CAPTCHA recovery:
 [инструкция](docs/huurwoningen.md).
 
+## Woldring Verhuur
+
+Квартиры и студии подключаются автоматически к расписанию 15 минут и существующему Telegram outbox.
+Первый запуск сохраняет отдельный baseline; затем приходят новые доступные объекты и переходы
+из недоступных в доступные, без повторных уведомлений. Нет ограничений цены, площади и даты публикации.
+Аренда, servicekosten, дата заселения и пометка о закрытом приёме заявок: [инструкция](docs/woldring.md).
+
 ## Telegram
 
 Подготовлены команды подключения группы: `npm run telegram:check`,
