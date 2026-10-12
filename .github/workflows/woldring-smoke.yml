@@ -1,0 +1,30 @@
+name: Woldring live smoke
+on:
+  push:
+    branches: [codex/woldring-monitor]
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Inspect public catalog
+        run: |
+          node <<'JS'
+          (async()=>{
+            for(const path of ['appartementen','studios']) {
+              const r=await fetch('https://woldringverhuur.nl/'+path+'/');
+              const html=await r.text();
+              console.log('CATALOG',path,r.status,html.length);
+              const heading=html.match(/<h1\b[^>]*>[\s\S]*?<\/h1>/i);console.log('HEADING',heading?.[0]);
+              const pos=html.indexOf('Per direct beschikbaar');
+              console.log('FIRST_CARD_HTML',html.slice(Math.max(0,pos-2200),pos+3200));
+              console.log('RESULT_COUNT',html.match(/.{0,100}resultaten.{0,100}/i)?.[0]);
+              console.log('STATUS_COUNTS', [...html.matchAll(/Per direct beschikbaar|Beschikbaar per:|Niet beschikbaar/g)].reduce((a,m)=>(a[m[0]]=(a[m[0]]||0)+1,a),{}));
+            }
+          })().catch(()=>{console.error('LIVE_FETCH_FAILED');process.exit(1)});
+          JS
