@@ -42,7 +42,8 @@ function validateAction(action) {
   if (action.type === 'check' || action.type === 'save') return action;
   throw new Error('INVALID_ACTION');
 }
-const emit = (event, data = {}) => console.log(JSON.stringify({ message: 'Funda browser session', event, at: new Date().toISOString(), ...data }));
+let browserName = 'Funda';
+const emit = (event, data = {}) => console.log(JSON.stringify({ message: browserName + ' browser session', event, at: new Date().toISOString(), ...data }));
 function html(nonce, name = 'Funda') {
   return `<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Браузер Funda</title><style nonce="${nonce}">
@@ -76,6 +77,7 @@ setInterval(refresh,1200);
 async function main(options = {}) {
   const { collect, FundaError, SEARCH_URL } = options.core ?? defaultCore;
   const name = options.name ?? 'Funda';
+  browserName = name;
   const homeUrl = options.homeUrl ?? 'https://www.funda.nl/';
   const navigationDomains = options.navigationDomains ?? ['www.funda.nl','funda.nl','login.funda.nl'];
   const listingSelector = options.listingSelector ?? 'a[href*="/detail/huur/"]';
@@ -113,7 +115,7 @@ async function main(options = {}) {
   catch (error) { if (error.code !== 'ENOENT') throw new Error('STATE_DECRYPT_FAILED'); }
   const context = await browser.newContext({ locale: 'nl-NL', viewport: { width: 1024, height: 768 }, ...(saved ? { storageState: saved } : {}) });
   let collecting=false;
-  // Only Funda pages may be navigated; never offer an arbitrary URL or debugger endpoint.
+  // Only the selected source may be navigated; never offer an arbitrary URL or debugger endpoint.
   await context.route('**/*', async route => {
     const request = route.request();
     let url; try { url = new URL(request.url()); } catch { return route.abort(); }
@@ -121,7 +123,7 @@ async function main(options = {}) {
     if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[)/.test(url.hostname) || url.hostname.endsWith('.internal')) return route.abort();
     if (request.isNavigationRequest() && request.frame().parentFrame() === null
       && !navigationDomains.includes(url.hostname)) return route.abort();
-    if(collecting&&request.resourceType()==='image')return route.abort();
+    if(collecting&&request.resourceType()==='image'&&(options.blockThirdPartyDuringCollection||url.hostname==='cloud.funda.nl'))return route.abort();
     if(collecting && options.blockThirdPartyDuringCollection && !navigationDomains.includes(url.hostname)
       && url.hostname!=='challenges.cloudflare.com' && ['script','stylesheet','media','font'].includes(request.resourceType()))return route.abort();
     return route.continue();
@@ -231,7 +233,7 @@ async function main(options = {}) {
           if(a.type==='save'&&recovery&&!state.humanCheck&&!state.accessDenied&&(state.searchReady ?? state.listingLinks>0)&&new URL(page.url()).pathname===searchPath) {recovery.resolved=true;await saveRecovery();}
           return state;
         });
-        return send(200,{...state,message:a.type==='save'?'Сессия сохранена в зашифрованном виде':state.listingLinks?'Объявления доступны':state.humanCheck?'Funda просит проверку человека':'Готово'});
+        return send(200,{...state,message:a.type==='save'?'Сессия сохранена в зашифрованном виде':state.listingLinks?'Объявления доступны':state.humanCheck?name+' просит проверку человека':'Готово'});
       }
       send(404,{message:'Not found'});
     }catch{send(400,{message:'Action failed'})}
