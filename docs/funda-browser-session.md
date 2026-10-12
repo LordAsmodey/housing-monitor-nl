@@ -129,10 +129,14 @@ a five-minute deadline under a six-minute database lease; HTTP retains its short
 budget. Dockerfile.browser packages the matching Playwright version for a
 reproducible browser-service build.
 
-For repository-backed browser deployments, select railway.browser.json as that
-service's config path (the main service keeps railway.json). This selects the
-browser Dockerfile and /health without running the application's database migration
-command inside the browser image. Keep one replica and the existing /data volume.
+The production browser uses the pinned official Playwright image. Its start command
+is assembled exclusively from the versioned funda-core.cjs and browser-session.cjs
+by scripts/funda-browser-bootstrap.cjs, without including environment secrets.
+Configure /health, preDeployCommand=[] and one replica with the existing /data
+volume. Dockerfile.browser is provided for a future independent repository build;
+the connected Railway API rejects changing deprecated config-file paths, so the
+production browser retains the official image. The main application retains its
+Dockerfile, /health/ready and database migrations.
 The temporary inspection endpoint used during research is removed from the final
 worker; only state, collection and recovery-grant API routes are retained.
 
@@ -149,3 +153,28 @@ publication older than the requested 72-hour window now excludes that card befor
 availability/geo/rent validation. Fresh or undated cards retain strict validation;
 unknown freshness or availability never becomes a successful empty result. The
 versioned browser scenario reference schedules one check when the recipe changes.
+
+## Production verification, 2026-10-12
+
+Commit 0538720 passed both GitHub CI runs, including PostgreSQL recovery/resume and
+concurrent administrative-alert deduplication. Application deployment
+5922b30f-ba23-4dce-8d5b-5211373f07dd reached SUCCESS. At 08:49:03 UTC the normal
+scheduler completed run cmv50boiy0003p401rzzl23gk: inspected=58, matched=0,
+created=0, baseline=true. This log is emitted after the database transaction commits.
+No listing notification was created by this initial baseline.
+
+At 08:50:05 UTC public /health/ready returned 200, status=ok, database=ready.
+The live worker recovery-grant mechanics returned the same episode on repeat
+requests, login=200, reused-link=401, saved=true, recovered=true, humanCheck=false,
+listingLinks=33. This was a mechanics check on an already-cleared session; no
+CAPTCHA was solved automatically or deliberately induced, and no test recovery
+alert was sent to Telegram. Actual recurrence of a challenge remains untested.
+
+The application is temporarily deployed from codex/funda-browser-monitor for
+production verification while PR #8 awaits merging. After merge, reconnect the
+application source to main; do not switch back before merge because old main
+still uses HTTP. Source reconnection through the current Railway connector resets
+checkSuites to false and offers no option to enable it; all deployed implementation
+commits were checked with GitHub CI. Restore the Railway Wait for CI setting when
+that configuration capability becomes available. The browser remains an image
+service with the same encrypted state key and volume.
