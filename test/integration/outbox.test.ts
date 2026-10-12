@@ -5,6 +5,9 @@ import { PrismaService } from '../../src/database/prisma.service';
 import { ListingsService } from '../../src/listings/listings.service';
 import { OutboxService } from '../../src/delivery/outbox.service';
 import { DeliveryError } from '../../src/delivery/telegram';
+import { runVesteda } from '../../src/sources/vesteda-runner';
+import { SOURCE_ID as VESTEDA_SOURCE_ID, SEARCH_URL as VESTEDA_URL, SourceError } from '../../src/sources/vesteda-core';
+import type { ListingInput } from '../../src/listings/listings.service';
 import { smoke } from '../../scripts/outbox-smoke.mjs';
 import { createRequire } from 'node:module';
 const requireFromRoot = createRequire(`${process.cwd()}/package.json`);
@@ -298,6 +301,52 @@ test('Woldring baseline, status transitions, retry rollback and notification ded
   await assert.rejects(runWoldring(db,service,{destination:'-123',collector:async()=>{throw new FundaError('INCOMPLETE_SEARCH')}}),/INCOMPLETE_SEARCH/);
   const failed=await db.source.findUniqueOrThrow({where:{id:WOLDRING_SOURCE_ID}});
   assert.deepEqual(failed.lastSuccessAt,before.lastSuccessAt);assert.deepEqual(failed.baselineAt,before.baselineAt);assert.equal(failed.status,'DEGRADED');
+});
+
+test('Vesteda baseline, lease, availability updates without housingDetails and failures preserve delivery state', async () => {
+  const { VestedaService } = await import('../../src/sources/vesteda.service');
+  const previous = process.env.VESTEDA_MONITORING_ENABLED;
+  process.env.VESTEDA_MONITORING_ENABLED='false';
+  try {
+    const monitor = new VestedaService(db,service);
+    assert.equal((await monitor.tick()).skipped,true);
+    assert.equal(await db.source.count({where:{id:VESTEDA_SOURCE_ID}}),0);
+  } finally {
+    if(previous !== undefined) process.env.VESTEDA_MONITORING_ENABLED=previous;
+    else delete process.env.VESTEDA_MONITORING_ENABLED;
+  }
+  ids.push(VESTEDA_SOURCE_ID);
+  const first: ListingInput = { ...item('50412'), canonicalUrl: 'https://www.vesteda.com/nl/huurwoningen-groningen/westerwal/toxopeusstraat-210-groningen-50412', availabilityStatus: 'available' };
+  const reserved: ListingInput = { ...first, externalId: '32752', canonicalUrl: 'https://www.vesteda.com/nl/huurwoningen-groningen/kolenpark/eelkemastraat-83-groningen-32752', availabilityStatus: 'unavailable' };
+  const run = (input: ListingInput[]) => runVesteda(db, service, { destination: '-123', collector: async () => ({listings:input,inspected:input.length,total:input.length,pages:1,available:input.filter(x=>x.availabilityStatus==='available').length}) });
+  const due = () => db.source.update({where:{id:VESTEDA_SOURCE_ID},data:{nextCheckAt:new Date(0)}});
+  const jobs = {listing:{sourceId:VESTEDA_SOURCE_ID}};
+  const baseline = await run([first,reserved]); assert.equal(baseline.skipped,false);
+  if (!baseline.skipped) assert.equal(baseline.baseline,true);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  const profile = await db.siteProfile.findUniqueOrThrow({where:{sourceId:VESTEDA_SOURCE_ID}});
+  assert.deepEqual(profile.searchUrls,[VESTEDA_URL]); assert.equal(profile.authStrategy,'none');
+  assert.deepEqual(profile.filters,{city:'Groningen',radiusKm:20,minRent:500,maxRent:1500,filtering:'vesteda-search'});
+  assert.equal((await run([first])).skipped,true);
+  const available = {...reserved,availabilityStatus:'available' as const,rentPrice:1138.85};
+  await due();
+  const concurrent=await Promise.all([run([first,available]),run([first,available])]);
+  assert.equal(concurrent.filter(x=>!x.skipped).length,1);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const stored=await db.housingListing.findFirstOrThrow({where:{sourceId:VESTEDA_SOURCE_ID,externalId:'32752'}});
+  assert.equal(stored.availabilityStatus,'available');assert.equal(Number(stored.rentPrice),1138.85);
+  for(const input of [[first,reserved],[first,available]]) {await due();await run(input);}
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const third={...first,externalId:'50339',canonicalUrl:'https://www.vesteda.com/nl/huurwoningen-groningen/westerwal/toxopeusstraat-60-groningen-50339'};
+  await due();await run([first,available,third]);assert.equal(await db.notificationOutbox.count({where:jobs}),2);
+  const before=await db.source.findUniqueOrThrow({where:{id:VESTEDA_SOURCE_ID}});
+  for(const error of [new SourceError('INCOMPLETE_SEARCH'),new SourceError('ACCESS_BLOCKED',true)]) {
+    await due();await assert.rejects(runVesteda(db,service,{destination:'-123',collector:async()=>{throw error;}}));
+    const after=await db.source.findUniqueOrThrow({where:{id:VESTEDA_SOURCE_ID}});
+    assert.deepEqual(after.baselineAt,before.baselineAt);assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
+    assert.equal(after.status,error.blocked?'BLOCKED':'DEGRADED');
+    assert.equal(await db.notificationOutbox.count({where:jobs}),2);
+  }
 });
 
 test('Huurwoningen has its own baseline, lease, filters and transactional notification deduplication', async () => {

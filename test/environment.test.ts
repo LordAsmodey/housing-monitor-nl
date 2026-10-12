@@ -8,6 +8,13 @@ test('defaults to a 15 minute monitoring interval', () => {
   assert.equal(parseEnvironment(valid).MONITOR_INTERVAL_SECONDS, 900);
 });
 
+test('Vesteda monitoring defaults to enabled and can be explicitly paused', () => {
+  assert.equal(parseEnvironment(valid).VESTEDA_MONITORING_ENABLED, true);
+  assert.equal(parseEnvironment({...valid,VESTEDA_MONITORING_ENABLED:'false'}).VESTEDA_MONITORING_ENABLED, false);
+  assert.equal(parseEnvironment({...valid,VESTEDA_MONITORING_ENABLED:'true'}).VESTEDA_MONITORING_ENABLED, true);
+  assert.throws(() => parseEnvironment({...valid,VESTEDA_MONITORING_ENABLED:'yes'}), /VESTEDA_MONITORING_ENABLED/);
+});
+
 test('Huurwoningen is opt-in and requires its own origin and token pair', () => {
   assert.equal(parseEnvironment(valid).HUURWONINGEN_BROWSER_ORIGIN, undefined);
   assert.throws(() => parseEnvironment({ ...valid, HUURWONINGEN_BROWSER_ORIGIN: 'https://huur.up.railway.app' }), /HUURWONINGEN_BROWSER_ORIGIN/);

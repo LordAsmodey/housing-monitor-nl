@@ -56,7 +56,8 @@ export class ListingsService {
       if (existing) {
         listing = await tx.housingListing.update({ where: { id: existing.id }, data: {
           lastSeenAt: now,
-          ...(housingDetails ? { ...storedItem, canonicalUrl, rawSourceRef: JSON.stringify(housingDetails) } : {}),
+          ...storedItem, canonicalUrl,
+          ...(housingDetails ? { rawSourceRef: JSON.stringify(housingDetails) } : {}),
         } });
         if (!transitioned) continue;
       } else {
