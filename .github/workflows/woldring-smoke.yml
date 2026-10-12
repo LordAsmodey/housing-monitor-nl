@@ -1,28 +1,28 @@
 name: Woldring live smoke
-on: [push, pull_request]
+on:
+  push:
+    branches: [codex/woldring-monitor]
+  pull_request:
+    paths: ['scripts/woldring-*.cjs', 'test/woldring.test.mjs', '.github/workflows/woldring-smoke.yml']
 permissions:
   contents: read
+concurrency:
+  group: woldring-smoke-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Inspect public catalog
+      - name: Validate both public catalogs
         run: |
           node <<'JS'
-          (async()=>{
-            for(const path of ['appartementen','studios']) {
-              const r=await fetch('https://woldringverhuur.nl/'+path+'/',{signal:AbortSignal.timeout(30000)});
-              const html=await r.text();
-              console.log('CATALOG',path,r.status,html.length);
-              console.log('HEADING',html.match(/<h1\b[^>]*>[\s\S]*?<\/h1>/i)?.[0]);
-              const pos=html.indexOf('Per direct beschikbaar');
-              console.log('FIRST_CARD_HTML',html.slice(Math.max(0,pos-2200),pos+3200));
-              console.log('RESULT_COUNT',html.match(/.{0,100}resultaten.{0,100}/i)?.[0]);
-              console.log('STATUS_COUNTS', [...html.matchAll(/Per direct beschikbaar|Beschikbaar per:|Niet beschikbaar/g)].reduce((a,m)=>(a[m[0]]=(a[m[0]]||0)+1,a),{}));
-            }
-          })().catch(()=>{console.error('LIVE_FETCH_FAILED');process.exit(1)});
+          const {collect}=require('./scripts/woldring-core.cjs');
+          collect().then(r=>{
+            console.log(JSON.stringify({inspected:r.inspected,available:r.available,pages:r.pages,apartments:r.listings.filter(x=>x.housingDetails.propertyType==='apartment').length,studios:r.listings.filter(x=>x.housingDetails.propertyType==='studio').length}));
+          }).catch(e=>{console.error(e.category||'LIVE_SMOKE_FAILED');process.exit(1)});
           JS
