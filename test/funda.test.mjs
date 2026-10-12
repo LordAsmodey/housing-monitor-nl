@@ -67,6 +67,8 @@ test('missing publication, rent, coordinates or availability fails validation in
   assert.equal(parseDetail(detail(), url(1).replace('appartement-test-', 'parkeergelegenheid-test-')), null);
   assert.throws(() => parseSearch('<h1>Log in</h1>'), /SEARCH_STRUCTURE_CHANGED/);
   assert.throws(() => parseSearch('<h1>Verify you are human</h1>'), /HUMAN_CHECK/);
+  assert.throws(() => parseSearch('<title>Je bent bijna op de pagina die je zoekt [funda]</title><h1>Je bent bijna op de pagina die je zoekt</h1>'),
+    error => error.category === 'HUMAN_CHECK' && error.blocked === true);
   assert.equal(parseSearch('<h1>0 huurwoningen in Groningen</h1>').total, 0);
 });
 

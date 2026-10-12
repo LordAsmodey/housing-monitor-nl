@@ -1,0 +1,340 @@
+{
+  "checkedAt": "2026-10-12",
+  "projectId": "41b9a6fb-54e2-4ada-91ba-a899cc54b9db",
+  "environmentId": "cbec9916-faef-4832-b5c5-17b860d8728d",
+  "serviceId": "64469536-f577-4dab-926c-ab203fdbc82c",
+  "region": "us-west2",
+  "sameEgressIpAsProduction": "not-verified",
+  "headless": {
+    "deploymentId": "44ad56c3-5e30-420c-b00a-9a9a9723be26",
+    "events": [
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:04.421Z",
+        "event": "start",
+        "region": null,
+        "node": "v22.20.0"
+      },
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:05.407Z",
+        "event": "http",
+        "target": "home",
+        "status": 200,
+        "headers": {
+          "content-type": "text/html;charset=utf-8"
+        },
+        "title": "Zoek huizen en appartementen te koop &#x2F; huur in Nederland | Funda",
+        "bytes": 196971,
+        "sha256": "ab2d16b38b1186774d4fdc213dec35b38bf722464f013bc3a2399c877687c443",
+        "indicators": [
+          "robot"
+        ]
+      },
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:06.430Z",
+        "event": "http",
+        "target": "simple-search",
+        "status": 403,
+        "headers": {
+          "server": "AkamaiGHost",
+          "content-type": "text/html"
+        },
+        "title": "Access Denied",
+        "bytes": 386,
+        "sha256": "fae3380b0e8227a9a040d7de3ca052bfa8be3b4725a2f20e4857a52315508aa2",
+        "indicators": [
+          "access denied"
+        ]
+      },
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:07.466Z",
+        "event": "http",
+        "target": "configured-search",
+        "status": 403,
+        "headers": {
+          "server": "AkamaiGHost",
+          "content-type": "text/html"
+        },
+        "title": "Access Denied",
+        "bytes": 386,
+        "sha256": "342441a229e849c9cb7c8510d0d7f787f130b0f00f78c7df5e3d9c3f113a0f4c",
+        "indicators": [
+          "access denied"
+        ]
+      },
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:10.480Z",
+        "event": "browser-start",
+        "version": "141.0.7390.37",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36"
+      },
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:15.577Z",
+        "event": "browser",
+        "target": "home",
+        "status": 200,
+        "finalOrigin": "https://www.funda.nl",
+        "finalPath": "/",
+        "headers": {
+          "server": "AkamaiNetStorage",
+          "content-type": "text/html"
+        },
+        "title": "Je bent bijna op de pagina die je zoekt [funda]",
+        "bytes": 443139,
+        "sha256": "5624e3507baa83f12b6344e161e5ea658b4b2814f1354d30e05ac41882db0751",
+        "indicators": [
+          "robot"
+        ],
+        "visibleTitle": "Je bent bijna op de pagina die je zoekt [funda]",
+        "rentalLinks": 0,
+        "resultCount": null,
+        "visibleIndicators": [],
+        "cookieNames": []
+      },
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:20.654Z",
+        "event": "browser",
+        "target": "simple-search",
+        "status": 200,
+        "finalOrigin": "https://www.funda.nl",
+        "finalPath": "/zoeken/huur",
+        "headers": {
+          "server": "AkamaiNetStorage",
+          "content-type": "text/html"
+        },
+        "title": "Je bent bijna op de pagina die je zoekt [funda]",
+        "bytes": 443139,
+        "sha256": "5624e3507baa83f12b6344e161e5ea658b4b2814f1354d30e05ac41882db0751",
+        "indicators": [
+          "robot"
+        ],
+        "visibleTitle": "Je bent bijna op de pagina die je zoekt [funda]",
+        "rentalLinks": 0,
+        "resultCount": null,
+        "visibleIndicators": [],
+        "cookieNames": []
+      },
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:25.732Z",
+        "event": "browser",
+        "target": "configured-search",
+        "status": 200,
+        "finalOrigin": "https://www.funda.nl",
+        "finalPath": "/zoeken/huur",
+        "headers": {
+          "server": "AkamaiNetStorage",
+          "content-type": "text/html"
+        },
+        "title": "Je bent bijna op de pagina die je zoekt [funda]",
+        "bytes": 443139,
+        "sha256": "5624e3507baa83f12b6344e161e5ea658b4b2814f1354d30e05ac41882db0751",
+        "indicators": [
+          "robot"
+        ],
+        "visibleTitle": "Je bent bijna op de pagina die je zoekt [funda]",
+        "rentalLinks": 0,
+        "resultCount": null,
+        "visibleIndicators": [],
+        "cookieNames": []
+      },
+      {
+        "probe": "funda-railway-v1",
+        "at": "2026-10-12T07:27:25.765Z",
+        "event": "complete"
+      }
+    ]
+  },
+  "headed": {
+    "deploymentId": "c6d2b0dd-915f-4d5c-8e5a-adf03e8682b8",
+    "events": [
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:12.487Z",
+        "event": "start",
+        "region": null,
+        "node": "v22.20.0"
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:13.156Z",
+        "event": "http",
+        "target": "home",
+        "status": 200,
+        "headers": {
+          "content-type": "text/html;charset=utf-8"
+        },
+        "title": "Zoek huizen en appartementen te koop &#x2F; huur in Nederland | Funda",
+        "bytes": 196971,
+        "sha256": "b10aa0e96228583a87077a9a5bc8121a22471fe5f0b87fe6fa23cd93d10abd45",
+        "indicators": [
+          "robot"
+        ]
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:14.176Z",
+        "event": "http",
+        "target": "simple-search",
+        "status": 403,
+        "headers": {
+          "server": "AkamaiGHost",
+          "content-type": "text/html"
+        },
+        "title": "Access Denied",
+        "bytes": 386,
+        "sha256": "cc1a661990aa87ca237c4380c530378ea5889782c08a4dc437b72804f9d90e36",
+        "indicators": [
+          "access denied"
+        ]
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:15.202Z",
+        "event": "http",
+        "target": "configured-search",
+        "status": 403,
+        "headers": {
+          "server": "AkamaiGHost",
+          "content-type": "text/html"
+        },
+        "title": "Access Denied",
+        "bytes": 386,
+        "sha256": "1a96cad6b90dba19ca79be4a2ac700e5051ae0d8c191f66c0cdc8c660ba2a846",
+        "indicators": [
+          "access denied"
+        ]
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:19.228Z",
+        "event": "display-start",
+        "pid": 23
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:20.065Z",
+        "event": "browser-start",
+        "mode": "headed-xvfb",
+        "version": "141.0.7390.37",
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:26.086Z",
+        "event": "browser",
+        "target": "home",
+        "status": 200,
+        "finalOrigin": "https://www.funda.nl",
+        "finalPath": "/",
+        "headers": {
+          "content-type": "text/html;charset=utf-8"
+        },
+        "title": "Zoek huizen en appartementen te koop / huur in Nederland | Funda",
+        "bytes": 320469,
+        "sha256": "fc93e85fb202f915a57f414c7907218b3d85c72d8eb88833ea237598d4632520",
+        "indicators": [
+          "robot"
+        ],
+        "visibleTitle": "Zoek huizen en appartementen te koop / huur in Nederland | Funda",
+        "rentalLinks": 0,
+        "resultCount": null,
+        "visibleIndicators": [],
+        "cookieNames": [
+          "_ga",
+          "_ga_TKEJ5N1955",
+          "_ga_WLRNSHBY8J",
+          "ak_bmsc",
+          "bm_lso",
+          "bm_s",
+          "bm_so",
+          "didomi_consent",
+          "didomi_token"
+        ]
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:31.368Z",
+        "event": "browser",
+        "target": "simple-search",
+        "status": 200,
+        "finalOrigin": "https://www.funda.nl",
+        "finalPath": "/zoeken/huur",
+        "headers": {
+          "server": "AkamaiNetStorage",
+          "content-type": "text/html"
+        },
+        "title": "Je bent bijna op de pagina die je zoekt [funda]",
+        "bytes": 447669,
+        "sha256": "b28b021d163bd6c54f3157fb4a34b5882da7097af4eb8b90616585a7c7a2cc7b",
+        "indicators": [
+          "captcha",
+          "akamai",
+          "robot"
+        ],
+        "visibleTitle": "Je bent bijna op de pagina die je zoekt [funda]",
+        "rentalLinks": 0,
+        "resultCount": null,
+        "visibleIndicators": [],
+        "cookieNames": [
+          "_ga",
+          "_ga_TKEJ5N1955",
+          "_ga_WLRNSHBY8J",
+          "ak_bmsc",
+          "bm_lso",
+          "bm_s",
+          "bm_so",
+          "didomi_consent",
+          "didomi_token"
+        ]
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:36.460Z",
+        "event": "browser",
+        "target": "configured-search",
+        "status": 200,
+        "finalOrigin": "https://www.funda.nl",
+        "finalPath": "/zoeken/huur",
+        "headers": {
+          "server": "AkamaiNetStorage",
+          "content-type": "text/html"
+        },
+        "title": "Je bent bijna op de pagina die je zoekt [funda]",
+        "bytes": 447671,
+        "sha256": "f0378712cb06c32bb0f38a34706e31d80d3d138d771aeaa9e0ee2c8911bac572",
+        "indicators": [
+          "captcha",
+          "akamai",
+          "robot"
+        ],
+        "visibleTitle": "Je bent bijna op de pagina die je zoekt [funda]",
+        "rentalLinks": 0,
+        "resultCount": null,
+        "visibleIndicators": [],
+        "cookieNames": [
+          "_ga",
+          "_ga_TKEJ5N1955",
+          "_ga_WLRNSHBY8J",
+          "ak_bmsc",
+          "bm_lso",
+          "bm_s",
+          "bm_so",
+          "didomi_consent",
+          "didomi_token"
+        ]
+      },
+      {
+        "probe": "funda-railway-v2",
+        "at": "2026-10-12T07:33:36.678Z",
+        "event": "complete"
+      }
+    ]
+  }
+}

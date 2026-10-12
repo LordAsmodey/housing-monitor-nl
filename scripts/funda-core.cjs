@@ -42,7 +42,7 @@ function allowedUrl(value, kind = 'detail') {
   url.hash = ''; return url.href;
 }
 function guardPage(html) {
-  if (/captcha|verify you are human|verifieer.{0,20}mens|access denied|just a moment|unusual traffic|bevestig.{0,20}mens/i.test(text(html))) {
+  if (/captcha|verify you are human|verifieer.{0,20}mens|access denied|just a moment|unusual traffic|bevestig.{0,20}mens|je bent bijna op de pagina die je zoekt|verifiëren dat onze bezoekers echte mensen zijn/i.test(text(html))) {
     throw new FundaError('HUMAN_CHECK', true);
   }
 }
