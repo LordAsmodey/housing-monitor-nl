@@ -122,6 +122,8 @@ async function main(options = {}) {
     if (request.isNavigationRequest() && request.frame().parentFrame() === null
       && !navigationDomains.includes(url.hostname)) return route.abort();
     if(collecting&&request.resourceType()==='image')return route.abort();
+    if(collecting && options.blockThirdPartyDuringCollection && !navigationDomains.includes(url.hostname)
+      && url.hostname!=='challenges.cloudflare.com' && ['script','stylesheet','media','font'].includes(request.resourceType()))return route.abort();
     return route.continue();
   });
   const page = await context.newPage();
@@ -178,13 +180,14 @@ async function main(options = {}) {
           const result=await serial(async()=>{
             collecting=true;
             try { const transport=async(url)=>{
-              const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:20000});
+              const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:options.navigationTimeout??20000});
               await page.waitForTimeout(1200);
               const content=await page.content();
               await persist();
               return new Response(content,{status:response?.status()??502,headers:{'content-type':'text/html'}});
             };
-            return await collect({transport,signal:AbortSignal.timeout(300000)});
+            return await collect({transport,signal:AbortSignal.timeout(300000),
+              ...(options.logProgress?{onPage:stats=>emit('collection-page',stats)}:{})});
             } finally { collecting=false; }
           });
           emit('collection-complete',{inspected:result.inspected,pages:result.pages,matched:result.listings.length});

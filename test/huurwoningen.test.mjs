@@ -50,4 +50,7 @@ test('temporary upstream 502 is retried with a bound; persistent failures remain
   calls=0;
   await assert.rejects(collect({pause:async()=>{},transport:async()=>{calls++;return new Response('gateway',{status:502})}}),/HTTP_STATUS/);
   assert.equal(calls,3);
+  calls=0;
+  const recovered=await collect({pause:async()=>{},transport:async()=>{if(++calls===1)throw Error('navigation timeout');return new Response(page(),{headers:{'content-type':'text/html'}})}});
+  assert.equal(calls,2);assert.equal(recovered.inspected,1);
 });

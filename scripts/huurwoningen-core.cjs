@@ -86,7 +86,10 @@ async function fetchHtml(url,signal,transport,pause) {
   allowedUrl(url,'search');let response;
   for(let attempt=0;attempt<3;attempt++) {
     if(signal.aborted)throw new FundaError('RUN_TIMEOUT');
-    try{response=await transport(url,{redirect:'manual',signal,headers:{Accept:'text/html','Accept-Language':'nl-NL'}})}catch{throw new FundaError('HTTP_TRANSPORT')}
+    try{response=await transport(url,{redirect:'manual',signal,headers:{Accept:'text/html','Accept-Language':'nl-NL'}})}catch{
+      if(attempt===2||signal.aborted)throw new FundaError(signal.aborted?'RUN_TIMEOUT':'HTTP_TRANSPORT');
+      await pause(2000);continue;
+    }
     if(![502,503,504].includes(response.status)||attempt===2)break;
     await response.body?.cancel();await pause(2000);
   }
@@ -100,7 +103,7 @@ async function fetchHtml(url,signal,transport,pause) {
   try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>5*1024*1024){await reader.cancel();throw new FundaError('BODY_TOO_LARGE')}chunks.push(value)}}catch(e){if(e instanceof FundaError)throw e;throw new FundaError('HTTP_TRANSPORT')}
   return Buffer.concat(chunks).toString('utf8');
 }
-async function collect({transport=fetch,maxPages=20,maxListings=600,signal=AbortSignal.timeout(120000),pause=ms=>new Promise(r=>setTimeout(r,ms))}={}) {
+async function collect({transport=fetch,maxPages=20,maxListings=600,signal=AbortSignal.timeout(120000),pause=ms=>new Promise(r=>setTimeout(r,ms)),onPage=()=>{}}={}) {
   const listings=new Map(),pages=new Set();let url=SEARCH_URL,total;
   while(url) {
     if(signal.aborted)throw new FundaError('RUN_TIMEOUT');
@@ -110,6 +113,7 @@ async function collect({transport=fetch,maxPages=20,maxListings=600,signal=Abort
     if(total>maxListings)throw new FundaError('LISTING_LIMIT');
     for(const item of page.listings){if(listings.has(item.canonicalUrl))throw new FundaError('PAGINATION_NOT_ADVANCING');listings.set(item.canonicalUrl,item)}
     if(listings.size>maxListings||listings.size>total)throw new FundaError('SEARCH_COUNT_MISMATCH');
+    onPage({page:pages.size,found:page.listings.length,total,accumulated:listings.size});
     url=page.next;if(url) {
       const current=Number(new URL([...pages].at(-1)).searchParams.get('page')??1);
       if(Number(new URL(url).searchParams.get('page')??1)!==current+1)throw new FundaError('PAGINATION_NOT_ADVANCING');
