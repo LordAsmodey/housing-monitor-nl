@@ -1,0 +1,27 @@
+name: Vesteda live smoke
+on:
+  push:
+    branches: [codex/vesteda-monitor]
+  pull_request:
+    paths: ['src/sources/vesteda*.ts', 'scripts/vesteda-check.cjs', 'test/vesteda.test.ts', '.github/workflows/vesteda-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: vesteda-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run build
+      - name: Validate public Vesteda search without database or delivery
+        run: node scripts/vesteda-check.cjs
