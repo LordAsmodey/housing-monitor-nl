@@ -23,17 +23,19 @@
     "outbox:admin": "node --env-file-if-exists=.env scripts/outbox-admin.mjs",
     "outbox:smoke": "node --env-file-if-exists=.env scripts/outbox-smoke.mjs",
     "funda:check": "node --env-file-if-exists=.env scripts/funda-check.cjs",
-    "test:funda": "node --test test/funda.test.mjs"
+    "test:funda": "node --test test/funda.test.mjs",
+    "sentry:smoke": "node --env-file-if-exists=.env scripts/sentry-smoke.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
     "@prisma/client": "^6.19.0",
+    "@sentry/node": "^11.7.0",
+    "prisma": "^6.19.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "zod": "^4.1.0",
-    "prisma": "^6.19.0"
+    "zod": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

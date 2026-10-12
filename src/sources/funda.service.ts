@@ -32,6 +32,7 @@ export class FundaService implements OnModuleInit, OnModuleDestroy {
     }).catch((error: unknown) => {
       // Only controlled categories and counts; never raw transport/Prisma errors or HTML.
       const category = error instanceof FundaError ? error.category : 'RUN_FAILED';
+      require('../../scripts/telemetry.cjs').init().report(error, 'funda', category);
       this.logger.warn(`Funda check failed: category=${category}`);
     }).finally(() => { this.active = undefined; });
   }

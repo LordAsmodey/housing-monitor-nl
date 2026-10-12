@@ -15,7 +15,8 @@ export class OutboxService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     if (!this.config.TELEGRAM_DELIVERY_ENABLED) return;
     this.timer = setInterval(() => {
-      if (!this.active) this.active = this.tick().catch(() => {
+      if (!this.active) this.active = this.tick().catch((error: unknown) => {
+        require('../../scripts/telemetry.cjs').init().report(error, 'telegram', 'OUTBOX_TICK_FAILED');
         // Never log Prisma/transport errors: they can include credentials or payloads.
         this.logger.error('Outbox tick failed; pending delivery state retained');
       }).finally(() => { this.active = undefined; });
@@ -49,13 +50,17 @@ export class OutboxService implements OnModuleInit, OnModuleDestroy {
     const retry = failure?.retryable && job.attempts < this.config.TELEGRAM_MAX_ATTEMPTS;
     const delay = Math.max(3100, (failure?.retryAfter ?? 0) * 1000,
       retry ? Math.min(3600000, 1000 * 2 ** job.attempts) + Math.floor(Math.random() * 1000) : 0);
-    await this.db.$transaction(async tx => {
+    const persisted = await this.db.$transaction(async tx => {
       const updated = await tx.notificationOutbox.updateMany({ where: { id: job.id, status: 'SENDING', lockToken: token }, data: {
         status: failure ? failure.uncertain ? 'UNCERTAIN' : retry ? 'PENDING' : 'DEAD_LETTER' : 'SENT',
         telegramMessageId: messageId, sentAt: messageId ? now : null,
         lastErrorCategory: failure?.category ?? null, nextAttemptAt: new Date(now.getTime() + delay), lockedUntil: null, lockToken: null,
       } });
       if (updated.count) await tx.deliveryGate.update({ where: { id: 'telegram' }, data: { nextAttemptAt: new Date(now.getTime() + delay) } });
+      return updated.count;
     });
+    if (persisted && failure && (failure.uncertain || !retry)) {
+      require('../../scripts/telemetry.cjs').init().report(failure, 'telegram', failure.uncertain ? 'DELIVERY_UNCERTAIN' : 'DELIVERY_DEAD_LETTER');
+    }
   }
 }
