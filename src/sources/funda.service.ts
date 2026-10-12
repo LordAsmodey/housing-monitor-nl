@@ -21,7 +21,7 @@ export class FundaService implements OnModuleInit, OnModuleDestroy {
   }
   private schedule() {
     if (this.active) return;
-    this.active = this.tick().catch(() => {
+    this.active = this.tick().then(() => {}).catch(() => {
       // Error categories are persisted on MonitoringRun. No HTML, tokens or URLs in logs.
       this.logger.warn('Funda check failed; inspect MonitoringRun errorCategory');
     }).finally(() => { this.active = undefined; });
