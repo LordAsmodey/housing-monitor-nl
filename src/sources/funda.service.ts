@@ -59,9 +59,9 @@ export class FundaService implements OnModuleInit, OnModuleDestroy {
   }
   private async enqueueRecovery(client: {recovery(): Promise<{id:string;url:string}>}) {
     const recovery=await client.recovery();
-    await this.db.notificationOutbox.upsert({where:{idempotencyKey:'funda-recovery:'+recovery.id},update:{},create:{
+    await this.db.notificationOutbox.createMany({skipDuplicates:true,data:[{
       destinationRef:this.config.TELEGRAM_CHAT_ID,idempotencyKey:'funda-recovery:'+recovery.id,
-      payload:'Funda просит проверку человека. Мониторинг приостановлен. Открой браузер, пройди проверку, нажми «Поиск жилья», затем «Сохранить сессию».\n'+recovery.url+'\nСсылка одноразовая, действует 24 часа. Не пересылай её.'}});
+      payload:'Funda просит проверку человека. Мониторинг приостановлен. Открой браузер, пройди проверку, нажми «Поиск жилья», затем «Сохранить сессию».\n'+recovery.url+'\nСсылка одноразовая, действует 24 часа. Не пересылай её.'}]});
   }
   async onModuleDestroy() { clearInterval(this.timer); await this.active; }
 }

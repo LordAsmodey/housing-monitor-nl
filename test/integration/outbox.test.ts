@@ -223,7 +223,7 @@ test('source recovery alerts use the same durable delivery without creating hous
   await db.notificationOutbox.updateMany({where:{status:'PENDING'},data:{status:'SENT'}});
   const before=await db.housingListing.count();
   const data={idempotencyKey:'recovery:test-episode',destinationRef:'-123',payload:'Funda needs manual verification'};
-  await Promise.all([db.notificationOutbox.upsert({where:{idempotencyKey:data.idempotencyKey},create:data,update:{}}),db.notificationOutbox.upsert({where:{idempotencyKey:data.idempotencyKey},create:data,update:{}})]);
+  await Promise.all([db.notificationOutbox.createMany({data:[data],skipDuplicates:true}),db.notificationOutbox.createMany({data:[data],skipDuplicates:true})]);
   let calls=0;
   await worker(async()=>{calls++;return 'recovery-message'}).tick();
   const alert=await db.notificationOutbox.findUniqueOrThrow({where:{idempotencyKey:data.idempotencyKey}});
