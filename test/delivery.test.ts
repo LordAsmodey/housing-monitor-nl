@@ -18,7 +18,7 @@ test('delivery transport confirms ID and classifies rejected, rate limited and a
     e => e instanceof DeliveryError && e.uncertain && !e.message.includes('secret-token'));
 });
 test('delivery needs explicit enabling and required secrets; configuration errors redact values', () => {
-  const env = { DATABASE_URL: 'postgresql://localhost/test', REDIS_URL: 'redis://localhost' };
+  const env = { DATABASE_URL: 'postgresql://localhost/test', REDIS_URL: 'redis://localhost', TELEGRAM_CHAT_ID: '-123' };
   assert.equal(parseEnvironment(env).TELEGRAM_DELIVERY_ENABLED, false);
   assert.throws(() => parseEnvironment({ ...env, TELEGRAM_DELIVERY_ENABLED: 'true' }), /TELEGRAM_BOT_TOKEN/);
   assert.throws(() => parseEnvironment({ ...env, TELEGRAM_BOT_TOKEN: 'secret' }), e => e instanceof Error && !e.message.includes('secret'));

@@ -2,16 +2,16 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseEnvironment } from '../src/config/environment';
 
-const valid = { DATABASE_URL: 'postgresql://user:password@localhost:5432/housing', REDIS_URL: 'redis://localhost:6379' };
+const valid = { DATABASE_URL: 'postgresql://user:password@localhost:5432/housing', REDIS_URL: 'redis://localhost:6379', TELEGRAM_CHAT_ID: '-123' };
 
 test('defaults to a 15 minute monitoring interval', () => {
   assert.equal(parseEnvironment(valid).MONITOR_INTERVAL_SECONDS, 900);
-  assert.equal(parseEnvironment(valid).FUNDA_MONITOR_ENABLED, false);
 });
 
 test('Funda monitoring requires a Telegram destination even when delivery is paused', () => {
-  assert.throws(() => parseEnvironment({ ...valid, FUNDA_MONITOR_ENABLED: 'true' }), /TELEGRAM_CHAT_ID/);
-  assert.equal(parseEnvironment({ ...valid, FUNDA_MONITOR_ENABLED: 'true', TELEGRAM_CHAT_ID: '-123' }).FUNDA_MONITOR_ENABLED, true);
+  const { TELEGRAM_CHAT_ID: _chat, ...withoutChat } = valid;
+  assert.throws(() => parseEnvironment(withoutChat), /TELEGRAM_CHAT_ID/);
+  assert.equal(parseEnvironment(valid).TELEGRAM_CHAT_ID, '-123');
 });
 
 test('rejects invalid configuration without leaking secrets', () => {

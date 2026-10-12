@@ -14,7 +14,6 @@ async function main() {
   require('reflect-metadata');
   const { parseEnvironment } = require('../dist/config/environment.js');
   const config = parseEnvironment(process.env);
-  if (!config.FUNDA_MONITOR_ENABLED) throw new FundaError('MONITOR_DISABLED');
   const { PrismaService } = require('../dist/database/prisma.service.js');
   const { ListingsService } = require('../dist/listings/listings.service.js');
   const db = new PrismaService();

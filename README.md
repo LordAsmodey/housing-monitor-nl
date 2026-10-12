@@ -10,7 +10,7 @@ NestJS + TypeScript подключает PostgreSQL через Prisma. Зафи�
 ограничение частоты, retries, DEAD_LETTER и UNCERTAIN. Добавлен автоматический HTTP-модуль
 Funda: Groningen +30 км, аренда до €1500/месяц, публикации за последние 72 часа.
 Расписание — 15 минут, блокировки и состояние запусков хранятся в PostgreSQL.
-Включение: `FUNDA_MONITOR_ENABLED=true`; инструкция и границы проверки — [docs/funda.md](docs/funda.md).
+Funda запускается автоматически после старта приложения; инструкция и границы проверки — [docs/funda.md](docs/funda.md).
 Live-доступ и разметка Funda в текущем окружении не подтверждены. Redis/BullMQ и LLM пока не подключены.
 
 ## Локальный запуск
