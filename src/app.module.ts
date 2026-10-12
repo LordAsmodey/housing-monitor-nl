@@ -6,7 +6,8 @@ import { ListingsService } from './listings/listings.service';
 import { OutboxService } from './delivery/outbox.service';
 import { FundaService } from './sources/funda.service';
 import { HuurwoningenService } from './sources/huurwoningen.service';
+import { WoldringService } from './sources/woldring.service';
 
-@Module({ controllers: [HealthController], providers: [PrismaService, ListingsService, OutboxService, FundaService, HuurwoningenService] })
+@Module({ controllers: [HealthController], providers: [PrismaService, ListingsService, OutboxService, FundaService, HuurwoningenService, WoldringService] })
 export class AppModule {}
 

@@ -27,8 +27,8 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
     await tx.monitoringRun.updateMany({ where: { sourceId: sourceId, status: 'RUNNING' },
       data: { status: 'FAILED', finishedAt: now, errorCategory: 'WORKER_INTERRUPTED' } });
     await tx.siteProfile.upsert({ where: { sourceId: sourceId }, create: {
-      sourceId: sourceId, searchUrls: [searchUrl], filters: filters, authStrategy: browser?'browser-session':'none',browserStateRef:browser?scenario:null,
-    }, update: { searchUrls: [searchUrl], filters: filters,authStrategy:browser?'browser-session':'none',browserStateRef:browser?scenario:null } });
+      sourceId: sourceId, searchUrls: source.searchUrls ?? [searchUrl], filters: filters, authStrategy: browser?'browser-session':'none',browserStateRef:browser?scenario:null,
+    }, update: { searchUrls: source.searchUrls ?? [searchUrl], filters: filters,authStrategy:browser?'browser-session':'none',browserStateRef:browser?scenario:null } });
     return tx.monitoringRun.create({ data: { sourceId: sourceId } });
   });
   if (!run) return { skipped: true };

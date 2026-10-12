@@ -1,0 +1,28 @@
+name: Woldring live smoke
+on:
+  push:
+    branches: [codex/woldring-monitor]
+  pull_request:
+    paths: ['scripts/woldring-*.cjs', 'test/woldring.test.mjs', '.github/workflows/woldring-smoke.yml']
+permissions:
+  contents: read
+concurrency:
+  group: woldring-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate both public catalogs
+        run: |
+          node <<'JS'
+          const {collect}=require('./scripts/woldring-core.cjs');
+          collect().then(r=>{
+            console.log(JSON.stringify({inspected:r.inspected,available:r.available,pages:r.pages,apartments:r.listings.filter(x=>x.housingDetails.propertyType==='apartment').length,studios:r.listings.filter(x=>x.housingDetails.propertyType==='studio').length}));
+          }).catch(e=>{console.error(e.category||'LIVE_SMOKE_FAILED');process.exit(1)});
+          JS
