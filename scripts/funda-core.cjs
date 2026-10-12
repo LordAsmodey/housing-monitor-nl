@@ -144,12 +144,19 @@ function distanceKm(latitude, longitude) {
     * Math.cos(rad(FILTERS.latitude)) * Math.sin(rad(longitude - FILTERS.longitude) / 2) ** 2;
   return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
-function parseDetail(html, value) {
+function parseDetail(html, value, now) {
   guardPage(html); const canonicalUrl = allowedUrl(value);
   if (!/\/(?:huis|appartement)-[^/]+\/\d+\/$/.test(new URL(canonicalUrl).pathname)) return null;
   const objects = structuredData(html);
   const status = fact(html, ['status']);
   if (/^(verhuurd|rented|onder optie|under option|onder bod|under offer|verhuurd onder voorbehoud)/i.test(status ?? '')) return null;
+  // Public detail pages show a numeric date under popularity even when Listed since is login-gated.
+  const offeredSince = fact(html, ['aangeboden sinds', 'listed since']);
+  const published = (offeredSince && !/log in|inloggen/i.test(offeredSince) ? offeredSince : undefined)
+    ?? objects.find(o => o.datePosted)?.datePosted ?? objects.find(o => o.datePublished)?.datePublished
+    ?? text(html).match(/\b(\d{1,2}-\d{1,2}-\d{4})\s+(?:Op Funda|On Funda)\b/i)?.[1];
+  const publishedAt = published ? publicationDate(published) : undefined;
+  if(now&&publishedAt&&now.getTime()-publishedAt.getTime()>FILTERS.maxAgeHours*3600000)return null;
   if (!/^(beschikbaar|available|te huur)/i.test(status ?? '')) throw new FundaError('AVAILABILITY_MISSING');
   const titleMatch = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   const title = titleMatch ? text(titleMatch[1]) : '';
@@ -159,12 +166,7 @@ function parseDetail(html, value) {
   if (!title || title.length > 500 || !city || city.length > 200) throw new FundaError('DETAIL_STRUCTURE_CHANGED');
   if (geo?.latitude == null || geo?.longitude == null || geo.latitude === '' || geo.longitude === ''
     || !Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) throw new FundaError('LOCATION_MISSING');
-  // Public detail pages show a numeric date under popularity even when Listed since is login-gated.
-  const offeredSince = fact(html, ['aangeboden sinds', 'listed since']);
-  const published = (offeredSince && !/log in|inloggen/i.test(offeredSince) ? offeredSince : undefined)
-    ?? objects.find(o => o.datePosted)?.datePosted ?? objects.find(o => o.datePublished)?.datePublished
-    ?? text(html).match(/\b(\d{1,2}-\d{1,2}-\d{4})\s+(?:Op Funda|On Funda)\b/i)?.[1];
-  const publishedAt = publicationDate(published);
+  if(!publishedAt)throw new FundaError('PUBLICATION_DATE_MISSING');
   const rentPrice = money(fact(html, ['huurprijs', 'rental price']));
   const area = fact(html, ['wonen', 'woonoppervlakte', 'living area'])?.match(/^([\d.,]+)\s*m/);
   const rooms = fact(html, ['aantal kamers', 'number of rooms'])?.match(/^(\d+)\s/);
@@ -237,7 +239,7 @@ async function collect({ transport = fetch, now = new Date(), maxPages = 5, maxL
     if (!/\/(?:huis|appartement)-[^/]+\/\d+\/$/.test(new URL(detail).pathname)) continue;
     if (signal.aborted) throw new FundaError('RUN_TIMEOUT');
     await pause(1000);
-    const item = parseDetail(await fetchHtml(detail, 'detail', signal, transport), detail);
+    const item = parseDetail(await fetchHtml(detail, 'detail', signal, transport), detail, now);
     if (item && matches(item, now)) listings.push(listingInput(item));
   }
   return { listings, inspected: urls.size, pages: pages.size };

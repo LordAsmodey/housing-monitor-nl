@@ -128,3 +128,10 @@ test('public Nuxt indexed coordinates validate radius without guessing from the 
   const ambiguous=html.replace('[null,', '[{"lat":5,"lng":6},').replace('7.0384274]','7.0384274,null,53.2194,6.5665]');
   assert.throws(()=>parseDetail(ambiguous,url(1)),/LOCATION_AMBIGUOUS/);
 });
+
+test('an explicitly old publication excludes legacy cards with omitted status; fresh ambiguous cards still fail',()=>{
+  const html=detail({date:'2026-10-01T00:00:00Z'}).replace('<dt>Status</dt><dd>Beschikbaar</dd>','');
+  assert.equal(parseDetail(html,url(1),now),null);
+  assert.throws(()=>parseDetail(html.replace('2026-10-01','2026-10-11'),url(1),now),/AVAILABILITY_MISSING/);
+  assert.throws(()=>parseDetail(html.replace('2026-10-01T00:00:00Z','Log in om te bekijken'),url(1),now),/AVAILABILITY_MISSING/);
+});

@@ -128,3 +128,24 @@ Onder bod are excluded alongside rented/under-option homes. Browser collection h
 a five-minute deadline under a six-minute database lease; HTTP retains its shorter
 budget. Dockerfile.browser packages the matching Playwright version for a
 reproducible browser-service build.
+
+For repository-backed browser deployments, select railway.browser.json as that
+service's config path (the main service keeps railway.json). This selects the
+browser Dockerfile and /health without running the application's database migration
+command inside the browser image. Keep one replica and the existing /data volume.
+The temporary inspection endpoint used during research is removed from the final
+worker; only state, collection and recovery-grant API routes are retained.
+
+The 1 GB research container approached its memory limit during repeated detail
+navigation (observed peak 0.990 GB) and later stopped serving page reads. The worker
+now exits on renderer crash or browser disconnect so Railway restores the encrypted
+session under its ON_FAILURE policy. Production browser memory is raised to 2 GB.
+During collection only, property photos from cloud.funda.nl are not loaded; page
+scripts, styles and manual human-check resources remain enabled. Human operations
+load normal images. Heartbeats do not accumulate while a collection is running.
+
+A live legacy P.C. Hooftlaan detail page omits Status entirely. An explicit public
+publication older than the requested 72-hour window now excludes that card before
+availability/geo/rent validation. Fresh or undated cards retain strict validation;
+unknown freshness or availability never becomes a successful empty result. The
+versioned browser scenario reference schedules one check when the recipe changes.

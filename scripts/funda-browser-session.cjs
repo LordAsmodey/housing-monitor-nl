@@ -4,7 +4,7 @@ const http = require('node:http');
 const fs = require('node:fs/promises');
 const { spawn, spawnSync } = require('node:child_process');
 const { randomBytes, createCipheriv, createDecipheriv, createHmac, timingSafeEqual } = require('node:crypto');
-const { collect, FundaError, parseSearch } = require('./funda-core.cjs');
+const { collect, FundaError } = require('./funda-core.cjs');
 const SEARCH_URL = 'https://www.funda.nl/zoeken/huur?' + new URLSearchParams({
   selected_area: JSON.stringify(['groningen,30km']), price: JSON.stringify('-1500'), sort: JSON.stringify('date_down'),
 });
@@ -109,6 +109,7 @@ async function main() {
   try { saved = decryptState(await fs.readFile(stateFile), stateKey); }
   catch (error) { if (error.code !== 'ENOENT') throw new Error('STATE_DECRYPT_FAILED'); }
   const context = await browser.newContext({ locale: 'nl-NL', viewport: { width: 1024, height: 768 }, ...(saved ? { storageState: saved } : {}) });
+  let collecting=false;
   // Only Funda pages may be navigated; never offer an arbitrary URL or debugger endpoint.
   await context.route('**/*', async route => {
     const request = route.request();
@@ -117,10 +118,13 @@ async function main() {
     if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[)/.test(url.hostname) || url.hostname.endsWith('.internal')) return route.abort();
     if (request.isNavigationRequest() && request.frame().parentFrame() === null
       && !['www.funda.nl','funda.nl','login.funda.nl'].includes(url.hostname)) return route.abort();
+    if(collecting&&request.resourceType()==='image'&&url.hostname==='cloud.funda.nl')return route.abort();
     return route.continue();
   });
   const page = await context.newPage();
   page.setDefaultTimeout(10000);
+  page.once('crash',()=>{emit('renderer-crashed');process.exit(1)});
+  browser.once('disconnected',()=>{emit('browser-disconnected');process.exit(1)});
   await page.goto('https://www.funda.nl/', { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
   await page.waitForTimeout(2000);
   await page.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
@@ -148,7 +152,8 @@ async function main() {
   let previous;
   async function report() { const state=await inspect();const encoded=JSON.stringify(state);if(encoded!==previous){emit('page-state',state);previous=encoded}return state; }
   await serial(async()=>{await persist();await report()});
-  const heartbeat=setInterval(()=>serial(async()=>{await persist();await report()}).catch(()=>emit('state-error')),30000);
+  let heartbeatBusy=false;
+  const heartbeat=setInterval(()=>{if(heartbeatBusy)return;heartbeatBusy=true;serial(async()=>{await persist();await report()}).catch(()=>emit('state-error')).finally(()=>heartbeatBusy=false)},30000);
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
     const pathname=new URL(req.url,'http://localhost').pathname;
@@ -167,18 +172,20 @@ async function main() {
         if(req.method==='POST'&&pathname==='/worker/recovery') return send(200,await serial(recoveryLink));
         if(req.method==='POST'&&pathname==='/worker/collect') {
           const result=await serial(async()=>{
-            const transport=async(url)=>{
+            collecting=true;
+            try { const transport=async(url)=>{
               const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:20000});
               await page.waitForTimeout(1200);
               const content=await page.content();
               await persist();
               return new Response(content,{status:response?.status()??502,headers:{'content-type':'text/html'}});
             };
-            return collect({transport,signal:AbortSignal.timeout(300000)});
+            return await collect({transport,signal:AbortSignal.timeout(300000)});
+            } finally { collecting=false; }
           });
+          emit('collection-complete',{inspected:result.inspected,pages:result.pages,matched:result.listings.length});
           return send(200,result);
         }
-        if(process.env.BROWSER_DIAGNOSTICS==='true'&&req.method==='GET'&&pathname==='/worker/inspect') return send(200,await serial(async()=>({search:await page.locator('body').innerText(),scripts:await page.locator('script[type="application/ld+json"]').allTextContents(),facts:await page.locator('dl').allTextContents(),coordinates:await page.evaluate(()=>{const h=document.documentElement.outerHTML;return {matches:[...h.matchAll(/.{0,80}(?:latitude|longitude|LatLng|maps\.google|google\.com\/maps|\"lat\"|\"lng\").{0,180}/gi)].slice(0,20).map(m=>m[0]),scripts:[...document.scripts].filter(s=>s.type==='application/json').map(s=>({id:s.id,len:s.textContent.length}))}})})));
         return send(404,{category:'NOT_FOUND'});
       }catch(error){return send(422,{category:error instanceof FundaError?error.category:'BROWSER_FAILED',blocked:error instanceof FundaError&&error.blocked})}
     }
@@ -242,7 +249,7 @@ async function main() {
     } catch {emit('self-check-failed');await close()}
   });
   let closing=false;
-  async function close(){if(closing)return;closing=true;clearInterval(heartbeat);server.close();await serial(persist).catch(()=>{});await browser.close().catch(()=>{});display.kill();emit('closed');process.exit(0)}
+  async function close(){if(closing)return;closing=true;clearInterval(heartbeat);server.close();await serial(persist).catch(()=>{});browser.removeAllListeners('disconnected');page.removeAllListeners('crash');await browser.close().catch(()=>{});display.kill();emit('closed');process.exit(0)}
   if(!process.env.BROWSER_WORKER_TOKEN)setTimeout(close,Math.max(1,expires-Date.now())).unref();process.on('SIGTERM',close);process.on('SIGINT',close);
 }
 module.exports={encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};
