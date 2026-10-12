@@ -1,12 +1,12 @@
 'use strict';
 
 // Deterministic HTTP fast path. Never executes page scripts or LLM-generated code.
-const FILTERS = Object.freeze({ city: 'Groningen', latitude: 53.2194, longitude: 6.5665,
-  radiusKm: 30, maxRent: 1500, maxAgeHours: 72, priceBasis: 'advertised-monthly-rent' });
+const FILTERS = Object.freeze({ city: 'Groningen', radiusKm: 30, maxRent: 1500,
+  publication: 'today', filtering: 'funda-search', priceBasis: 'advertised-monthly-rent' });
+// Retain the historical source ID to preserve baseline and notification deduplication.
 const SOURCE_ID = 'funda:groningen-30km-1500-3d';
 const SEARCH_URL = 'https://www.funda.nl/zoeken/huur?' + new URLSearchParams({
-  selected_area: JSON.stringify(['groningen,30km']), price: JSON.stringify('-1500'),
-  sort: JSON.stringify('date_down'),
+  selected_area: 'groningen', radius_search: '30', price: '0-1500', publication_date: '1',
 }).toString();
 class FundaError extends Error {
   constructor(category, blocked = false, retryAfterSeconds = 0) {
@@ -30,10 +30,10 @@ function allowedUrl(value, kind = 'detail') {
   if (kind === 'search') {
     if (url.pathname !== '/zoeken/huur') throw new FundaError('URL_NOT_ALLOWED');
     const expected = new URL(SEARCH_URL);
-    for (const key of ['selected_area', 'price', 'sort']) {
+    for (const key of ['selected_area', 'radius_search', 'price', 'publication_date']) {
       if (url.searchParams.get(key) !== expected.searchParams.get(key)) throw new FundaError('SEARCH_FILTER_CHANGED');
     }
-    for (const key of url.searchParams.keys()) if (!['selected_area', 'price', 'sort', 'page'].includes(key)) throw new FundaError('SEARCH_FILTER_CHANGED');
+    for (const key of url.searchParams.keys()) if (!['selected_area', 'radius_search', 'price', 'publication_date', 'page'].includes(key)) throw new FundaError('SEARCH_FILTER_CHANGED');
     if (url.searchParams.has('page') && !/^[1-9]\d*$/.test(url.searchParams.get('page'))) throw new FundaError('INVALID_PAGE');
   } else {
     if (!/^\/(?:en\/)?detail\/huur\/[^/]+\/[^/]+\/\d+\/$/.test(url.pathname)) throw new FundaError('URL_NOT_ALLOWED');
@@ -87,27 +87,6 @@ function structuredData(html) {
   }
   return objects;
 }
-// Nuxt uses a flattened public hydration array; coordinates are indexed values,
-// not literal latitude/longitude in Funda's JSON-LD.
-function hydrationGeo(html) {
-  const found=[];
-  for(const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
-    const attr=attributes(match[1]);
-    if(attr.id!=='__NUXT_DATA__'||attr.type!=='application/json')continue;
-    let data;try{data=JSON.parse(match[2])}catch{throw new FundaError('INVALID_HYDRATION_DATA')}
-    if(!Array.isArray(data))throw new FundaError('INVALID_HYDRATION_DATA');
-    for(const value of data){
-      if(!value||typeof value!=='object'||Array.isArray(value)||!Object.hasOwn(value,'lat')||!Object.hasOwn(value,'lng'))continue;
-      if(!Number.isInteger(value.lat)||!Number.isInteger(value.lng)||value.lat<0||value.lng<0)throw new FundaError('LOCATION_MISSING');
-      const latitude=data[value.lat],longitude=data[value.lng];
-      if(typeof latitude!=='number'||typeof longitude!=='number'||!Number.isFinite(latitude)||!Number.isFinite(longitude))throw new FundaError('LOCATION_MISSING');
-      found.push({latitude,longitude});
-    }
-  }
-  const unique=[...new Map(found.map(g=>[JSON.stringify(g),g])).values()];
-  if(unique.length>1)throw new FundaError('LOCATION_AMBIGUOUS');
-  return unique[0];
-}
 function fact(html, labels) {
   for (const match of html.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)) {
     if (labels.includes(text(match[1]).toLowerCase())) return text(match[2]);
@@ -138,13 +117,7 @@ function publicationDate(value) {
   const localHour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Amsterdam', hour: '2-digit', hourCycle: 'h23' }).format(utc));
   return new Date(utc.getTime() - localHour * 3600000);
 }
-function distanceKm(latitude, longitude) {
-  const rad = n => n * Math.PI / 180;
-  const a = Math.sin(rad(latitude - FILTERS.latitude) / 2) ** 2 + Math.cos(rad(latitude))
-    * Math.cos(rad(FILTERS.latitude)) * Math.sin(rad(longitude - FILTERS.longitude) / 2) ** 2;
-  return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-function parseDetail(html, value, now) {
+function parseDetail(html, value) {
   guardPage(html); const canonicalUrl = allowedUrl(value);
   if (!/\/(?:huis|appartement)-[^/]+\/\d+\/$/.test(new URL(canonicalUrl).pathname)) return null;
   const objects = structuredData(html);
@@ -155,33 +128,20 @@ function parseDetail(html, value, now) {
   const published = (offeredSince && !/log in|inloggen/i.test(offeredSince) ? offeredSince : undefined)
     ?? objects.find(o => o.datePosted)?.datePosted ?? objects.find(o => o.datePublished)?.datePublished
     ?? text(html).match(/\b(\d{1,2}-\d{1,2}-\d{4})\s+(?:Op Funda|On Funda)\b/i)?.[1];
-  const publishedAt = published ? publicationDate(published) : undefined;
-  if(now&&publishedAt&&now.getTime()-publishedAt.getTime()>FILTERS.maxAgeHours*3600000)return null;
+  // Publication is optional display metadata; the search already filters to today.
+  let publishedAt;
+  if(published)try{publishedAt=publicationDate(published)}catch{}
   if (!/^(beschikbaar|available|te huur)/i.test(status ?? '')) throw new FundaError('AVAILABILITY_MISSING');
   const titleMatch = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   const title = titleMatch ? text(titleMatch[1]) : '';
   const city = objects.find(o => typeof o.addressLocality === 'string')?.addressLocality;
-  const geo = objects.find(o => o.latitude !== undefined && o.longitude !== undefined) ?? hydrationGeo(html);
-  const latitude = Number(geo?.latitude), longitude = Number(geo?.longitude);
   if (!title || title.length > 500 || !city || city.length > 200) throw new FundaError('DETAIL_STRUCTURE_CHANGED');
-  if (geo?.latitude == null || geo?.longitude == null || geo.latitude === '' || geo.longitude === ''
-    || !Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) throw new FundaError('LOCATION_MISSING');
-  if(!publishedAt)throw new FundaError('PUBLICATION_DATE_MISSING');
   const rentPrice = money(fact(html, ['huurprijs', 'rental price']));
   const area = fact(html, ['wonen', 'woonoppervlakte', 'living area'])?.match(/^([\d.,]+)\s*m/);
   const rooms = fact(html, ['aantal kamers', 'number of rooms'])?.match(/^(\d+)\s/);
-  return { externalId: canonicalUrl.match(/\/(\d+)\/$/)[1], canonicalUrl, title, city, latitude, longitude,
-    rentPrice, publishedAt, availabilityStatus: 'available',
+  return { externalId: canonicalUrl.match(/\/(\d+)\/$/)[1], canonicalUrl, title, city,
+    rentPrice, ...(publishedAt ? {publishedAt} : {}), availabilityStatus: 'available',
     ...(area ? { areaM2: Number(area[1].replace(',', '.')) } : {}), ...(rooms ? { rooms: Number(rooms[1]) } : {}) };
-}
-function matches(item, now) {
-  const age = now.getTime() - item.publishedAt.getTime();
-  if (age < 0) throw new FundaError('FUTURE_PUBLICATION_DATE');
-  return item.rentPrice <= FILTERS.maxRent && age <= FILTERS.maxAgeHours * 3600000
-    && distanceKm(item.latitude, item.longitude) <= FILTERS.radiusKm;
-}
-function listingInput(item) {
-  const { latitude, longitude, ...listing } = item; return listing;
 }
 async function fetchHtml(url, kind, signal, transport = fetch) {
   allowedUrl(url, kind);
@@ -210,7 +170,7 @@ async function fetchHtml(url, kind, signal, transport = fetch) {
   } catch (error) { if (error instanceof FundaError) throw error; throw new FundaError('HTTP_TRANSPORT'); }
   return Buffer.concat(chunks).toString('utf8');
 }
-async function collect({ transport = fetch, now = new Date(), maxPages = 5, maxListings = 60,
+async function collect({ transport = fetch, maxPages = 5, maxListings = 60,
   signal = AbortSignal.timeout(120000), pause = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
   const urls = new Set(), pages = new Set(); let url = SEARCH_URL, total;
   while (url) {
@@ -239,10 +199,10 @@ async function collect({ transport = fetch, now = new Date(), maxPages = 5, maxL
     if (!/\/(?:huis|appartement)-[^/]+\/\d+\/$/.test(new URL(detail).pathname)) continue;
     if (signal.aborted) throw new FundaError('RUN_TIMEOUT');
     await pause(1000);
-    const item = parseDetail(await fetchHtml(detail, 'detail', signal, transport), detail, now);
-    if (item && matches(item, now)) listings.push(listingInput(item));
+    const item = parseDetail(await fetchHtml(detail, 'detail', signal, transport), detail);
+    if (item) listings.push(item);
   }
   return { listings, inspected: urls.size, pages: pages.size };
 }
 module.exports = { FILTERS, SOURCE_ID, SEARCH_URL, FundaError, allowedUrl, parseSearch, parseDetail,
-  publicationDate, distanceKm, matches, collect };
+  publicationDate, collect };

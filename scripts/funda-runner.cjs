@@ -1,6 +1,6 @@
 'use strict';
 const { randomUUID } = require('node:crypto');
-const BROWSER_SCENARIO = 'railway:funda-browser-session:encrypted-volume:v1';
+const BROWSER_SCENARIO = 'railway:funda-browser-session:encrypted-volume:v2-today';
 const { SOURCE_ID, SEARCH_URL, FILTERS, FundaError, collect } = require('./funda-core.cjs');
 
 // Network I/O is outside transactions. A durable lease prevents replica overlap;
