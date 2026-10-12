@@ -4,7 +4,7 @@ const http = require('node:http');
 const fs = require('node:fs/promises');
 const { spawn, spawnSync } = require('node:child_process');
 const { randomBytes, createCipheriv, createDecipheriv, createHmac, timingSafeEqual } = require('node:crypto');
-const { collect, FundaError, SEARCH_URL } = require('./funda-core.cjs');
+const defaultCore = require('./funda-core.cjs');
 function encryptState(state, key) {
   const iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', key, iv);
   const data = Buffer.concat([cipher.update(JSON.stringify(state), 'utf8'), cipher.final()]);
@@ -43,7 +43,7 @@ function validateAction(action) {
   throw new Error('INVALID_ACTION');
 }
 const emit = (event, data = {}) => console.log(JSON.stringify({ message: 'Funda browser session', event, at: new Date().toISOString(), ...data }));
-function html(nonce) {
+function html(nonce, name = 'Funda') {
   return `<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Браузер Funda</title><style nonce="${nonce}">
 body{margin:0;background:#f3f5f7;color:#17212b;font:16px system-ui}main{max-width:1040px;margin:auto;padding:12px}h1{font-size:22px;margin:8px 0}p{line-height:1.4}button,input{font:inherit;padding:11px;border:1px solid #b8c6d2;border-radius:8px;background:white}button{cursor:pointer}button:disabled{opacity:.5}.row{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}input{flex:1;min-width:120px}#screen{width:100%;display:block;border:1px solid #b8c6d2;background:white;touch-action:pan-y pinch-zoom}#status{font-size:14px}#work{display:none}#note{min-height:20px;color:#25556a}.tip{font-size:14px;color:#435563}
@@ -71,9 +71,15 @@ $('screen').addEventListener('click',e=>{const r=$('screen').getBoundingClientRe
 const key=new URLSearchParams(location.hash.slice(1)).get('key');history.replaceState(null,'',location.pathname);
 if(key)login(key);else api('/api/state').then(()=>{active=true;$('login').style.display='none';$('work').style.display='block';refresh()}).catch(()=>{});
 setInterval(refresh,1200);
-</script></html>`;
+</script></html>`.replaceAll('Funda', name);
 }
-async function main() {
+async function main(options = {}) {
+  const { collect, FundaError, SEARCH_URL } = options.core ?? defaultCore;
+  const name = options.name ?? 'Funda';
+  const homeUrl = options.homeUrl ?? 'https://www.funda.nl/';
+  const navigationDomains = options.navigationDomains ?? ['www.funda.nl','funda.nl','login.funda.nl'];
+  const listingSelector = options.listingSelector ?? 'a[href*="/detail/huur/"]';
+  const searchPath = new URL(SEARCH_URL).pathname;
   let authKey = process.env.BROWSER_ACCESS_KEY;
   const stateKey = Buffer.from(process.env.BROWSER_STATE_KEY_HEX ?? '', 'hex');
   let expires = Date.parse(process.env.BROWSER_ACCESS_EXPIRES_AT ?? '');
@@ -114,15 +120,15 @@ async function main() {
     if (!['https:', 'http:'].includes(url.protocol)) return route.abort();
     if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[)/.test(url.hostname) || url.hostname.endsWith('.internal')) return route.abort();
     if (request.isNavigationRequest() && request.frame().parentFrame() === null
-      && !['www.funda.nl','funda.nl','login.funda.nl'].includes(url.hostname)) return route.abort();
-    if(collecting&&request.resourceType()==='image'&&url.hostname==='cloud.funda.nl')return route.abort();
+      && !navigationDomains.includes(url.hostname)) return route.abort();
+    if(collecting&&request.resourceType()==='image')return route.abort();
     return route.continue();
   });
   const page = await context.newPage();
   page.setDefaultTimeout(10000);
   page.once('crash',()=>{emit('renderer-crashed');process.exit(1)});
   browser.once('disconnected',()=>{emit('browser-disconnected');process.exit(1)});
-  await page.goto('https://www.funda.nl/', { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
+  await page.goto(homeUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
   await page.waitForTimeout(2000);
   await page.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
   await page.waitForTimeout(2000);
@@ -139,7 +145,8 @@ async function main() {
     return { title: title.slice(0,200), path: new URL(page.url()).pathname,
       humanCheck: /je bent bijna op de pagina die je zoekt|verify you are human|verifiëren dat onze bezoekers echte mensen zijn/i.test(title+' '+body),
       accessDenied: /access denied|forbidden/i.test(title+' '+body),
-      listingLinks: await page.locator('a[href*="/detail/huur/"]').count() };
+      listingLinks: await page.locator(listingSelector).count(),
+      ...(options.searchReady ? {searchReady: await options.searchReady(await page.content(), page.url())} : {}) };
   }
   async function persist() {
     const state = await context.storageState({ indexedDB: true });
@@ -160,7 +167,7 @@ async function main() {
     if(req.method==='GET'&&pathname==='/'){
       const nonce=randomBytes(16).toString('base64');
       res.setHeader('Content-Security-Policy',`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; img-src 'self' blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`);
-      res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html(nonce));return;
+      res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html(nonce, name));return;
     }
     if(pathname.startsWith('/worker/')) {
       if(!equalSecret(req.headers.authorization, 'Bearer '+process.env.BROWSER_WORKER_TOKEN) || !process.env.BROWSER_WORKER_TOKEN) return send(401,{category:'WORKER_AUTH'});
@@ -212,10 +219,10 @@ async function main() {
           if(a.type==='text')await page.keyboard.insertText(a.text);
           if(a.type==='key')await page.keyboard.press(a.key);
           if(a.type==='scroll')await page.mouse.wheel(0,a.delta);
-          if(a.type==='navigate'||a.type==='check')await page.goto(a.target==='home'?'https://www.funda.nl/':SEARCH_URL,{waitUntil:'domcontentloaded',timeout:30000});
+          if(a.type==='navigate'||a.type==='check')await page.goto(a.target==='home'?homeUrl:SEARCH_URL,{waitUntil:'domcontentloaded',timeout:30000});
           if(a.type==='check')await page.waitForTimeout(3000);
           await persist();const state=await report();
-          if(a.type==='save'&&recovery&&!state.humanCheck&&!state.accessDenied&&state.listingLinks>0&&new URL(page.url()).pathname==='/zoeken/huur') {recovery.resolved=true;await saveRecovery();}
+          if(a.type==='save'&&recovery&&!state.humanCheck&&!state.accessDenied&&(state.searchReady ?? state.listingLinks>0)&&new URL(page.url()).pathname===searchPath) {recovery.resolved=true;await saveRecovery();}
           return state;
         });
         return send(200,{...state,message:a.type==='save'?'Сессия сохранена в зашифрованном виде':state.listingLinks?'Объявления доступны':state.humanCheck?'Funda просит проверку человека':'Готово'});
@@ -251,3 +258,4 @@ async function main() {
 }
 module.exports={encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};
 if(require.main===module)main().catch(()=>{emit('startup-failed');process.exit(1)});
+
