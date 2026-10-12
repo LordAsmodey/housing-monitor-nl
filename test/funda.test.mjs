@@ -38,6 +38,7 @@ test('€1500 and 72 hours are inclusive; older, expensive and distant listings 
 test('Dutch dates use Amsterdam midnight across winter, summer and DST transitions', () => {
   assert.equal(publicationDate('12 oktober 2026').toISOString(), '2026-10-11T22:00:00.000Z');
   assert.equal(publicationDate('2026-01-12').toISOString(), '2026-01-11T23:00:00.000Z');
+  assert.equal(publicationDate('5-10-2026').toISOString(), '2026-10-04T22:00:00.000Z');
   assert.equal(publicationDate('29 maart 2026').toISOString(), '2026-03-28T23:00:00.000Z');
   assert.equal(publicationDate('25 oktober 2026').toISOString(), '2026-10-24T22:00:00.000Z');
   for (const value of ['31 februari 2026', '3 dagen', 'vandaag', 'Log in om te bekijken', '']) {
@@ -63,9 +64,16 @@ test('missing publication, rent, coordinates or availability fails validation in
     assert.throws(() => parseDetail(html, url(1)));
   }
   assert.equal(parseDetail(detail({ status: 'Verhuurd' }), url(1)), null);
+  assert.equal(parseDetail(detail(), url(1).replace('appartement-test-', 'parkeergelegenheid-test-')), null);
   assert.throws(() => parseSearch('<h1>Log in</h1>'), /SEARCH_STRUCTURE_CHANGED/);
   assert.throws(() => parseSearch('<h1>Verify you are human</h1>'), /HUMAN_CHECK/);
   assert.equal(parseSearch('<h1>0 huurwoningen in Groningen</h1>').total, 0);
+});
+
+test('public Op Funda date works when Aangeboden sinds is login-gated', () => {
+  const html = detail({ date: 'Log in om te bekijken' }) + '<div>5-10-2026</div><div>Op Funda</div>';
+  assert.equal(parseDetail(html, url(1)).publishedAt.toISOString(), '2026-10-04T22:00:00.000Z');
+  assert.equal(parseSearch('<h1>Huurwoningen Groningen</h1><span>1 huurwoningen in Groningen</span><a href="' + url(1) + '">Woning</a>').total, 1);
 });
 
 test('collector follows pagination, deduplicates links, applies all filters and carries publication date', async () => {
@@ -90,7 +98,7 @@ test('HTTP blocks, rate limits, redirects and partial pagination never count as 
     await assert.rejects(collect({ ...options, transport: async () => new Response('', { status, headers: { 'retry-after': '7200' } }) }),
       error => error.category === category && (status !== 429 || error.retryAfterSeconds === 7200));
   }
-  await assert.rejects(collect({ ...options, transport: async () => response(search([1], 2)) }), /INCOMPLETE_SEARCH/);
+  await assert.rejects(collect({ ...options, transport: async () => response(search([1], 2)) }), /PAGINATION_NOT_ADVANCING/);
   await assert.rejects(collect({ ...options, transport: async () => response(search([1], 1, SEARCH_URL)) }), /PAGINATION_LIMIT/);
   await assert.rejects(collect({ ...options, maxListings: 1, transport: async () => response(search([1, 2])) }), /LISTING_LIMIT/);
   await assert.rejects(collect({ ...options, transport: async () => response('Access denied') }), /HUMAN_CHECK/);

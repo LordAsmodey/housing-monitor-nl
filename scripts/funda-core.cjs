@@ -66,7 +66,7 @@ function parseSearch(html, currentUrl = SEARCH_URL) {
     if (attr.rel === 'next' && attr.href) next = allowedUrl(new URL(attr.href.replace(/&amp;/g, '&'), currentUrl).href, 'search');
   }
   const heading = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)].map(m => text(m[1])).join(' ');
-  const totalMatch = heading.match(/([\d.,]+)\s+(?:huurwoningen|woningen|rental properties|properties)/i);
+  const totalMatch = (heading + ' ' + text(html)).match(/([\d.,]+)\s+(?:huurwoningen|woningen|rental properties|properties)/i);
   const total = totalMatch ? Number(totalMatch[1].replace(/[.,]/g, '')) : undefined;
   const empty = /geen (?:huurwoningen|woningen|resultaten) gevonden|no (?:homes|properties|results) found/i.test(text(html));
   if (!urls.size && !(total === 0 || empty)) throw new FundaError('SEARCH_STRUCTURE_CHANGED');
@@ -108,9 +108,10 @@ function publicationDate(value) {
   // Funda often exposes only a calendar date. Use midnight Amsterdam conservatively.
   const match = value.toLowerCase().match(/^(\d{1,2}) (\w+) (\d{4})$/);
   const iso = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const year = Number(match?.[3] ?? iso?.[1]);
-  const month = match ? MONTHS.indexOf(match[2]) + 1 : Number(iso?.[2]);
-  const day = Number(match?.[1] ?? iso?.[3]);
+  const numeric = value.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  const year = Number(match?.[3] ?? iso?.[1] ?? numeric?.[3]);
+  const month = match ? MONTHS.indexOf(match[2]) + 1 : Number(iso?.[2] ?? numeric?.[2]);
+  const day = Number(match?.[1] ?? iso?.[3] ?? numeric?.[1]);
   const utc = new Date(Date.UTC(year, month - 1, day));
   if (!year || month < 1 || month > 12 || day < 1 || utc.getUTCMonth() !== month - 1 || utc.getUTCDate() !== day) throw new FundaError('INVALID_PUBLICATION_DATE');
   const localHour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Amsterdam', hour: '2-digit', hourCycle: 'h23' }).format(utc));
@@ -124,6 +125,7 @@ function distanceKm(latitude, longitude) {
 }
 function parseDetail(html, value) {
   guardPage(html); const canonicalUrl = allowedUrl(value);
+  if (!/\/(?:huis|appartement)-[^/]+\/\d+\/$/.test(new URL(canonicalUrl).pathname)) return null;
   const objects = structuredData(html);
   const status = fact(html, ['status']);
   if (/^(verhuurd|rented|onder optie|under option|verhuurd onder voorbehoud)/i.test(status ?? '')) return null;
@@ -136,8 +138,11 @@ function parseDetail(html, value) {
   if (!title || title.length > 500 || !city || city.length > 200) throw new FundaError('DETAIL_STRUCTURE_CHANGED');
   if (geo?.latitude == null || geo?.longitude == null || geo.latitude === '' || geo.longitude === ''
     || !Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) throw new FundaError('LOCATION_MISSING');
-  const published = fact(html, ['aangeboden sinds', 'listed since']) ?? objects.find(o => o.datePosted || o.datePublished)?.datePosted
-    ?? objects.find(o => o.datePublished)?.datePublished;
+  // Public detail pages show a numeric date under popularity even when Listed since is login-gated.
+  const offeredSince = fact(html, ['aangeboden sinds', 'listed since']);
+  const published = (offeredSince && !/log in|inloggen/i.test(offeredSince) ? offeredSince : undefined)
+    ?? objects.find(o => o.datePosted)?.datePosted ?? objects.find(o => o.datePublished)?.datePublished
+    ?? text(html).match(/\b(\d{1,2}-\d{1,2}-\d{4})\s+(?:Op Funda|On Funda)\b/i)?.[1];
   const publishedAt = publicationDate(published);
   const rentPrice = money(fact(html, ['huurprijs', 'rental price']));
   const area = fact(html, ['wonen', 'woonoppervlakte', 'living area'])?.match(/^([\d.,]+)\s*m/);
@@ -191,14 +196,24 @@ async function collect({ transport = fetch, now = new Date(), maxPages = 5, maxL
     const page = parseSearch(await fetchHtml(url, 'search', signal, transport), url);
     if (total !== undefined && page.total !== total) throw new FundaError('SEARCH_CHANGED_DURING_RUN');
     total = page.total;
+    const before = urls.size;
     for (const detail of page.urls) urls.add(detail);
+    if (page.urls.length && urls.size === before) throw new FundaError('PAGINATION_NOT_ADVANCING');
     if (urls.size > maxListings || total > maxListings) throw new FundaError('LISTING_LIMIT');
+    // Some rendered result pages expose pagination as buttons rather than anchors.
+    // Probe the next numbered page only while the explicit result count is incomplete.
     url = page.next;
+    if (!url && urls.size < total) {
+      const next = new URL(SEARCH_URL);
+      next.searchParams.set('page', String(pages.size + 1)); url = next.href;
+    }
     if (url) await pause(1000);
   }
   if (urls.size !== total) throw new FundaError('INCOMPLETE_SEARCH');
   const listings = [];
   for (const detail of urls) {
+    // Rental results can include parking/storage; these are not housing.
+    if (!/\/(?:huis|appartement)-[^/]+\/\d+\/$/.test(new URL(detail).pathname)) continue;
     if (signal.aborted) throw new FundaError('RUN_TIMEOUT');
     await pause(1000);
     const item = parseDetail(await fetchHtml(detail, 'detail', signal, transport), detail);
