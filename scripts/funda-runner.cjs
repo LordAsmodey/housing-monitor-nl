@@ -1,10 +1,11 @@
 'use strict';
 const { randomUUID } = require('node:crypto');
+const BROWSER_SCENARIO = 'railway:funda-browser-session:encrypted-volume:v1';
 const { SOURCE_ID, SEARCH_URL, FILTERS, FundaError, collect } = require('./funda-core.cjs');
 
 // Network I/O is outside transactions. A durable lease prevents replica overlap;
 // ownership is checked under the source row lock before committing any findings.
-async function runFunda(db, listings, { destination, intervalSeconds = 900, collector = collect } = {}) {
+async function runFunda(db, listings, { destination, intervalSeconds = 900, collector = collect, browser = false } = {}) {
   if (!/^-[1-9]\d*$/.test(destination ?? '')) throw new FundaError('DESTINATION_MISSING');
   const now = new Date(), token = randomUUID();
   const run = await db.$transaction(async tx => {
@@ -12,17 +13,19 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
       id: SOURCE_ID, name: 'Funda — Groningen +30 km', baseUrl: 'https://www.funda.nl',
       allowedDomains: ['www.funda.nl'], intervalSeconds, status: 'DEGRADED',
     } });
+    const profile=await tx.siteProfile.findUnique({where:{sourceId:SOURCE_ID}});
+    if(browser&&profile?.browserStateRef!==BROWSER_SCENARIO) await tx.source.updateMany({where:{id:SOURCE_ID,monitorLeaseToken:null},data:{nextCheckAt:now}});
     const claim = await tx.source.updateMany({ where: { id: SOURCE_ID, AND: [
       { OR: [{ nextCheckAt: null }, { nextCheckAt: { lte: now } }] },
       { OR: [{ monitorLeaseUntil: null }, { monitorLeaseUntil: { lte: now } }] },
-    ] }, data: { monitorLeaseToken: token, monitorLeaseUntil: new Date(now.getTime() + 180000),
+    ] }, data: { monitorLeaseToken: token, monitorLeaseUntil: new Date(now.getTime() + (browser?360000:180000)),
       lastAttemptAt: now, nextCheckAt: new Date(now.getTime() + intervalSeconds * 1000) } });
     if (!claim.count) return null;
     await tx.monitoringRun.updateMany({ where: { sourceId: SOURCE_ID, status: 'RUNNING' },
       data: { status: 'FAILED', finishedAt: now, errorCategory: 'WORKER_INTERRUPTED' } });
     await tx.siteProfile.upsert({ where: { sourceId: SOURCE_ID }, create: {
-      sourceId: SOURCE_ID, searchUrls: [SEARCH_URL], filters: FILTERS, authStrategy: 'none',
-    }, update: { searchUrls: [SEARCH_URL], filters: FILTERS } });
+      sourceId: SOURCE_ID, searchUrls: [SEARCH_URL], filters: FILTERS, authStrategy: browser?'browser-session':'none',browserStateRef:browser?BROWSER_SCENARIO:null,
+    }, update: { searchUrls: [SEARCH_URL], filters: FILTERS,authStrategy:browser?'browser-session':'none',browserStateRef:browser?BROWSER_SCENARIO:null } });
     return tx.monitoringRun.create({ data: { sourceId: SOURCE_ID } });
   });
   if (!run) return { skipped: true };

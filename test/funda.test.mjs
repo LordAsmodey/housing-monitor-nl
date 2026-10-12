@@ -64,9 +64,12 @@ test('missing publication, rent, coordinates or availability fails validation in
     assert.throws(() => parseDetail(html, url(1)));
   }
   assert.equal(parseDetail(detail({ status: 'Verhuurd' }), url(1)), null);
+  assert.equal(parseDetail(detail({ status: 'Onder bod' }), url(1)), null);
   assert.equal(parseDetail(detail(), url(1).replace('appartement-test-', 'parkeergelegenheid-test-')), null);
   assert.throws(() => parseSearch('<h1>Log in</h1>'), /SEARCH_STRUCTURE_CHANGED/);
   assert.throws(() => parseSearch('<h1>Verify you are human</h1>'), /HUMAN_CHECK/);
+  assert.throws(() => parseSearch('<title>Je bent bijna op de pagina die je zoekt [funda]</title><h1>Je bent bijna op de pagina die je zoekt</h1>'),
+    error => error.category === 'HUMAN_CHECK' && error.blocked === true);
   assert.equal(parseSearch('<h1>0 huurwoningen in Groningen</h1>').total, 0);
 });
 
@@ -113,4 +116,22 @@ test('late detail failure discards earlier findings; only explicit empty searche
 
 test('response size is bounded before parsing', async () => {
   await assert.rejects(collect({ ...options, transport: async () => response('x'.repeat(5 * 1024 * 1024 + 1)) }), /BODY_TOO_LARGE/);
+});
+
+// Minimal sanitized capture of the coordinate structure observed on a live detail
+// page, 2026-10-12; surrounding listing fixtures above remain synthetic.
+test('public Nuxt indexed coordinates validate radius without guessing from the city',()=>{
+  const data=[null,{lat:2,lng:3},53.146248,7.0384274];
+  const html=detail().replace(/,"geo":\{[^}]+\}/,'')+'<script id="__NUXT_DATA__" type="application/json">'+JSON.stringify(data)+'</script>';
+  const item=parseDetail(html,url(1));assert.equal(item.latitude,53.146248);assert.equal(matches(item,now),false);
+  assert.throws(()=>parseDetail(html.replace('53.146248','null'),url(1)),/LOCATION_MISSING/);
+  const ambiguous=html.replace('[null,', '[{"lat":5,"lng":6},').replace('7.0384274]','7.0384274,null,53.2194,6.5665]');
+  assert.throws(()=>parseDetail(ambiguous,url(1)),/LOCATION_AMBIGUOUS/);
+});
+
+test('an explicitly old publication excludes legacy cards with omitted status; fresh ambiguous cards still fail',()=>{
+  const html=detail({date:'2026-10-01T00:00:00Z'}).replace('<dt>Status</dt><dd>Beschikbaar</dd>','');
+  assert.equal(parseDetail(html,url(1),now),null);
+  assert.throws(()=>parseDetail(html.replace('2026-10-01','2026-10-11'),url(1),now),/AVAILABILITY_MISSING/);
+  assert.throws(()=>parseDetail(html.replace('2026-10-01T00:00:00Z','Log in om te bekijken'),url(1),now),/AVAILABILITY_MISSING/);
 });
