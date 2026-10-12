@@ -272,7 +272,7 @@ test('Huurwoningen has its own baseline, lease, filters and transactional notifi
   assert.equal(await db.notificationOutbox.count({ where: { listing: { sourceId: HUUR_SOURCE_ID } } }), 0);
   const profile = await db.siteProfile.findUniqueOrThrow({ where: { sourceId: HUUR_SOURCE_ID } });
   assert.deepEqual(profile.searchUrls, [HUUR_SEARCH_URL]);
-  assert.deepEqual(profile.filters, {city:'Groningen',radiusKm:25,availableFrom:'within_3_months',filtering:'huurwoningen-search'});
+  assert.deepEqual(profile.filters, {city:'Groningen',radiusKm:25,maxRent:1500,since:'1',availableFrom:'within_3_months',excludedOfferTypes:['homeswap'],filtering:'huurwoningen-search'});
   assert.match(profile.browserStateRef!, /huurwoningen-browser-session/);
   assert.equal((await run([first])).skipped, true);
   await db.source.update({ where: { id: HUUR_SOURCE_ID }, data: { nextCheckAt: new Date(0) } });

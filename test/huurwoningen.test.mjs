@@ -18,9 +18,17 @@ test('live card fixture preserves rent, locality and features with nested lists'
   assert.equal(parseCard(requested).city,'Uithuizermeeden');assert.equal(Object.hasOwn(parseCard(requested),'rentPrice'),false);
 });
 test('URL allowlist preserves the agreed filters and rejects SSRF or broadened searches',()=>{
+  assert.equal(SEARCH_URL,'https://www.huurwoningen.com/in/groningen/?price=0-1500&radius=25&since=1&available_from=within_3_months&filters%5Boffer_type%5D%5B0%5D=homeswap');
   assert.equal(allowedUrl(SEARCH_URL,'search'),SEARCH_URL);
   assert.equal(allowedUrl('/huren/groningen/83108c92/eeldersingel/?tracking=1'),'https://www.huurwoningen.com/huren/groningen/83108c92/eeldersingel/');
   for(const value of [SEARCH_URL.replace('25','30'),SEARCH_URL.replace('within_3_months','now'),SEARCH_URL+'&radius=25',SEARCH_URL+'&price=1500',SEARCH_URL+'&page=0','http://localhost/in/groningen/','https://user:secret@www.huurwoningen.com/in/groningen/'])assert.throws(()=>allowedUrl(value,'search'));
+  for(const key of ['price','since','filters[offer_type][0]']) {
+    const missing=new URL(SEARCH_URL);missing.searchParams.delete(key);assert.throws(()=>allowedUrl(missing.href,'search'),/SEARCH_FILTER_CHANGED/);
+    const changed=new URL(SEARCH_URL);changed.searchParams.set(key,'different');assert.throws(()=>allowedUrl(changed.href,'search'),/SEARCH_FILTER_CHANGED/);
+  }
+  const paginated=new URL(allowedUrl(SEARCH_URL+'&page=2','search'));
+  assert.equal(paginated.searchParams.get('price'),'0-1500');assert.equal(paginated.searchParams.get('since'),'1');
+  assert.equal(paginated.searchParams.get('filters[offer_type][0]'),'homeswap');
 });
 test('changed filters, damaged cards and CAPTCHA fail instead of establishing an empty baseline',()=>{
   assert.equal(parseSearch(page()).listings.length,1);

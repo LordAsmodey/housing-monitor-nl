@@ -1,8 +1,8 @@
 'use strict';
 const { FundaError } = require('./funda-core.cjs');
 const SOURCE_ID = 'huurwoningen:groningen-25km-within-3-months';
-const SEARCH_URL = 'https://www.huurwoningen.com/in/groningen/?radius=25&available_from=within_3_months';
-const FILTERS = Object.freeze({city:'Groningen',radiusKm:25,availableFrom:'within_3_months',filtering:'huurwoningen-search'});
+const SEARCH_URL = 'https://www.huurwoningen.com/in/groningen/?price=0-1500&radius=25&since=1&available_from=within_3_months&filters%5Boffer_type%5D%5B0%5D=homeswap';
+const FILTERS = Object.freeze({city:'Groningen',radiusKm:25,maxRent:1500,since:'1',availableFrom:'within_3_months',excludedOfferTypes:['homeswap'],filtering:'huurwoningen-search'});
 function text(html) {
   return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
     .replace(/<[^>]*>/g,' ').replace(/&(?:nbsp|#160);/g,' ').replace(/&amp;/g,'&').replace(/&(?:euro|#8364);/g,'€')
@@ -17,10 +17,12 @@ function allowedUrl(value, kind='detail') {
   if(kind==='search') {
     if(url.pathname!=='/in/groningen/')throw new FundaError('URL_NOT_ALLOWED');
     const expected=new URL(SEARCH_URL);
-    for(const key of ['radius','available_from'])if(url.searchParams.getAll(key).length!==1||url.searchParams.get(key)!==expected.searchParams.get(key))throw new FundaError('SEARCH_FILTER_CHANGED');
-    for(const key of url.searchParams.keys())if(!['radius','available_from','page'].includes(key))throw new FundaError('SEARCH_FILTER_CHANGED');
+    for(const [key,value] of expected.searchParams)if(url.searchParams.getAll(key).length!==1||url.searchParams.get(key)!==value)throw new FundaError('SEARCH_FILTER_CHANGED');
+    for(const key of url.searchParams.keys())if(!expected.searchParams.has(key)&&key!=='page')throw new FundaError('SEARCH_FILTER_CHANGED');
     if(url.searchParams.has('page')&&(url.searchParams.getAll('page').length!==1||!/^([1-9]\d*)$/.test(url.searchParams.get('page'))))throw new FundaError('INVALID_PAGE');
-    url.search=new URLSearchParams({radius:'25',available_from:'within_3_months',...(url.searchParams.has('page')?{page:url.searchParams.get('page')}:{})}).toString();
+    const page=url.searchParams.get('page');
+    url.search=expected.search;
+    if(page!==null)url.searchParams.set('page',page);
   } else {
     if(!/^\/huren\/[^/]+\/[a-f0-9]{8}\/[^/]+\/$/.test(url.pathname))throw new FundaError('URL_NOT_ALLOWED');
     url.search='';
@@ -61,7 +63,7 @@ function parseCard(html) {
     throw error;
   }
   const area=visible.match(/\b(\d+(?:[.,]\d+)?)\s*m²/),rooms=visible.match(/\b(\d+)\s+kamers?\b/i);
-  // The selected search includes rooms, studios, houses and woningruil; retain them.
+  // The site applies the agreed search filters; do not repeat them in cards.
   return {externalId:new URL(canonicalUrl).pathname.split('/')[3],canonicalUrl,title,city,...(!priceOnRequest?{rentPrice}:{}),availabilityStatus:'unknown',
     ...(area?{areaM2:Number(area[1].replace(',','.'))}:{}),...(rooms?{rooms:Number(rooms[1])}:{})};
 }
