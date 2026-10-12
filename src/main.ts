@@ -1,3 +1,4 @@
+import './instrument';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -11,6 +12,9 @@ async function bootstrap() {
 }
 
 void bootstrap().catch((error: unknown) => {
+  const telemetry = require('../scripts/telemetry.cjs').init();
+  telemetry.report(error, 'application', 'STARTUP_FAILED');
   console.error('Application startup failed; check configuration and database connectivity');
   process.exitCode = 1;
+  void telemetry.flush();
 });

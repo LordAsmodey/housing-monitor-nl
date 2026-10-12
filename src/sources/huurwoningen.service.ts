@@ -25,6 +25,7 @@ export class HuurwoningenService implements OnModuleInit, OnModuleDestroy {
       if (!result.skipped) this.logger.log(`Huurwoningen check succeeded: ${JSON.stringify(result)}`);
     }).catch((error: unknown) => {
       const category = error instanceof FundaError ? (error as Error & { category: string }).category : 'RUN_FAILED';
+      require('../../scripts/telemetry.cjs').init().report(error, 'huurwoningen', category);
       this.logger.warn(`Huurwoningen check failed: category=${category}`);
     }).finally(() => { this.active = undefined; });
   }

@@ -32,9 +32,12 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
     return tx.monitoringRun.create({ data: { sourceId: sourceId } });
   });
   if (!run) return { skipped: true };
+  const telemetry = require('./telemetry.cjs').init();
+  const monitorSource = sourceId.split(':')[0];
+  const checkInId = telemetry.start(monitorSource, intervalSeconds);
   try {
     const result = await collector({ now });
-    return await db.$transaction(async tx => {
+    const completed = await db.$transaction(async tx => {
       const finishedAt = new Date();
       const owned = await tx.source.updateMany({ where: { id: sourceId, monitorLeaseToken: token,
         monitorLeaseUntil: { gt: finishedAt } }, data: { monitorLeaseToken: null, monitorLeaseUntil: null, status: 'HEALTHY' } });
@@ -44,8 +47,11 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
         status: 'SUCCEEDED', finishedAt, listingsFound: result.listings.length } });
       return { skipped: false, runId: run.id, inspected: result.inspected, matched: result.listings.length, ...recorded };
     }, { timeout: 30000 });
+    telemetry.finish(monitorSource, checkInId, 'ok');
+    return completed;
   } catch (error) {
     const failure = error instanceof FundaError ? error : new FundaError('RUN_FAILED');
+    telemetry.finish(monitorSource, checkInId, 'error');
     await db.$transaction(async tx => {
       await tx.source.updateMany({ where: { id: sourceId, monitorLeaseToken: token }, data: {
         status: failure.blocked ? 'BLOCKED' : 'DEGRADED', monitorLeaseToken: null, monitorLeaseUntil: null,
@@ -59,4 +65,3 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
   }
 }
 module.exports = { runFunda };
-

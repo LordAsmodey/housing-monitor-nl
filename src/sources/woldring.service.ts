@@ -22,6 +22,7 @@ export class WoldringService implements OnModuleInit, OnModuleDestroy {
       if (!result.skipped) this.logger.log(`Woldring check succeeded: ${JSON.stringify(result)}`);
     }).catch((error: unknown) => {
       const category = error instanceof FundaError ? (error as Error & { category: string }).category : 'RUN_FAILED';
+      require('../../scripts/telemetry.cjs').init().report(error, 'woldring', category);
       this.logger.warn(`Woldring check failed: category=${category}`);
     }).finally(() => { this.active = undefined; });
   }
