@@ -71,7 +71,7 @@ DATABASE_URL=postgresql://housing:test@localhost:55432/housing npm run test:inte
 
 ## Huurwoningen
 
-Второй браузерный источник: Groningen +25 км, доступность для заселения в течение трёх месяцев.
+Второй браузерный источник: Groningen +25 км, до €1500, свежесть `since=1`, доступность для заселения в течение трёх месяцев и исключение обмена по пользовательской ссылке.
 Для включения задаются `HUURWONINGEN_BROWSER_ORIGIN` и `HUURWONINGEN_BROWSER_TOKEN`.
 Отдельные сессия и baseline, полная пагинация, существующий Telegram outbox и CAPTCHA recovery:
 [инструкция](docs/huurwoningen.md).
