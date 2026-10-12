@@ -7,7 +7,7 @@ const environmentSchema = z.object({
   REDIS_URL: z.url().refine((v) => /^rediss?:/.test(v)),
   TELEGRAM_DELIVERY_ENABLED: z.enum(['true', 'false']).default('false').transform(v => v === 'true'),
   TELEGRAM_BOT_TOKEN: z.string().regex(/^\d+:[A-Za-z0-9_-]+$/).optional(),
-  TELEGRAM_CHAT_ID: z.string().regex(/^-[1-9]\d*$/).optional(),
+  TELEGRAM_CHAT_ID: z.string().regex(/^-[1-9]\d*$/),
   TELEGRAM_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
   MONITOR_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(900),
 }).superRefine((v, ctx) => {
