@@ -20,7 +20,8 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "test:integration": "node --import tsx --test test/integration/*.test.ts",
-    "outbox:admin": "node --env-file-if-exists=.env scripts/outbox-admin.mjs"
+    "outbox:admin": "node --env-file-if-exists=.env scripts/outbox-admin.mjs",
+    "outbox:smoke": "node --env-file-if-exists=.env scripts/outbox-smoke.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
