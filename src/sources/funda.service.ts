@@ -42,7 +42,7 @@ export class FundaService implements OnModuleInit, OnModuleDestroy {
       const source=await this.db.source.findUnique({where:{id:sourceId}});
       if(source?.status==='BLOCKED') {
         const state=await client.state();
-        if(state.humanCheck || state.accessDenied) await this.enqueueRecovery(client);
+        if(state.humanCheck || state.accessDenied) {await this.enqueueRecovery(client);return {skipped:true as const};}
         if(state.recovered && !state.humanCheck && !state.accessDenied && state.listingLinks>0) {
           await this.db.source.updateMany({where:{id:sourceId,status:'BLOCKED',monitorLeaseToken:null},data:{status:'DEGRADED',nextCheckAt:new Date()}});
         }

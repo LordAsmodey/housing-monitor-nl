@@ -97,7 +97,8 @@ async function main() {
     }
     return {id:recovery.id,url:origin+'/#key='+recovery.key,expiresAt:new Date(recovery.expires).toISOString()};
   }
-  const install = spawnSync('npm', ['install', '--prefix', '/tmp/funda-browser', '--no-audit', '--no-fund', '--ignore-scripts', 'playwright@1.56.1'], { timeout: 120000, encoding: 'utf8' });
+  const installed=await fs.access('/tmp/funda-browser/node_modules/playwright/package.json').then(()=>true,()=>false);
+  const install = installed?{status:0}:spawnSync('npm', ['install', '--prefix', '/tmp/funda-browser', '--no-audit', '--no-fund', '--ignore-scripts', 'playwright@1.56.1'], { timeout: 120000, encoding: 'utf8' });
   if (install.status !== 0) throw new Error('PLAYWRIGHT_SETUP');
   const display = spawn('Xvfb', [':99', '-screen', '0', '1024x768x24', '-nolisten', 'tcp'], { stdio: 'ignore' });
   await new Promise((resolve,reject)=>{display.once('error',()=>reject(new Error('DISPLAY_SETUP')));setTimeout(()=>display.exitCode===null?resolve():reject(new Error('DISPLAY_EXITED')),1000)});
@@ -173,7 +174,7 @@ async function main() {
               await persist();
               return new Response(content,{status:response?.status()??502,headers:{'content-type':'text/html'}});
             };
-            return collect({transport,signal:AbortSignal.timeout(120000)});
+            return collect({transport,signal:AbortSignal.timeout(300000)});
           });
           return send(200,result);
         }

@@ -121,3 +121,10 @@ for administrative alerts; listingId is nullable for these outbox entries.
 Recovery links are privileged, short-lived capabilities intentionally delivered to
 the configured Telegram group at the user's request. Never include their values,
 worker tokens, encrypted state keys or cookies in Git, Notion or logs.
+
+The live parser reads coordinates from the indexed __NUXT_DATA__ array when JSON-LD
+omits them. Unknown or ambiguous coordinates remain an error. Listings marked
+Onder bod are excluded alongside rented/under-option homes. Browser collection has
+a five-minute deadline under a six-minute database lease; HTTP retains its shorter
+budget. Dockerfile.browser packages the matching Playwright version for a
+reproducible browser-service build.

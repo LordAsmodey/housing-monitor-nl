@@ -8,7 +8,7 @@ function browserClient(origin, token, transport = fetch) {
   async function request(path, method = 'GET') {
     let response, result;
     try {
-      response = await transport(new URL(path,url), {method,redirect:'error',headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(135000)});
+      response = await transport(new URL(path,url), {method,redirect:'error',headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(330000)});
       result = await response.json();
     } catch { throw new FundaError('BROWSER_TRANSPORT'); }
     if (!response.ok) throw new FundaError(/^[A-Z_]{1,60}$/.test(result.category??'') ? result.category : 'BROWSER_STATUS',result.blocked===true);

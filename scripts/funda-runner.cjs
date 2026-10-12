@@ -17,7 +17,7 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
     const claim = await tx.source.updateMany({ where: { id: SOURCE_ID, AND: [
       { OR: [{ nextCheckAt: null }, { nextCheckAt: { lte: now } }] },
       { OR: [{ monitorLeaseUntil: null }, { monitorLeaseUntil: { lte: now } }] },
-    ] }, data: { monitorLeaseToken: token, monitorLeaseUntil: new Date(now.getTime() + 180000),
+    ] }, data: { monitorLeaseToken: token, monitorLeaseUntil: new Date(now.getTime() + (browser?360000:180000)),
       lastAttemptAt: now, nextCheckAt: new Date(now.getTime() + intervalSeconds * 1000) } });
     if (!claim.count) return null;
     await tx.monitoringRun.updateMany({ where: { sourceId: SOURCE_ID, status: 'RUNNING' },

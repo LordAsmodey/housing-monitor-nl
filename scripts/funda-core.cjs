@@ -149,7 +149,7 @@ function parseDetail(html, value) {
   if (!/\/(?:huis|appartement)-[^/]+\/\d+\/$/.test(new URL(canonicalUrl).pathname)) return null;
   const objects = structuredData(html);
   const status = fact(html, ['status']);
-  if (/^(verhuurd|rented|onder optie|under option|verhuurd onder voorbehoud)/i.test(status ?? '')) return null;
+  if (/^(verhuurd|rented|onder optie|under option|onder bod|under offer|verhuurd onder voorbehoud)/i.test(status ?? '')) return null;
   if (!/^(beschikbaar|available|te huur)/i.test(status ?? '')) throw new FundaError('AVAILABILITY_MISSING');
   const titleMatch = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   const title = titleMatch ? text(titleMatch[1]) : '';

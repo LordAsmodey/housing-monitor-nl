@@ -64,6 +64,7 @@ test('missing publication, rent, coordinates or availability fails validation in
     assert.throws(() => parseDetail(html, url(1)));
   }
   assert.equal(parseDetail(detail({ status: 'Verhuurd' }), url(1)), null);
+  assert.equal(parseDetail(detail({ status: 'Onder bod' }), url(1)), null);
   assert.equal(parseDetail(detail(), url(1).replace('appartement-test-', 'parkeergelegenheid-test-')), null);
   assert.throws(() => parseSearch('<h1>Log in</h1>'), /SEARCH_STRUCTURE_CHANGED/);
   assert.throws(() => parseSearch('<h1>Verify you are human</h1>'), /HUMAN_CHECK/);
