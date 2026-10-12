@@ -8,6 +8,13 @@ test('defaults to a 15 minute monitoring interval', () => {
   assert.equal(parseEnvironment(valid).MONITOR_INTERVAL_SECONDS, 900);
 });
 
+test('Huurwoningen is opt-in and requires its own origin and token pair', () => {
+  assert.equal(parseEnvironment(valid).HUURWONINGEN_BROWSER_ORIGIN, undefined);
+  assert.throws(() => parseEnvironment({ ...valid, HUURWONINGEN_BROWSER_ORIGIN: 'https://huur.up.railway.app' }), /HUURWONINGEN_BROWSER_ORIGIN/);
+  assert.throws(() => parseEnvironment({ ...valid, HUURWONINGEN_BROWSER_TOKEN: 'x'.repeat(43) }), /HUURWONINGEN_BROWSER_ORIGIN/);
+  assert.equal(parseEnvironment({ ...valid, HUURWONINGEN_BROWSER_ORIGIN: 'https://huur.up.railway.app', HUURWONINGEN_BROWSER_TOKEN: 'x'.repeat(43) }).HUURWONINGEN_BROWSER_TOKEN?.length, 43);
+});
+
 test('Funda monitoring requires a Telegram destination even when delivery is paused', () => {
   const { TELEGRAM_CHAT_ID: _chat, ...withoutChat } = valid;
   assert.throws(() => parseEnvironment(withoutChat), /TELEGRAM_CHAT_ID/);
@@ -23,3 +30,4 @@ test('rejects invalid configuration without leaking secrets', () => {
   assert.throws(() => parseEnvironment({ ...valid, PORT: 65536 }));
   assert.throws(() => parseEnvironment({ ...valid, MONITOR_INTERVAL_SECONDS: 0 }));
 });
+

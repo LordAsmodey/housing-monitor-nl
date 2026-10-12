@@ -1,0 +1,7 @@
+FROM mcr.microsoft.com/playwright:v1.56.1-noble
+WORKDIR /app
+RUN npm install --prefix /tmp/funda-browser --no-audit --no-fund --ignore-scripts playwright@1.56.1
+COPY scripts/funda-core.cjs scripts/funda-browser-session.cjs scripts/huurwoningen-core.cjs scripts/huurwoningen-browser-session.cjs ./scripts/
+ENV PORT=8080
+EXPOSE 8080
+CMD ["node", "scripts/huurwoningen-browser-session.cjs"]

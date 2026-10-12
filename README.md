@@ -69,6 +69,13 @@ DATABASE_URL=postgresql://housing:test@localhost:55432/housing npm run test:inte
 
 Детали и следующие шаги: [docs/roadmap.md](docs/roadmap.md).
 
+## Huurwoningen
+
+Второй браузерный источник: Groningen +25 км, доступность для заселения в течение трёх месяцев.
+Для включения задаются `HUURWONINGEN_BROWSER_ORIGIN` и `HUURWONINGEN_BROWSER_TOKEN`.
+Отдельные сессия и baseline, полная пагинация, существующий Telegram outbox и CAPTCHA recovery:
+[инструкция](docs/huurwoningen.md).
+
 ## Telegram
 
 Подготовлены команды подключения группы: `npm run telegram:check`,
@@ -79,3 +86,4 @@ Worker и outbox реализованы; включение и диагност�
 ## Railway
 
 Целевая площадка — Railway. Конфигурация сборки и health-check: `railway.json`. Настройка GitHub-autodeploy и переменных описана в [docs/railway.md](docs/railway.md).
+

@@ -10,6 +10,8 @@ import { createRequire } from 'node:module';
 const requireFromRoot = createRequire(`${process.cwd()}/package.json`);
 const { runFunda } = requireFromRoot('./scripts/funda-runner.cjs');
 const { SOURCE_ID, FundaError } = requireFromRoot('./scripts/funda-core.cjs');
+const { runHuurwoningen } = requireFromRoot('./scripts/huurwoningen-runner.cjs');
+const { SOURCE_ID: HUUR_SOURCE_ID, SEARCH_URL: HUUR_SEARCH_URL } = requireFromRoot('./scripts/huurwoningen-core.cjs');
 
 // Run only against an explicitly supplied disposable database (never load .env).
 assert.ok(process.env.DATABASE_URL, 'Supply a disposable DATABASE_URL');
@@ -260,3 +262,55 @@ test('browser CAPTCHA creates one recovery alert and saving the session resumes 
     await db.notificationOutbox.deleteMany({where:{idempotencyKey:'funda-recovery:'+'a'.repeat(32)}});
   }
 });
+
+test('Huurwoningen has its own baseline, lease, filters and transactional notification deduplication', async () => {
+  ids.push(HUUR_SOURCE_ID);
+  const first = { ...item('83108c92'), canonicalUrl: 'https://www.huurwoningen.com/huren/groningen/83108c92/eeldersingel/' };
+  const second = { ...item('abcdef12'), canonicalUrl: 'https://www.huurwoningen.com/huren/groningen/abcdef12/andere-straat/' };
+  const run = (input: any[]) => runHuurwoningen(db, service, { destination: '-123', collector: async () => ({ listings: input, inspected: input.length }) });
+  const baseline = await run([first]); assert.equal(baseline.baseline, true);
+  assert.equal(await db.notificationOutbox.count({ where: { listing: { sourceId: HUUR_SOURCE_ID } } }), 0);
+  const profile = await db.siteProfile.findUniqueOrThrow({ where: { sourceId: HUUR_SOURCE_ID } });
+  assert.deepEqual(profile.searchUrls, [HUUR_SEARCH_URL]);
+  assert.deepEqual(profile.filters, {city:'Groningen',radiusKm:25,availableFrom:'within_3_months',filtering:'huurwoningen-search'});
+  assert.match(profile.browserStateRef!, /huurwoningen-browser-session/);
+  assert.equal((await run([first])).skipped, true);
+  await db.source.update({ where: { id: HUUR_SOURCE_ID }, data: { nextCheckAt: new Date(0) } });
+  const results = await Promise.all([run([first, second]), run([first, second])]);
+  assert.equal(results.filter(x => !x.skipped).length, 1);
+  assert.equal(await db.notificationOutbox.count({ where: { listing: { sourceId: HUUR_SOURCE_ID } } }), 1);
+  await db.source.update({ where: { id: HUUR_SOURCE_ID }, data: { nextCheckAt: new Date(0) } });
+  await run([first, second]);
+  assert.equal(await db.notificationOutbox.count({ where: { listing: { sourceId: HUUR_SOURCE_ID } } }), 1);
+});
+
+test('Huurwoningen recovery deduplicates alerts and resumes even when the validated search is empty', async () => {
+  const { HuurwoningenService } = await import('../../src/sources/huurwoningen.service');
+  process.env.HUURWONINGEN_BROWSER_ORIGIN = 'https://huurwoningen-browser-session-production.up.railway.app';
+  process.env.HUURWONINGEN_BROWSER_TOKEN = 'x'.repeat(43);
+  const original = globalThis.fetch; let recovered = false, collections = 0;
+  globalThis.fetch = async input => {
+    const path = new URL(String(input)).pathname;
+    if (path === '/worker/state') return Response.json({humanCheck:!recovered,accessDenied:false,recovered,listingLinks:0,searchReady:recovered});
+    if (path === '/worker/recovery') return Response.json({id:'b'.repeat(32),url:process.env.HUURWONINGEN_BROWSER_ORIGIN+'/#key='+'y'.repeat(43)});
+    collections++;
+    return recovered ? Response.json({listings:[],inspected:0}) : Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
+  };
+  try {
+    const monitor = new HuurwoningenService(db,service);
+    const before = await db.source.findUniqueOrThrow({where:{id:HUUR_SOURCE_ID}});
+    await db.source.update({where:{id:HUUR_SOURCE_ID},data:{nextCheckAt:new Date(0)}});
+    await assert.rejects(monitor.tick(),/HUMAN_CHECK/);
+    const blocked = await db.source.findUniqueOrThrow({where:{id:HUUR_SOURCE_ID}});
+    assert.equal(blocked.status,'BLOCKED');assert.deepEqual(blocked.lastSuccessAt,before.lastSuccessAt);
+    await monitor.tick();await monitor.tick();assert.equal(collections,1);
+    assert.equal(await db.notificationOutbox.count({where:{idempotencyKey:'huurwoningen-recovery:'+'b'.repeat(32)}}),1);
+    recovered=true;assert.equal((await monitor.tick()).skipped,false);
+    assert.equal((await db.source.findUniqueOrThrow({where:{id:HUUR_SOURCE_ID}})).status,'HEALTHY');
+    assert.equal(collections,2);
+  } finally {
+    globalThis.fetch=original;delete process.env.HUURWONINGEN_BROWSER_ORIGIN;delete process.env.HUURWONINGEN_BROWSER_TOKEN;
+    await db.notificationOutbox.deleteMany({where:{idempotencyKey:'huurwoningen-recovery:'+'b'.repeat(32)}});
+  }
+});
+
