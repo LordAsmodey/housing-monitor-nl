@@ -6,6 +6,10 @@ import { ListingsService } from '../../src/listings/listings.service';
 import { OutboxService } from '../../src/delivery/outbox.service';
 import { DeliveryError } from '../../src/delivery/telegram';
 import { smoke } from '../../scripts/outbox-smoke.mjs';
+import { createRequire } from 'node:module';
+const requireFromRoot = createRequire(`${process.cwd()}/package.json`);
+const { runFunda } = requireFromRoot('./scripts/funda-runner.cjs');
+const { SOURCE_ID, FundaError } = requireFromRoot('./scripts/funda-core.cjs');
 
 // Run only against an explicitly supplied disposable database (never load .env).
 assert.ok(process.env.DATABASE_URL, 'Supply a disposable DATABASE_URL');
@@ -21,6 +25,8 @@ before(() => db.$connect());
 after(async () => {
   await db.notificationOutbox.deleteMany({ where: { listing: { sourceId: { in: ids } } } });
   await db.housingListing.deleteMany({ where: { sourceId: { in: ids } } });
+  await db.monitoringRun.deleteMany({ where: { sourceId: { in: ids } } });
+  await db.siteProfile.deleteMany({ where: { sourceId: { in: ids } } });
   await db.source.deleteMany({ where: { id: { in: ids } } });
   await db.deliveryGate.deleteMany();
   await db.$disconnect();
@@ -157,4 +163,57 @@ test('smoke check preserves an ambiguous job and never requeues it on rerun', as
   await assert.rejects(smoke(db, service, '-123', runId, wait), /UNCERTAIN/);
   assert.equal(calls, 1);
   assert.equal(await db.notificationOutbox.count({ where: { listing: { sourceId: `outbox-smoke:${runId}` } } }), 1);
+});
+
+test('Funda runs preserve baseline, deduplicate and retain last success on blocked or malformed responses', async () => {
+  ids.push(SOURCE_ID);
+  const scope = { sourceId: SOURCE_ID };
+  const listing = { ...item('funda-1'), canonicalUrl: 'https://www.funda.nl/detail/huur/groningen/appartement-test/12345678/',
+    publishedAt: new Date(), availabilityStatus: 'available' };
+  const collector = async () => ({ listings: [listing], inspected: 1 });
+  const options = { destination: '-123', collector };
+  const first = await runFunda(db, service, options);
+  assert.equal(first.baseline, true);
+  assert.equal(await db.notificationOutbox.count({ where: { listing: scope } }), 0);
+  assert.ok((await db.housingListing.findFirstOrThrow({ where: scope })).publishedAt);
+  assert.equal((await runFunda(db, service, options)).skipped, true);
+  const due = () => db.source.update({ where: { id: SOURCE_ID }, data: { nextCheckAt: new Date(0) } });
+  await due();
+  await runFunda(db, service, { ...options, collector: async () => ({ inspected: 2, listings: [listing,
+    { ...listing, externalId: 'funda-2', canonicalUrl: 'https://www.funda.nl/detail/huur/groningen/appartement-test/12345679/' }] }) });
+  const jobs = { listing: scope };
+  assert.equal(await db.notificationOutbox.count({ where: jobs }), 1);
+  await due(); await runFunda(db, service, options);
+  assert.equal(await db.notificationOutbox.count({ where: jobs }), 1);
+  const before = await db.source.findUniqueOrThrow({ where: { id: SOURCE_ID } });
+  await due();
+  await assert.rejects(runFunda(db, service, { ...options, collector: async () => { throw new FundaError('HUMAN_CHECK', true); } }), /HUMAN_CHECK/);
+  const blocked = await db.source.findUniqueOrThrow({ where: { id: SOURCE_ID } });
+  assert.equal(blocked.status, 'BLOCKED'); assert.deepEqual(blocked.lastSuccessAt, before.lastSuccessAt);
+  assert.deepEqual(blocked.baselineAt, before.baselineAt);
+  assert.ok(blocked.nextCheckAt!.getTime() > Date.now() + 21000000);
+  await due();
+  await assert.rejects(runFunda(db, service, { ...options, collector: async () => { throw new FundaError('PUBLICATION_DATE_MISSING'); } }));
+  const degraded = await db.source.findUniqueOrThrow({ where: { id: SOURCE_ID } });
+  assert.equal(degraded.status, 'DEGRADED'); assert.deepEqual(degraded.lastSuccessAt, before.lastSuccessAt);
+  assert.equal(await db.monitoringRun.count({ where: { ...scope, status: 'FAILED' } }), 2);
+  assert.equal(await db.notificationOutbox.count({ where: jobs }), 1);
+});
+
+test('Funda durable lease prevents overlap and stale workers cannot commit findings', async () => {
+  await db.source.update({ where: { id: SOURCE_ID }, data: { nextCheckAt: new Date(0) } });
+  let release!: () => void;
+  let entered!: () => void;
+  const waiting = new Promise<void>(resolve => { release = resolve; });
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  const running = runFunda(db, service, { destination: '-123', collector: async () => {
+    entered(); await waiting; return { listings: [], inspected: 0 };
+  } });
+  await started;
+  assert.equal((await runFunda(db, service, { destination: '-123', collector: async () => { throw new Error('must not run'); } })).skipped, true);
+  const previous = await db.source.findUniqueOrThrow({ where: { id: SOURCE_ID } });
+  await db.source.update({ where: { id: SOURCE_ID }, data: { monitorLeaseUntil: new Date(0) } });
+  const rejected = assert.rejects(running, /LEASE_LOST/);
+  release(); await rejected;
+  assert.deepEqual((await db.source.findUniqueOrThrow({ where: { id: SOURCE_ID } })).lastSuccessAt, previous.lastSuccessAt);
 });

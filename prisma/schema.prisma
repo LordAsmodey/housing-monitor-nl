@@ -39,6 +39,9 @@ model Source {
   baselineAt        DateTime?
   lastAttemptAt     DateTime?
   lastSuccessAt     DateTime?
+  nextCheckAt       DateTime?
+  monitorLeaseUntil DateTime?
+  monitorLeaseToken String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   profile           SiteProfile?

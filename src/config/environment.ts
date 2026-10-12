@@ -10,7 +10,11 @@ const environmentSchema = z.object({
   TELEGRAM_CHAT_ID: z.string().regex(/^-[1-9]\d*$/).optional(),
   TELEGRAM_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
   MONITOR_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(900),
+  FUNDA_MONITOR_ENABLED: z.enum(['true', 'false']).default('false').transform(v => v === 'true'),
 }).superRefine((v, ctx) => {
+  if (v.FUNDA_MONITOR_ENABLED && !v.TELEGRAM_CHAT_ID) {
+    ctx.addIssue({ code: 'custom', path: ['TELEGRAM_CHAT_ID'], message: 'Required for Funda monitoring' });
+  }
   if (v.TELEGRAM_DELIVERY_ENABLED) for (const key of ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'] as const) {
     if (!v[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'Required for delivery' });
   }

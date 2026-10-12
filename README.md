@@ -7,9 +7,11 @@
 NestJS + TypeScript подключает PostgreSQL через Prisma. Зафиксирована начальная миграция,
 добавлены `/health/live` и `/health/ready`, сохранение валидированных объявлений с baseline,
 дедупликацией и transactional outbox. Worker Telegram включается явно и поддерживает
-ограничение частоты, retries, DEAD_LETTER и UNCERTAIN. Реальные источники, scheduler,
-Redis/BullMQ и LLM пока не подключены. Вход записи объявлений — внутренний
-`ListingsService.recordValidatedRun`, который позже вызовет executor источников.
+ограничение частоты, retries, DEAD_LETTER и UNCERTAIN. Добавлен автоматический HTTP-модуль
+Funda: Groningen +30 км, аренда до €1500/месяц, публикации за последние 72 часа.
+Расписание — 15 минут, блокировки и состояние запусков хранятся в PostgreSQL.
+Включение: `FUNDA_MONITOR_ENABLED=true`; инструкция и границы проверки — [docs/funda.md](docs/funda.md).
+Live-доступ и разметка Funda в текущем окружении не подтверждены. Redis/BullMQ и LLM пока не подключены.
 
 ## Локальный запуск
 

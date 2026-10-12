@@ -6,6 +6,12 @@ const valid = { DATABASE_URL: 'postgresql://user:password@localhost:5432/housing
 
 test('defaults to a 15 minute monitoring interval', () => {
   assert.equal(parseEnvironment(valid).MONITOR_INTERVAL_SECONDS, 900);
+  assert.equal(parseEnvironment(valid).FUNDA_MONITOR_ENABLED, false);
+});
+
+test('Funda monitoring requires a Telegram destination even when delivery is paused', () => {
+  assert.throws(() => parseEnvironment({ ...valid, FUNDA_MONITOR_ENABLED: 'true' }), /TELEGRAM_CHAT_ID/);
+  assert.equal(parseEnvironment({ ...valid, FUNDA_MONITOR_ENABLED: 'true', TELEGRAM_CHAT_ID: '-123' }).FUNDA_MONITOR_ENABLED, true);
 });
 
 test('rejects invalid configuration without leaking secrets', () => {
