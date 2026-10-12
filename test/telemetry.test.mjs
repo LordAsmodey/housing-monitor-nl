@@ -12,6 +12,36 @@ function fakeSdk() {
     captureCheckIn: (...args) => { calls.push(['checkin', ...args]); return 'checkin-id'; },
     flush: async () => true };
 }
+test('test environment and Node test runner suppress SDK initialization, errors and cron traffic even with a DSN', async () => {
+  for (const isolation of [{ NODE_ENV: 'test' }, { NODE_ENV: 'development', NODE_TEST_CONTEXT: 'child-v8' }]) {
+    const sdk = fakeSdk();
+    const telemetry = createTelemetry(sdk, { SENTRY_DSN: dsn, SENTRY_CRONS_ENABLED: 'true', ...isolation });
+    assert.equal(telemetry.report(Error('expected failure'), 'telegram', 'DELIVERY_DEAD_LETTER'), undefined);
+    assert.equal(telemetry.start('funda', 900), undefined);
+    telemetry.finish('funda', 'existing-id', 'error');
+    assert.equal(await telemetry.flush(), false);
+    assert.deepEqual(sdk.calls, []);
+  }
+});
+test('runtime init remains disabled when a DSN is loaded inside the test process', async () => {
+  const previousDsn = process.env.SENTRY_DSN;
+  const previousError = console.error;
+  const errors = [];
+  try {
+    console.error = (...args) => errors.push(args);
+    assert.ok(process.env.NODE_TEST_CONTEXT);
+    // An invalid DSN would make init emit SENTRY_INIT_FAILED if it tried to load the SDK.
+    process.env.SENTRY_DSN = 'not-a-valid-dsn';
+    const telemetry = require('../scripts/telemetry.cjs').init();
+    assert.equal(telemetry.report(Error('expected failure')), undefined);
+    assert.equal(await telemetry.flush(), false);
+    assert.deepEqual(errors, []);
+  } finally {
+    console.error = previousError;
+    if (previousDsn === undefined) delete process.env.SENTRY_DSN;
+    else process.env.SENTRY_DSN = previousDsn;
+  }
+});
 test('disabled telemetry is inert; SDK failures never break source monitoring', async () => {
   const disabled = createTelemetry(undefined, {});
   assert.equal(disabled.report(Error('secret')), undefined);
@@ -65,7 +95,8 @@ test('real SDK sends only sanitized error fields through its transport', async (
   const wrapped = { ...Sentry, init(options) {
     Sentry.init({ ...options, transport: () => ({ send: async envelope => { envelopes.push(envelope); return { statusCode: 200 }; }, flush: async () => true }) });
   } };
-  const telemetry = createTelemetry(wrapped, { SENTRY_DSN: dsn, NODE_ENV: 'test' });
+  // Explicit injected environment/transport exercises the SDK without runtime init or networking.
+  const telemetry = createTelemetry(wrapped, { SENTRY_DSN: dsn, SENTRY_ENVIRONMENT: 'test' });
   Sentry.setUser({ email: 'private-sdk-email' });
   Sentry.setExtra('cookie', 'private-sdk-cookie');
   const id = telemetry.report(Error('private-sdk-message'), 'telegram', 'DELIVERY_DEAD_LETTER');
