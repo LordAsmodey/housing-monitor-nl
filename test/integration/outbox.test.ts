@@ -217,3 +217,46 @@ test('Funda durable lease prevents overlap and stale workers cannot commit findi
   release(); await rejected;
   assert.deepEqual((await db.source.findUniqueOrThrow({ where: { id: SOURCE_ID } })).lastSuccessAt, previous.lastSuccessAt);
 });
+
+test('source recovery alerts use the same durable delivery without creating housing listings', async () => {
+  await resetGate();
+  await db.notificationOutbox.updateMany({where:{status:'PENDING'},data:{status:'SENT'}});
+  const before=await db.housingListing.count();
+  const data={idempotencyKey:'recovery:test-episode',destinationRef:'-123',payload:'Funda needs manual verification'};
+  await Promise.all([db.notificationOutbox.upsert({where:{idempotencyKey:data.idempotencyKey},create:data,update:{}}),db.notificationOutbox.upsert({where:{idempotencyKey:data.idempotencyKey},create:data,update:{}})]);
+  let calls=0;
+  await worker(async()=>{calls++;return 'recovery-message'}).tick();
+  const alert=await db.notificationOutbox.findUniqueOrThrow({where:{idempotencyKey:data.idempotencyKey}});
+  assert.equal(alert.listingId,null);assert.equal(alert.status,'SENT');assert.equal(calls,1);
+  assert.equal(await db.housingListing.count(),before);
+  await db.notificationOutbox.delete({where:{id:alert.id}});
+});
+
+test('browser CAPTCHA creates one recovery alert and saving the session resumes the blocked scheduler', async()=>{
+  const {FundaService}=await import('../../src/sources/funda.service');
+  process.env.FUNDA_BROWSER_ORIGIN='https://funda-browser-session-production.up.railway.app';
+  process.env.FUNDA_BROWSER_TOKEN='x'.repeat(43);
+  const original=globalThis.fetch;let recovered=false,collections=0;
+  globalThis.fetch=async(input)=>{
+    const path=new URL(String(input)).pathname;
+    if(path==='/worker/state')return Response.json({humanCheck:!recovered,accessDenied:false,recovered,listingLinks:recovered?1:0});
+    if(path==='/worker/recovery')return Response.json({id:'a'.repeat(32),url:process.env.FUNDA_BROWSER_ORIGIN+'/#key='+'y'.repeat(43)});
+    collections++;
+    return recovered?Response.json({listings:[],inspected:1}):Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
+  };
+  try {
+    const monitor=new FundaService(db,service);
+    await db.source.update({where:{id:SOURCE_ID},data:{status:'DEGRADED',nextCheckAt:new Date(0),monitorLeaseToken:null,monitorLeaseUntil:null}});
+    await assert.rejects(monitor.tick(),/HUMAN_CHECK/);
+    assert.equal((await db.source.findUniqueOrThrow({where:{id:SOURCE_ID}})).status,'BLOCKED');
+    await monitor.tick();await monitor.tick();assert.equal(collections,1);
+    assert.equal(await db.notificationOutbox.count({where:{idempotencyKey:'funda-recovery:'+'a'.repeat(32)}}),1);
+    recovered=true;
+    const result=await monitor.tick();assert.equal(result.skipped,false);
+    assert.equal((await db.source.findUniqueOrThrow({where:{id:SOURCE_ID}})).status,'HEALTHY');
+    assert.equal(collections,2);
+  } finally {
+    globalThis.fetch=original;delete process.env.FUNDA_BROWSER_ORIGIN;delete process.env.FUNDA_BROWSER_TOKEN;
+    await db.notificationOutbox.deleteMany({where:{idempotencyKey:'funda-recovery:'+'a'.repeat(32)}});
+  }
+});

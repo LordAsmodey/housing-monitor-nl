@@ -4,7 +4,7 @@ const { SOURCE_ID, SEARCH_URL, FILTERS, FundaError, collect } = require('./funda
 
 // Network I/O is outside transactions. A durable lease prevents replica overlap;
 // ownership is checked under the source row lock before committing any findings.
-async function runFunda(db, listings, { destination, intervalSeconds = 900, collector = collect } = {}) {
+async function runFunda(db, listings, { destination, intervalSeconds = 900, collector = collect, browser = false } = {}) {
   if (!/^-[1-9]\d*$/.test(destination ?? '')) throw new FundaError('DESTINATION_MISSING');
   const now = new Date(), token = randomUUID();
   const run = await db.$transaction(async tx => {
@@ -12,6 +12,8 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
       id: SOURCE_ID, name: 'Funda — Groningen +30 km', baseUrl: 'https://www.funda.nl',
       allowedDomains: ['www.funda.nl'], intervalSeconds, status: 'DEGRADED',
     } });
+    const profile=await tx.siteProfile.findUnique({where:{sourceId:SOURCE_ID}});
+    if(browser&&profile?.authStrategy!=='browser-session') await tx.source.updateMany({where:{id:SOURCE_ID,monitorLeaseToken:null},data:{nextCheckAt:now}});
     const claim = await tx.source.updateMany({ where: { id: SOURCE_ID, AND: [
       { OR: [{ nextCheckAt: null }, { nextCheckAt: { lte: now } }] },
       { OR: [{ monitorLeaseUntil: null }, { monitorLeaseUntil: { lte: now } }] },
@@ -21,8 +23,8 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
     await tx.monitoringRun.updateMany({ where: { sourceId: SOURCE_ID, status: 'RUNNING' },
       data: { status: 'FAILED', finishedAt: now, errorCategory: 'WORKER_INTERRUPTED' } });
     await tx.siteProfile.upsert({ where: { sourceId: SOURCE_ID }, create: {
-      sourceId: SOURCE_ID, searchUrls: [SEARCH_URL], filters: FILTERS, authStrategy: 'none',
-    }, update: { searchUrls: [SEARCH_URL], filters: FILTERS } });
+      sourceId: SOURCE_ID, searchUrls: [SEARCH_URL], filters: FILTERS, authStrategy: browser?'browser-session':'none',
+    }, update: { searchUrls: [SEARCH_URL], filters: FILTERS,authStrategy:browser?'browser-session':'none',browserStateRef:browser?'railway:funda-browser-session:encrypted-volume':null } });
     return tx.monitoringRun.create({ data: { sourceId: SOURCE_ID } });
   });
   if (!run) return { skipped: true };

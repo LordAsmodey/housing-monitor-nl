@@ -105,8 +105,8 @@ model HousingListing {
 
 model NotificationOutbox {
   id                String         @id @default(cuid())
-  listingId         String
-  listing           HousingListing @relation(fields: [listingId], references: [id])
+  listingId         String?
+  listing           HousingListing? @relation(fields: [listingId], references: [id])
   destinationRef    String
   idempotencyKey    String         @unique
   status            DeliveryStatus @default(PENDING)

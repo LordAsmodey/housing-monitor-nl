@@ -42,7 +42,7 @@ function allowedUrl(value, kind = 'detail') {
   url.hash = ''; return url.href;
 }
 function guardPage(html) {
-  if (/captcha|verify you are human|verifieer.{0,20}mens|access denied|just a moment|unusual traffic|bevestig.{0,20}mens/i.test(text(html))) {
+  if (/captcha|verify you are human|verifieer.{0,20}mens|access denied|just a moment|unusual traffic|bevestig.{0,20}mens|je bent bijna op de pagina die je zoekt|verifiëren dat onze bezoekers echte mensen zijn/i.test(text(html))) {
     throw new FundaError('HUMAN_CHECK', true);
   }
 }
@@ -86,6 +86,27 @@ function structuredData(html) {
     try { walk(JSON.parse(match[2])); } catch { throw new FundaError('INVALID_STRUCTURED_DATA'); }
   }
   return objects;
+}
+// Nuxt uses a flattened public hydration array; coordinates are indexed values,
+// not literal latitude/longitude in Funda's JSON-LD.
+function hydrationGeo(html) {
+  const found=[];
+  for(const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+    const attr=attributes(match[1]);
+    if(attr.id!=='__NUXT_DATA__'||attr.type!=='application/json')continue;
+    let data;try{data=JSON.parse(match[2])}catch{throw new FundaError('INVALID_HYDRATION_DATA')}
+    if(!Array.isArray(data))throw new FundaError('INVALID_HYDRATION_DATA');
+    for(const value of data){
+      if(!value||typeof value!=='object'||Array.isArray(value)||!Object.hasOwn(value,'lat')||!Object.hasOwn(value,'lng'))continue;
+      if(!Number.isInteger(value.lat)||!Number.isInteger(value.lng)||value.lat<0||value.lng<0)throw new FundaError('LOCATION_MISSING');
+      const latitude=data[value.lat],longitude=data[value.lng];
+      if(typeof latitude!=='number'||typeof longitude!=='number'||!Number.isFinite(latitude)||!Number.isFinite(longitude))throw new FundaError('LOCATION_MISSING');
+      found.push({latitude,longitude});
+    }
+  }
+  const unique=[...new Map(found.map(g=>[JSON.stringify(g),g])).values()];
+  if(unique.length>1)throw new FundaError('LOCATION_AMBIGUOUS');
+  return unique[0];
 }
 function fact(html, labels) {
   for (const match of html.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/gi)) {
@@ -133,7 +154,7 @@ function parseDetail(html, value) {
   const titleMatch = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   const title = titleMatch ? text(titleMatch[1]) : '';
   const city = objects.find(o => typeof o.addressLocality === 'string')?.addressLocality;
-  const geo = objects.find(o => o.latitude !== undefined && o.longitude !== undefined);
+  const geo = objects.find(o => o.latitude !== undefined && o.longitude !== undefined) ?? hydrationGeo(html);
   const latitude = Number(geo?.latitude), longitude = Number(geo?.longitude);
   if (!title || title.length > 500 || !city || city.length > 200) throw new FundaError('DETAIL_STRUCTURE_CHANGED');
   if (geo?.latitude == null || geo?.longitude == null || geo.latitude === '' || geo.longitude === ''

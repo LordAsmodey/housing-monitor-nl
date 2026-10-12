@@ -97,3 +97,27 @@ Production-монитор ещё использует исходный HTTP Fast
 Runtime пишет только начало подключения и сводку текущей страницы: заголовок, путь,
 признак проверки человека, отказа и число ссылок карточек. Ввод пользователя, секреты,
 screenshots и значения browser state в логи не попадают.
+
+## Persistent monitoring and manual recovery
+
+The browser service can now run continuously with BROWSER_WORKER_TOKEN set. Its
+worker API accepts a separate server credential, serializes collection and human
+operations, and returns normalized listings, never cookies. The existing encrypted
+volume and BROWSER_STATE_KEY_HEX must be retained. Expiry closes human access only;
+the collector continues. The Nest scheduler uses FUNDA_BROWSER_ORIGIN and
+FUNDA_BROWSER_TOKEN (a Railway reference to the browser service credential), with
+no monitor enable flag. Switching from HTTP schedules the first browser check
+without waiting for the previous six-hour block cooldown.
+
+A blocked collection retains baseline and last success. A recovery episode creates
+one durable Telegram outbox alert containing an explicit, one-use browser access
+link with a 24-hour expiry. The grant is encrypted on the browser volume and
+survives restart. Do not forward the link. The user completes the challenge,
+opens “Поиск жилья” and clicks “Сохранить сессию”. The scheduler sees that recovery
+and schedules a fresh validated collection. Other normal notification delivery
+continues through the bot-wide durable gate. No fake housing listing is created
+for administrative alerts; listingId is nullable for these outbox entries.
+
+Recovery links are privileged, short-lived capabilities intentionally delivered to
+the configured Telegram group at the user's request. Never include their values,
+worker tokens, encrypted state keys or cookies in Git, Notion or logs.
