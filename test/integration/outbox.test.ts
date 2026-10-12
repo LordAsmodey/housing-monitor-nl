@@ -27,6 +27,9 @@ const service = new ListingsService(db);
 const ids: string[] = [];
 before(() => db.$connect());
 after(async () => {
+  // Outbox tests deliberately create DEAD_LETTER/UNCERTAIN. Even an inherited
+  // SENTRY_DSN must never load the runtime SDK or send those failures externally.
+  assert.equal(requireFromRoot.cache[requireFromRoot.resolve('@sentry/node')], undefined);
   await db.notificationOutbox.deleteMany({ where: { listing: { sourceId: { in: ids } } } });
   await db.housingListing.deleteMany({ where: { sourceId: { in: ids } } });
   await db.monitoringRun.deleteMany({ where: { sourceId: { in: ids } } });

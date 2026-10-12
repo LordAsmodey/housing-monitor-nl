@@ -5,6 +5,12 @@ const SOURCES = new Set(['funda', 'huurwoningen', 'woldring', 'telegram', 'appli
 const ROLES = new Set(['application', 'funda-browser', 'huurwoningen-browser']);
 const MONITORS = new Set(['funda', 'huurwoningen', 'woldring']);
 
+// Prisma can load .env while constructing a client. Test isolation must not
+// depend on the DSN being absent or on which module loaded configuration first.
+function telemetryEnabled(env) {
+  return Boolean(env.SENTRY_DSN) && env.NODE_ENV !== 'test' && !env.NODE_TEST_CONTEXT;
+}
+
 function sanitizeEvent(event) {
   const tags = {};
   if (SOURCES.has(event.tags?.source)) tags.source = event.tags.source;
@@ -26,7 +32,7 @@ function sanitizeEvent(event) {
 }
 
 function createTelemetry(sdk, env = process.env, component = 'application') {
-  const enabled = Boolean(env.SENTRY_DSN);
+  const enabled = telemetryEnabled(env);
   if (!ROLES.has(component)) throw Error('INVALID_TELEMETRY_COMPONENT');
   if (enabled) {
     let url;
@@ -66,7 +72,7 @@ function init(component = 'application') {
   if (instance) return instance;
   let sdk;
   try {
-    if (process.env.SENTRY_DSN) {
+    if (telemetryEnabled(process.env)) {
       try { sdk = require('@sentry/node'); }
       catch { sdk = require('/tmp/funda-browser/node_modules/@sentry/node'); }
     }
