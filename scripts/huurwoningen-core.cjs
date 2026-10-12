@@ -82,9 +82,14 @@ function parseSearch(html,currentUrl=SEARCH_URL) {
   }
   return {listings,total,next};
 }
-async function fetchHtml(url,signal,transport) {
+async function fetchHtml(url,signal,transport,pause) {
   allowedUrl(url,'search');let response;
-  try{response=await transport(url,{redirect:'manual',signal,headers:{Accept:'text/html','Accept-Language':'nl-NL'}})}catch{throw new FundaError('HTTP_TRANSPORT')}
+  for(let attempt=0;attempt<3;attempt++) {
+    if(signal.aborted)throw new FundaError('RUN_TIMEOUT');
+    try{response=await transport(url,{redirect:'manual',signal,headers:{Accept:'text/html','Accept-Language':'nl-NL'}})}catch{throw new FundaError('HTTP_TRANSPORT')}
+    if(![502,503,504].includes(response.status)||attempt===2)break;
+    await response.body?.cancel();await pause(2000);
+  }
   if([401,403].includes(response.status))throw new FundaError('ACCESS_BLOCKED',true);
   if(response.status===429)throw new FundaError('RATE_LIMIT',false,900);
   if(response.status>=300&&response.status<400)throw new FundaError('UNEXPECTED_REDIRECT');
@@ -100,7 +105,7 @@ async function collect({transport=fetch,maxPages=20,maxListings=600,signal=Abort
   while(url) {
     if(signal.aborted)throw new FundaError('RUN_TIMEOUT');
     if(pages.has(url)||pages.size>=maxPages)throw new FundaError('PAGINATION_LIMIT');
-    pages.add(url);const page=parseSearch(await fetchHtml(url,signal,transport),url);
+    pages.add(url);const page=parseSearch(await fetchHtml(url,signal,transport,pause),url);
     if(total!==undefined&&total!==page.total)throw new FundaError('SEARCH_CHANGED_DURING_RUN');total=page.total;
     if(total>maxListings)throw new FundaError('LISTING_LIMIT');
     for(const item of page.listings){if(listings.has(item.canonicalUrl))throw new FundaError('PAGINATION_NOT_ADVANCING');listings.set(item.canonicalUrl,item)}

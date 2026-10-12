@@ -42,3 +42,12 @@ test('incomplete, repeated, changing or oversized pagination cannot commit parti
   await assert.rejects(run(page([card],601)),/LISTING_LIMIT/);
   await assert.rejects(collect({transport:async()=>new Response('blocked',{status:403})}),e=>e.category==='ACCESS_BLOCKED'&&e.blocked);
 });
+
+test('temporary upstream 502 is retried with a bound; persistent failures remain failed',async()=>{
+  let calls=0;
+  const result=await collect({pause:async()=>{},transport:async()=>++calls===1?new Response('gateway',{status:502}):new Response(page(),{headers:{'content-type':'text/html'}})});
+  assert.equal(calls,2);assert.equal(result.inspected,1);
+  calls=0;
+  await assert.rejects(collect({pause:async()=>{},transport:async()=>{calls++;return new Response('gateway',{status:502})}}),/HTTP_STATUS/);
+  assert.equal(calls,3);
+});
