@@ -5,6 +5,7 @@ import { PrismaService } from '../../src/database/prisma.service';
 import { ListingsService } from '../../src/listings/listings.service';
 import { OutboxService } from '../../src/delivery/outbox.service';
 import { DeliveryError } from '../../src/delivery/telegram';
+import { smoke } from '../../scripts/outbox-smoke.mjs';
 
 // Run only against an explicitly supplied disposable database (never load .env).
 assert.ok(process.env.DATABASE_URL, 'Supply a disposable DATABASE_URL');
@@ -125,4 +126,35 @@ test('confirmed HTTP delivery followed by database failure is quarantined after 
   await worker(async () => { calls++; return '1001'; }).tick();
   assert.equal(calls, 1);
   assert.equal((await db.notificationOutbox.findUniqueOrThrow({ where: { id: job.id } })).status, 'UNCERTAIN');
+});
+
+test('smoke check uses the existing worker and a stable run ID across CLI restarts', async () => {
+  await resetGate();
+  const runId = `smoke-${Date.now()}`;
+  ids.push(`outbox-smoke:${runId}`);
+  let calls = 0;
+  const w = worker(async () => { calls++; return '12345'; });
+  const wait = async () => { await w.tick(); };
+  const first = await smoke(db, service, '-123', runId, wait);
+  assert.equal(first.baselineVerified, true);
+  assert.equal(first.status, 'SENT');
+  assert.equal(first.attempts, 1);
+  const repeated = await smoke(db, new ListingsService(db), '-123', runId, wait);
+  assert.equal(repeated.baselineVerified, false);
+  assert.equal(repeated.id, first.id);
+  assert.equal(repeated.telegramMessageId, first.telegramMessageId);
+  assert.equal(calls, 1);
+});
+
+test('smoke check preserves an ambiguous job and never requeues it on rerun', async () => {
+  await resetGate();
+  const runId = `uncertain-${Date.now()}`;
+  ids.push(`outbox-smoke:${runId}`);
+  let calls = 0;
+  const w = worker(async () => { calls++; throw new DeliveryError('TRANSPORT_UNCERTAIN', true); });
+  const wait = async () => { await w.tick(); };
+  await assert.rejects(smoke(db, service, '-123', runId, wait), /UNCERTAIN/);
+  await assert.rejects(smoke(db, service, '-123', runId, wait), /UNCERTAIN/);
+  assert.equal(calls, 1);
+  assert.equal(await db.notificationOutbox.count({ where: { listing: { sourceId: `outbox-smoke:${runId}` } } }), 1);
 });

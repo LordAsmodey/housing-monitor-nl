@@ -6,6 +6,9 @@
 - Реализованы baseline, дедупликация и transactional outbox для валидированных результатов.
 - Реализован Telegram worker с durable rate limit, retries 429, DEAD_LETTER и UNCERTAIN.
 - Добавлены интеграционные тесты и CLI ручного разрешения проблемных заданий.
+- 12.10.2026 проверена доставка через штатный production-worker Railway: SENT,
+  одна попытка, Telegram message ID 6; повтор CLI не создал дубль. Добавлен
+  повторяемый `outbox:smoke`; детали и границы проверки — в [outbox.md](outbox.md).
 - Реальные источники, scheduler, AI recovery и расширенные модели остаются в backlog.
 
 ## P0 — исследование источников
