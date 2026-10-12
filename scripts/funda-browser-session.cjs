@@ -4,10 +4,7 @@ const http = require('node:http');
 const fs = require('node:fs/promises');
 const { spawn, spawnSync } = require('node:child_process');
 const { randomBytes, createCipheriv, createDecipheriv, createHmac, timingSafeEqual } = require('node:crypto');
-const { collect, FundaError } = require('./funda-core.cjs');
-const SEARCH_URL = 'https://www.funda.nl/zoeken/huur?' + new URLSearchParams({
-  selected_area: JSON.stringify(['groningen,30km']), price: JSON.stringify('-1500'), sort: JSON.stringify('date_down'),
-});
+const { collect, FundaError, SEARCH_URL } = require('./funda-core.cjs');
 function encryptState(state, key) {
   const iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', key, iv);
   const data = Buffer.concat([cipher.update(JSON.stringify(state), 'utf8'), cipher.final()]);

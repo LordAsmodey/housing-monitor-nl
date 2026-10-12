@@ -25,7 +25,7 @@ function browserClient(origin, token, transport = fetch) {
     collect: async () => {
       const result = await request('/worker/collect','POST');
       if (!Array.isArray(result.listings) || !Number.isInteger(result.inspected)) throw new FundaError('BROWSER_RESULT_INVALID');
-      return {...result,listings:result.listings.map(item=>({...item,publishedAt:new Date(item.publishedAt)}))};
+      return {...result,listings:result.listings.map(item=>({...item,...(item.publishedAt?{publishedAt:new Date(item.publishedAt)}:{})}))};
     },
   };
 }

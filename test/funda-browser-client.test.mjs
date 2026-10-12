@@ -16,3 +16,8 @@ test('browser CAPTCHA, malformed results and transport failure cannot become emp
   await assert.rejects(browserClient(origin,token,async()=>Response.json({})).collect(),/BROWSER_RESULT_INVALID/);
   await assert.rejects(browserClient(origin,token,async()=>{throw Error('private credentials')}).collect(),e=>e.message==='BROWSER_TRANSPORT');
 });
+
+test('a missing optional publication date remains absent across the worker boundary',async()=>{
+  const result=await browserClient(origin,token,async()=>Response.json({inspected:1,listings:[{externalId:'1'}]})).collect();
+  assert.equal(Object.hasOwn(result.listings[0],'publishedAt'),false);
+});
