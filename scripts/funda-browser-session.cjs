@@ -194,7 +194,10 @@ async function main(options = {}) {
           return send(200,result);
         }
         return send(404,{category:'NOT_FOUND'});
-      }catch(error){return send(422,{category:error instanceof FundaError?error.category:'BROWSER_FAILED',blocked:error instanceof FundaError&&error.blocked})}
+      }catch(error){
+        if(options.logProgress&&error instanceof FundaError&&error.diagnostic)emit('collection-validation-failed',{category:error.category,...error.diagnostic});
+        return send(422,{category:error instanceof FundaError?error.category:'BROWSER_FAILED',blocked:error instanceof FundaError&&error.blocked})
+      }
     }
     if(req.method==='POST'&&!validOrigin(req.headers.origin,origin)) return send(403,{message:'Origin rejected'});
     let body;

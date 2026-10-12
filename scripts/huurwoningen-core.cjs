@@ -53,10 +53,16 @@ function parseCard(html) {
   const visible=text(html), city=visible.match(/\b[1-9]\d{3}\s?[A-Z]{2}\s+(.+?)\s*\(/)?.[1];
   const price=visible.match(/€\s*([\d.]+(?:,\d{1,2})?)\s+per maand/i);
   const rentPrice=price?Number(price[1].replace(/\./g,'').replace(',','.')):NaN;
-  if(!city||city.length>200||!(rentPrice>0&&rentPrice<100000000))throw new FundaError('CARD_METADATA_MISSING');
+  const priceOnRequest=/^Prijs op aanvraag$/i.test(text(html.match(/<span\b[^>]*class="listing-search-item__price-main"[^>]*>([\s\S]*?)<\/span>/i)?.[1]??''));
+  if(!city||city.length>200||(!priceOnRequest&&!(rentPrice>0&&rentPrice<100000000))) {
+    const error=new FundaError('CARD_METADATA_MISSING');
+    error.diagnostic={title:title.slice(0,200),location:text(html.match(/<div\b[^>]*class="listing-search-item__sub-title"[^>]*>([\s\S]*?)<\/div>/i)?.[1]??'').slice(0,200),
+      price:text(html.match(/<span\b[^>]*class="listing-search-item__price-main"[^>]*>([\s\S]*?)<\/span>/i)?.[1]??'').slice(0,100)};
+    throw error;
+  }
   const area=visible.match(/\b(\d+(?:[.,]\d+)?)\s*m²/),rooms=visible.match(/\b(\d+)\s+kamers?\b/i);
   // The selected search includes rooms, studios, houses and woningruil; retain them.
-  return {externalId:new URL(canonicalUrl).pathname.split('/')[3],canonicalUrl,title,city,rentPrice,availabilityStatus:'unknown',
+  return {externalId:new URL(canonicalUrl).pathname.split('/')[3],canonicalUrl,title,city,...(!priceOnRequest?{rentPrice}:{}),availabilityStatus:'unknown',
     ...(area?{areaM2:Number(area[1].replace(',','.'))}:{}),...(rooms?{rooms:Number(rooms[1])}:{})};
 }
 function parseSearch(html,currentUrl=SEARCH_URL) {

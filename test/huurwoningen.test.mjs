@@ -14,6 +14,8 @@ test('live card fixture preserves rent, locality and features with nested lists'
   assert.equal(parseCard(card.replace('€&nbsp;780','€&nbsp;1.995')).rentPrice,1995);
   assert.equal(parseCard(card.replaceAll('Groningen (Badstratenbuurt)','Marum (Marum)')).city,'Marum');
   assert.equal(parseCard(card.replaceAll('Studio Eeldersingel','Kamer Eeldersingel')+' Woningruil').title,'Kamer Eeldersingel');
+  const requested=card.replaceAll('Studio Eeldersingel','Huis Hoofdstraat').replaceAll('9726 AS Groningen (Badstratenbuurt)','9982 AL Uithuizermeeden (Uithuizermeeden Noord)').replace('€&nbsp;780 per maand','Prijs op aanvraag');
+  assert.equal(parseCard(requested).city,'Uithuizermeeden');assert.equal(Object.hasOwn(parseCard(requested),'rentPrice'),false);
 });
 test('URL allowlist preserves the agreed filters and rejects SSRF or broadened searches',()=>{
   assert.equal(allowedUrl(SEARCH_URL,'search'),SEARCH_URL);
@@ -25,7 +27,7 @@ test('changed filters, damaged cards and CAPTCHA fail instead of establishing an
   assert.equal(parseSearch(page([],0)).total,0);
   assert.equal(searchReady(page([],0),SEARCH_URL),true);
   assert.equal(searchReady('<h1>Captcha</h1>',SEARCH_URL),false);
-  for(const html of [page().replace('Binnen 3 maanden','Binnen 6 maanden'),page([],5),page().replace('€&nbsp;780 per maand','Prijs op aanvraag'),page().replace('9726 AS Groningen (Badstratenbuurt)','Onbekend'),page([card,card]),'<h1>Verify you are human</h1>'])assert.throws(()=>parseSearch(html));
+  for(const html of [page().replace('Binnen 3 maanden','Binnen 6 maanden'),page([],5),page().replace('€&nbsp;780 per maand','Onbekend'),page().replace('9726 AS Groningen (Badstratenbuurt)','Onbekend'),page([card,card]),'<h1>Verify you are human</h1>'])assert.throws(()=>parseSearch(html));
 });
 test('all result pages are collected without visiting every detail page',async()=>{
   const next=SEARCH_URL+'&page=2',calls=[];
