@@ -12,6 +12,8 @@ const { runFunda } = requireFromRoot('./scripts/funda-runner.cjs');
 const { SOURCE_ID, FundaError } = requireFromRoot('./scripts/funda-core.cjs');
 const { runHuurwoningen } = requireFromRoot('./scripts/huurwoningen-runner.cjs');
 const { SOURCE_ID: HUUR_SOURCE_ID, SEARCH_URL: HUUR_SEARCH_URL } = requireFromRoot('./scripts/huurwoningen-core.cjs');
+const { runWoldring } = requireFromRoot('./scripts/woldring-runner.cjs');
+const { SOURCE_ID: WOLDRING_SOURCE_ID, SEARCH_URLS: WOLDRING_URLS } = requireFromRoot('./scripts/woldring-core.cjs');
 
 // Run only against an explicitly supplied disposable database (never load .env).
 assert.ok(process.env.DATABASE_URL, 'Supply a disposable DATABASE_URL');
@@ -261,6 +263,38 @@ test('browser CAPTCHA creates one recovery alert and saving the session resumes 
     globalThis.fetch=original;delete process.env.FUNDA_BROWSER_ORIGIN;delete process.env.FUNDA_BROWSER_TOKEN;
     await db.notificationOutbox.deleteMany({where:{idempotencyKey:'funda-recovery:'+'a'.repeat(32)}});
   }
+});
+
+test('Woldring baseline, status transitions, retry rollback and notification deduplication', async () => {
+  ids.push(WOLDRING_SOURCE_ID);
+  const first = {...item('woldring-first'),canonicalUrl:'https://woldringverhuur.nl/first/',availabilityStatus:'available' as const,
+    serviceCosts:95,housingDetails:{propertyType:'apartment' as const,availableFrom:'now',energyLabel:'A+',huurtoeslag:true,utilities:'separate' as const,applicationsClosed:true}};
+  const unavailable={...first,externalId:'woldring-second',canonicalUrl:'https://woldringverhuur.nl/second/',availabilityStatus:'unavailable' as const};
+  const run=(input:any[])=>runWoldring(db,service,{destination:'-123',collector:async()=>({listings:input,inspected:input.length})});
+  assert.equal((await run([first,unavailable])).baseline,true);
+  assert.equal(await db.notificationOutbox.count({where:{listing:{sourceId:WOLDRING_SOURCE_ID}}}),0);
+  const profile=await db.siteProfile.findUniqueOrThrow({where:{sourceId:WOLDRING_SOURCE_ID}});
+  assert.deepEqual(profile.searchUrls,WOLDRING_URLS);assert.equal(profile.authStrategy,'none');
+  assert.equal((await run([first])).skipped,true);
+  const nowAvailable={...unavailable,availabilityStatus:'available' as const};
+  await db.source.update({where:{id:WOLDRING_SOURCE_ID},data:{nextCheckAt:new Date(0)}});
+  const results=await Promise.all([run([first,nowAvailable]),run([first,nowAvailable])]);
+  assert.equal(results.filter(x=>!x.skipped).length,1);
+  const alerts=await db.notificationOutbox.findMany({where:{listing:{sourceId:WOLDRING_SOURCE_ID}}});
+  assert.equal(alerts.length,1);assert.match(alerts[0].payload,/Servicekosten: €95/);assert.match(alerts[0].payload,/Аренда \+ servicekosten:/);
+  assert.match(alerts[0].payload,/Приём заявок закрыт/);assert.doesNotMatch(alerts[0].payload,/Опубликовано:/);
+  for(const input of [[first,unavailable],[first,nowAvailable]]) {
+    await db.source.update({where:{id:WOLDRING_SOURCE_ID},data:{nextCheckAt:new Date(0)}});await run(input);
+  }
+  assert.equal(await db.notificationOutbox.count({where:{listing:{sourceId:WOLDRING_SOURCE_ID}}}),1);
+  const third={...first,externalId:'woldring-third',canonicalUrl:'https://woldringverhuur.nl/third/'};
+  await db.source.update({where:{id:WOLDRING_SOURCE_ID},data:{nextCheckAt:new Date(0)}});await run([first,nowAvailable,third]);
+  assert.equal(await db.notificationOutbox.count({where:{listing:{sourceId:WOLDRING_SOURCE_ID}}}),2);
+  const before=await db.source.findUniqueOrThrow({where:{id:WOLDRING_SOURCE_ID}});
+  await db.source.update({where:{id:WOLDRING_SOURCE_ID},data:{nextCheckAt:new Date(0)}});
+  await assert.rejects(runWoldring(db,service,{destination:'-123',collector:async()=>{throw new FundaError('INCOMPLETE_SEARCH')}}),/INCOMPLETE_SEARCH/);
+  const failed=await db.source.findUniqueOrThrow({where:{id:WOLDRING_SOURCE_ID}});
+  assert.deepEqual(failed.lastSuccessAt,before.lastSuccessAt);assert.deepEqual(failed.baselineAt,before.baselineAt);assert.equal(failed.status,'DEGRADED');
 });
 
 test('Huurwoningen has its own baseline, lease, filters and transactional notification deduplication', async () => {
