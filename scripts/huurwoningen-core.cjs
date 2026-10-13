@@ -74,8 +74,16 @@ function parseSearch(html,currentUrl=SEARCH_URL) {
   const heading=html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
   if(!heading||!/huurwoningen in een straal van 25\s*km van Groningen/i.test(text(heading[1]))||!/Binnen 3 maanden/i.test(visible))throw new FundaError('SEARCH_FILTER_CHANGED');
   const count=visible.match(/\b([\d.]+)\s+Huurwoningen in een straal van 25\s*km van Groningen/i);
-  if(!count)throw new FundaError('SEARCH_COUNT_MISSING');
-  const total=Number(count[1].replace(/\./g,''));
+  // Empty searches use a separate section without the usual numeric heading.
+  // Nearby suggestions have their own count and must not establish an empty run.
+  const emptySection=[...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/gi)]
+    .find(match=>(attributes(match[1]).class??'').split(/\s+/).includes('no-search-results'));
+  const emptyTitle=emptySection?.[2].match(/<h2\b([^>]*)>([\s\S]*?)<\/h2>/i);
+  const confirmedEmpty=emptyTitle&&(attributes(emptyTitle[1]).class??'').split(/\s+/).includes('no-search-results__title')
+    &&/^Helaas, er zijn geen woningen gevonden$/i.test(text(emptyTitle[2]));
+  if(!count&&!confirmedEmpty)throw new FundaError('SEARCH_COUNT_MISSING');
+  const total=count?Number(count[1].replace(/\./g,'')):0;
+  if(confirmedEmpty&&total!==0)throw new FundaError('SEARCH_COUNT_MISMATCH');
   const listings=cardSections(html).map(parseCard);
   const urls=new Set(listings.map(x=>x.canonicalUrl));
   if(urls.size!==listings.length)throw new FundaError('DUPLICATE_CARD');
@@ -88,6 +96,7 @@ function parseSearch(html,currentUrl=SEARCH_URL) {
       next=allowedUrl(new URL((attr.href??'').replace(/&amp;/g,'&'),currentUrl).href,'search');
     }
   }
+  if(total===0&&next)throw new FundaError('SEARCH_COUNT_MISMATCH');
   return {listings,total,next};
 }
 async function fetchHtml(url,signal,transport,pause) {
