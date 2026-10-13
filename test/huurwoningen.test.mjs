@@ -88,3 +88,9 @@ test('temporary upstream 502 is retried with a bound; persistent failures remain
   const recovered=await collect({pause:async()=>{},transport:async()=>{if(++calls===1)throw Error('navigation timeout');return new Response(page(),{headers:{'content-type':'text/html'}})}});
   assert.equal(calls,2);assert.equal(recovered.inspected,1);
 });
+
+test('Dutch Cloudflare challenge is BLOCKED rather than a malformed or empty search',()=>{
+  for(const html of ['<title>Even geduld...</title>', '<form id="challenge-form"></form>', '<script>window._cf_chl_opt = {};</script>']) {
+    assert.throws(()=>parseSearch(html,SEARCH_URL),error=>error.category==='HUMAN_CHECK'&&error.blocked===true);
+  }
+});

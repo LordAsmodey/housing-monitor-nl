@@ -38,3 +38,51 @@ test('browser actions are bounded and cannot supply navigation URLs or arbitrary
     {type:'navigate',target:'http://localhost'},{type:'evaluate',script:'process.env'},
     {type:'key',key:'F12'},{type:'text',text:'a'.repeat(2001)},{type:'scroll',delta:99999}])assert.throws(()=>validateAction(action));
 });
+
+const {routeRequest,humanCheck,recoveryReady,startDisplay}=require('../scripts/funda-browser-session.cjs');
+function routeFixture(url,{navigation=true,frame='missing',type='document',failContinue=false}={}) {
+  const calls=[];
+  return {calls,route:{request:()=>({url:()=>url,isNavigationRequest:()=>navigation,resourceType:()=>type,
+    frame:()=>{if(frame==='missing')throw Error('Frame for this navigation request is not available');return {parentFrame:()=>frame==='main'?null:{}}}}),
+    abort:async()=>{calls.push('abort')},continue:async()=>{calls.push('continue');if(failContinue)throw Error('Target closed')}}};
+}
+const policy={navigationDomains:['www.huurwoningen.com','huurwoningen.com']};
+test('early source and Cloudflare iframe navigations survive unavailable frames; other targets fail closed',async()=>{
+  for(const [url,expected] of [
+    ['https://www.huurwoningen.com/in/groningen/','continue'],
+    ['https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/if/abc','continue'],
+    ['https://example.com/','abort'],['http://127.0.0.1/','abort'],
+    ['https://challenges.cloudflare.com/other','abort'],['http://challenges.cloudflare.com/cdn-cgi/challenge-platform/','abort'],
+  ]){const {route,calls}=routeFixture(url);await routeRequest(route,policy);assert.deepEqual(calls,[expected],url)}
+  const {route,calls}=routeFixture('https://challenges.cloudflare.com/cdn-cgi/challenge-platform/',{frame:'main'});
+  await routeRequest(route,policy);assert.deepEqual(calls,['abort']);
+});
+test('third party assets remain bounded during collection and closed routes cannot reject the handler',async()=>{
+  for(const [url,type,expected] of [
+    ['https://www.huurwoningen.com/photo.jpg','image','abort'],
+    ['https://ads.example/script.js','script','abort'],
+    ['https://challenges.cloudflare.com/turnstile/v0/api.js','script','continue'],
+  ]){const {route,calls}=routeFixture(url,{navigation:false,type});await routeRequest(route,{...policy,collecting:true,blockThirdPartyDuringCollection:true});assert.deepEqual(calls,[expected])}
+  const {route,calls}=routeFixture('https://www.huurwoningen.com/',{failContinue:true});let errors=0;
+  await routeRequest(route,policy,()=>errors++);assert.equal(errors,1);assert.deepEqual(calls,['continue','abort']);
+  await assert.doesNotReject(routeRequest({request:()=>{throw Error('closed')},abort:async()=>{throw Error('closed')}},policy));
+});
+test('Dutch Cloudflare pages cannot be mistaken for saved recovery, including stale listing links',()=>{
+  assert.equal(humanCheck('Even geduld...',''),true);
+  assert.equal(humanCheck('Just a moment...',''),true);
+  assert.equal(humanCheck('','', '<script>window._cf_chl_opt = {};</script>'),true);
+  assert.equal(humanCheck('Huurwoningen','Groningen'),false);
+  const state={humanCheck:false,accessDenied:false,searchReady:true,listingLinks:0};
+  assert.equal(recoveryReady(state,'https://www.huurwoningen.com/in/groningen/','/in/groningen/'),true);
+  assert.equal(recoveryReady({...state,humanCheck:true,listingLinks:5},'https://www.huurwoningen.com/in/groningen/','/in/groningen/'),false);
+  assert.equal(recoveryReady({...state,searchReady:false},'https://www.huurwoningen.com/in/groningen/','/in/groningen/'),false);
+  assert.equal(recoveryReady(state,'https://www.huurwoningen.com/','/in/groningen/'),false);
+});
+test('Xvfb allocates a fresh display and startup failure cleans up its child',async()=>{
+  const {EventEmitter}=await import('node:events');
+  function child(){const process=new EventEmitter();process.stdout=new EventEmitter();process.killed=false;process.kill=()=>{process.killed=true};return process}
+  const ready=child();
+  const result=await startDisplay((name,args)=>{assert.equal(name,'Xvfb');assert.deepEqual(args.slice(0,2),['-displayfd','1']);queueMicrotask(()=>ready.stdout.emit('data',Buffer.from('101\n')));return ready});
+  assert.equal(result.name,':101');assert.equal(result.display,ready);
+  const failed=child();await assert.rejects(startDisplay(()=>{queueMicrotask(()=>failed.emit('exit',1));return failed}),/DISPLAY_EXITED/);assert.equal(failed.killed,true);
+});
