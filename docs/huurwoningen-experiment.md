@@ -1,7 +1,9 @@
 # Huurwoningen: isolated Patchright trial
 
-The experimental service reads the exact existing Groningen search. It never connects to PostgreSQL,
-the production scheduler or Telegram. The production browser, source ID, baseline and outbox stay in place.
+The Patchright service reads the exact existing Groningen search and has no direct database or Telegram access.
+By explicit user decision on 13 October 2026, the production application now uses this worker while
+the 24-hour observer runs in parallel. The existing Source ID, baseline and transactional outbox are retained.
+The old Playwright browser is retained as a separate fallback; it is not used for scheduled Huurwoningen collection.
 
 Runtime: Patchright 1.63.0, Google Chrome, headed persistent context, no user-agent injection,
 no viewport emulation. Chrome's complete profile lives in ephemeral `/tmp`; only an authenticated-encrypted
@@ -48,4 +50,12 @@ confirm profileRestored=true in /health and restoredRestarts>=1 in the authentic
 A blocked or failed report is not a completed soak, and process liveness is not evidence of website access.
 
 If the unproxied Railway trial is blocked, ask for proxy credentials/budget before testing paid egress.
-Do not switch the production application to this worker until the trial passes and the rollout is authorized.
+The user authorized production Telegram delivery before the 24-hour trial completed.
+Production owns the 15-minute schedule and listing deduplication; the observer performs additional read-only
+collections through the same serialized browser queue. Only new listings relative to the existing baseline
+can generate Telegram notifications; observer collections never send notifications directly.
+Configure application HUURWONINGEN_BROWSER_ORIGIN with the Patchright service origin and
+HUURWONINGEN_BROWSER_TOKEN as a Railway reference to its BROWSER_WORKER_TOKEN. After verifying
+collection with the new worker and deployment configuration, release the previous BLOCKED state
+conditionally (no active lease), without modifying baselineAt or stored listings.
+If rollback is needed, restore the previous origin and token reference; preserve the source history.
