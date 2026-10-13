@@ -86,3 +86,13 @@ test('Xvfb allocates a fresh display and startup failure cleans up its child',as
   assert.equal(result.name,':101');assert.equal(result.display,ready);
   const failed=child();await assert.rejects(startDisplay(()=>{queueMicrotask(()=>failed.emit('exit',1));return failed}),/DISPLAY_EXITED/);assert.equal(failed.killed,true);
 });
+
+const {shouldRenewRecovery}=require('../scripts/funda-browser-session.cjs');
+test('consumed recovery grants remain stable for scheduler deduplication, but can be explicitly renewed',()=>{
+  const now=1000,recovery={consumed:true,resolved:false,expires:2000};
+  assert.equal(shouldRenewRecovery(recovery,now),false);
+  assert.equal(shouldRenewRecovery(recovery,now,true),true);
+  assert.equal(shouldRenewRecovery(recovery,2000),true);
+  assert.equal(shouldRenewRecovery({...recovery,resolved:true},now),true);
+  assert.equal(shouldRenewRecovery(null,now),true);
+});

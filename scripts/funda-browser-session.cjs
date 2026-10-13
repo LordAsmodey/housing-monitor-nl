@@ -70,6 +70,9 @@ function humanCheck(title, body, content = '') {
   return /je bent bijna op de pagina die je zoekt|verify you are human|verifiëren dat onze bezoekers echte mensen zijn|even geduld\s*\.{0,3}|just a moment|verifieer.{0,30}mens|bevestig.{0,30}mens/i.test(title + ' ' + body)
     || /id=["']challenge-form["']|window\._cf_chl_opt\s*=/.test(content);
 }
+function shouldRenewRecovery(recovery, now = Date.now(), renew = false) {
+  return !recovery || recovery.resolved || recovery.expires <= now || renew;
+}
 function recoveryReady(state, url, searchPath) {
   return !state.humanCheck && !state.accessDenied && (state.searchReady ?? state.listingLinks > 0)
     && new URL(url).pathname === searchPath;
@@ -150,9 +153,9 @@ async function main(options = {}) {
   try { recovery=decryptState(await fs.readFile(recoveryFile),stateKey); } catch(error){if(error.code!=='ENOENT')throw Error('RECOVERY_DECRYPT_FAILED')}
   if(recovery){authKey=recovery.key;expires=recovery.expires;consumed=recovery.consumed}
   async function saveRecovery(){await fs.writeFile(recoveryFile+'.tmp',encryptState(recovery,stateKey),{mode:0o600});await fs.rename(recoveryFile+'.tmp',recoveryFile)}
-  async function recoveryLink(){
-    if(!recovery||recovery.resolved||recovery.expires<Date.now()){
-      recovery={id:randomBytes(16).toString('hex'),key:randomBytes(32).toString('base64url'),expires:Date.now()+24*3600000,consumed:false,resolved:false};
+  async function recoveryLink(renew = false){
+    if(shouldRenewRecovery(recovery, Date.now(), renew)){
+      recovery={id:renew&&recovery&&!recovery.resolved?recovery.id:randomBytes(16).toString('hex'),key:randomBytes(32).toString('base64url'),expires:Date.now()+24*3600000,consumed:false,resolved:false};
       authKey=recovery.key;expires=recovery.expires;consumed=false;await saveRecovery();
     }
     return {id:recovery.id,url:origin+'/#key='+recovery.key,expiresAt:new Date(recovery.expires).toISOString()};
@@ -224,6 +227,7 @@ async function main(options = {}) {
       try {
         if(req.method==='GET'&&pathname==='/worker/state') return send(200,{...await serial(inspect),recovered:recovery?.resolved===true});
         if(req.method==='POST'&&pathname==='/worker/recovery') return send(200,await serial(recoveryLink));
+        if(req.method==='POST'&&pathname==='/worker/recovery/renew') return send(200,await serial(()=>recoveryLink(true)));
         if(req.method==='POST'&&pathname==='/worker/collect') {
           const result=await serial(async()=>{
             collecting=true;
@@ -313,6 +317,6 @@ async function main(options = {}) {
   async function close(){if(closing)return;closing=true;clearInterval(heartbeat);server.close();await serial(persist).catch(()=>{});browser.removeAllListeners('disconnected');page.removeAllListeners('crash');await browser.close().catch(()=>{});display.kill();emit('closed');process.exit(0)}
   if(!process.env.BROWSER_WORKER_TOKEN)setTimeout(close,Math.max(1,expires-Date.now())).unref();process.on('SIGTERM',close);process.on('SIGINT',close);
 }
-module.exports={routeRequest,humanCheck,recoveryReady,startDisplay,encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};
+module.exports={shouldRenewRecovery,routeRequest,humanCheck,recoveryReady,startDisplay,encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};
 if(require.main===module)main().catch(()=>{emit('startup-failed');process.exit(1)});
 
