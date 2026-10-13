@@ -126,7 +126,7 @@ document.querySelectorAll('[data-scroll]').forEach(b=>b.addEventListener('click'
 document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>action({type:'key',key:b.dataset.key})));
 $('type').addEventListener('click',()=>action({type:'text',text:$('text').value}));$('refresh').addEventListener('click',refresh);
 $('check').addEventListener('click',()=>action({type:'check'}));$('save').addEventListener('click',()=>action({type:'save'}));
-$('screen').addEventListener('click',e=>{const r=$('screen').getBoundingClientRect();action({type:'click',x:(e.clientX-r.left)*1024/r.width,y:(e.clientY-r.top)*768/r.height})});
+$('screen').addEventListener('click',e=>{const r=$('screen').getBoundingClientRect();action({type:'click',x:(e.clientX-r.left)*$('screen').naturalWidth/r.width,y:(e.clientY-r.top)*$('screen').naturalHeight/r.height})});
 const key=new URLSearchParams(location.hash.slice(1)).get('key');history.replaceState(null,'',location.pathname);
 if(key)login(key);else api('/api/state').then(()=>{active=true;$('login').style.display='none';$('work').style.display='block';refresh()}).catch(()=>{});
 setInterval(refresh,1200);
@@ -160,23 +160,30 @@ async function main(options = {}) {
     }
     return {id:recovery.id,url:origin+'/#key='+recovery.key,expiresAt:new Date(recovery.expires).toISOString()};
   }
+  if (!options.launchBrowser) {
   const installed=await fs.access('/tmp/funda-browser/node_modules/playwright/package.json').then(()=>true,()=>false);
   const install = installed?{status:0}:spawnSync('npm', ['install', '--prefix', '/tmp/funda-browser', '--no-audit', '--no-fund', '--ignore-scripts', 'playwright@1.56.1'], { timeout: 120000, encoding: 'utf8' });
   if (install.status !== 0) throw new Error('PLAYWRIGHT_SETUP');
+  }
   const { display, name: displayName } = await startDisplay();
   process.once('exit', () => display.kill());
   process.env.DISPLAY = displayName;
-  const { chromium } = require('/tmp/funda-browser/node_modules/playwright');
-  const browser = await chromium.launch({ headless: false });
   let saved;
   try { saved = decryptState(await fs.readFile(stateFile), stateKey); }
   catch (error) { if (error.code !== 'ENOENT') throw new Error('STATE_DECRYPT_FAILED'); }
-  const context = await browser.newContext({ locale: 'nl-NL', viewport: { width: 1024, height: 768 }, ...(saved ? { storageState: saved } : {}) });
+  let launched;
+  if (options.launchBrowser) launched = await options.launchBrowser({ saved, stateKey, directory });
+  else {
+    const { chromium } = require('/tmp/funda-browser/node_modules/playwright');
+    const browser = await chromium.launch({ headless: false });
+    launched = { browser, context: await browser.newContext({ locale: 'nl-NL', viewport: { width: 1024, height: 768 }, ...(saved ? { storageState: saved } : {}) }) };
+  }
+  const { browser, context } = launched;
   let collecting=false;
   // Only the selected source may be navigated; never offer an arbitrary URL or debugger endpoint.
   await context.route('**/*', route => routeRequest(route, { navigationDomains, collecting,
     blockThirdPartyDuringCollection: options.blockThirdPartyDuringCollection }, () => emit('route-error')));
-  const page = await context.newPage();
+  const page = context.pages()[0] ?? await context.newPage();
   page.setDefaultTimeout(10000);
   page.once('crash',()=>{emit('renderer-crashed');process.exit(1)});
   browser.once('disconnected',()=>{emit('browser-disconnected');process.exit(1)});
@@ -184,7 +191,7 @@ async function main(options = {}) {
   await page.waitForTimeout(2000);
   await page.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
   await page.waitForTimeout(2000);
-  emit('browser-ready', { restored: Boolean(saved), version: browser.version(), expiresAt: new Date(expires).toISOString() });
+  emit('browser-ready', { restored: launched.restored ?? Boolean(saved), engine: options.engine ?? 'playwright', release: options.release ?? 'legacy', version: browser.version(), expiresAt: new Date(expires).toISOString() });
   let chain = Promise.resolve(), queued = 0;
   function serial(task) {
     if (queued >= 15) return Promise.reject(new Error('BUSY'));
@@ -211,12 +218,26 @@ async function main(options = {}) {
   await serial(async()=>{await persist();await report()});
   let heartbeatBusy=false;
   const heartbeat=setInterval(()=>{if(heartbeatBusy)return;heartbeatBusy=true;serial(async()=>{await persist();await report()}).catch(()=>emit('state-error')).finally(()=>heartbeatBusy=false)},30000);
+  async function collectSearch() {
+    collecting = true;
+    try {
+      const transport = async url => {
+        const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: options.navigationTimeout ?? 20000 });
+        await page.waitForTimeout(options.collectionSettleMs ?? 1200);
+        const content = await page.content();
+        await persist();
+        return new Response(content, { status: response?.status() ?? 502, headers: { 'content-type': 'text/html' } });
+      };
+      return await collect({ transport, signal: AbortSignal.timeout(300000),
+        ...(options.logProgress ? { onPage: stats => emit('collection-page', stats) } : {}) });
+    } finally { collecting = false; }
+  }
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
     const pathname=new URL(req.url,'http://localhost').pathname;
     const send=(status,data)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(data))};
 
-    if(req.method==='GET'&&pathname==='/health') return send(200,{status:'ready'});
+    if(req.method==='GET'&&pathname==='/health') return send(200,{status:'ready',engine:options.engine??'playwright',release:options.release??'legacy',profileRestored:launched.restored??Boolean(saved)});
     if(req.method==='GET'&&pathname==='/'){
       const nonce=randomBytes(16).toString('base64');
       res.setHeader('Content-Security-Policy',`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; img-src 'self' blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`);
@@ -225,23 +246,13 @@ async function main(options = {}) {
     if(pathname.startsWith('/worker/')) {
       if(!equalSecret(req.headers.authorization, 'Bearer '+process.env.BROWSER_WORKER_TOKEN) || !process.env.BROWSER_WORKER_TOKEN) return send(401,{category:'WORKER_AUTH'});
       try {
+        if(options.experiment && req.method==='GET'&&pathname==='/worker/experiment') return send(200,options.experiment.state());
+        if(options.experiment && req.method==='POST'&&pathname==='/worker/experiment/start') {await options.experiment.start();return send(200,options.experiment.state());}
         if(req.method==='GET'&&pathname==='/worker/state') return send(200,{...await serial(inspect),recovered:recovery?.resolved===true});
         if(req.method==='POST'&&pathname==='/worker/recovery') return send(200,await serial(recoveryLink));
         if(req.method==='POST'&&pathname==='/worker/recovery/renew') return send(200,await serial(()=>recoveryLink(true)));
         if(req.method==='POST'&&pathname==='/worker/collect') {
-          const result=await serial(async()=>{
-            collecting=true;
-            try { const transport=async(url)=>{
-              const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:options.navigationTimeout??20000});
-              await page.waitForTimeout(1200);
-              const content=await page.content();
-              await persist();
-              return new Response(content,{status:response?.status()??502,headers:{'content-type':'text/html'}});
-            };
-            return await collect({transport,signal:AbortSignal.timeout(300000),
-              ...(options.logProgress?{onPage:stats=>emit('collection-page',stats)}:{})});
-            } finally { collecting=false; }
-          });
+          const result=await serial(collectSearch);
           emit('collection-complete',{inspected:result.inspected,pages:result.pages,matched:result.listings.length});
           return send(200,result);
         }
@@ -283,6 +294,7 @@ async function main(options = {}) {
           if(a.type==='save') {
             if(!recoveryReady(state,page.url(),searchPath)) throw new Error('SEARCH_NOT_READY');
             if(recovery){recovery.resolved=true;await saveRecovery();}
+            if(options.experiment) setImmediate(()=>options.experiment.start().catch(()=>emit('experiment-error')));
           }
           return state;
         });
@@ -307,14 +319,16 @@ async function main(options = {}) {
       await uiContext.addCookies([{name:'funda_session',value:issueCookie(authKey,Date.now()+60000),url:base,httpOnly:true,sameSite:'Strict'}]);
       await uiPage.goto(base,{waitUntil:'domcontentloaded',timeout:10000});
       await uiPage.waitForFunction(()=>document.getElementById('work').style.display==='block',{},{timeout:10000});
-      await uiPage.waitForFunction(()=>document.getElementById('screen').naturalWidth===1024,{},{timeout:10000});
+      await uiPage.waitForFunction(()=>document.getElementById('screen').naturalWidth>0,{},{timeout:10000});
       if(scriptErrors)throw new Error('UI_SCRIPT_ERROR');
+      const screenshotWidth=await uiPage.locator('#screen').evaluate(img=>img.naturalWidth);
       await uiContext.close();
-      emit('server-ready',{unauthorizedScreen:screen.status,rejectedOrigin:rejectedOrigin.status,rejectedKey:rejectedKey.status,mobileUi:true,screenshotWidth:1024});
+      emit('server-ready',{unauthorizedScreen:screen.status,rejectedOrigin:rejectedOrigin.status,rejectedKey:rejectedKey.status,mobileUi:true,screenshotWidth});
+      if(options.experiment) await options.experiment.init({collect:()=>serial(collectSearch),profileRestored:launched.restored});
     } catch {emit('self-check-failed');await close()}
   });
   let closing=false;
-  async function close(){if(closing)return;closing=true;clearInterval(heartbeat);server.close();await serial(persist).catch(()=>{});browser.removeAllListeners('disconnected');page.removeAllListeners('crash');await browser.close().catch(()=>{});display.kill();emit('closed');process.exit(0)}
+  async function close(){if(closing)return;closing=true;clearInterval(heartbeat);options.experiment?.stop();server.close();await serial(persist).catch(()=>{});browser.removeAllListeners('disconnected');page.removeAllListeners('crash');await (launched.close?launched.close():browser.close()).catch(()=>emit('profile-save-failed'));display.kill();emit('closed');process.exit(0)}
   if(!process.env.BROWSER_WORKER_TOKEN)setTimeout(close,Math.max(1,expires-Date.now())).unref();process.on('SIGTERM',close);process.on('SIGINT',close);
 }
 module.exports={shouldRenewRecovery,routeRequest,humanCheck,recoveryReady,startDisplay,encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};

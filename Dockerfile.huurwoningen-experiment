@@ -1,0 +1,11 @@
+FROM mcr.microsoft.com/playwright:v1.56.1-noble
+WORKDIR /opt/housing-browser
+COPY browser-experiment/package.json browser-experiment/package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && npx patchright install chrome
+ENV NODE_PATH=/opt/housing-browser/node_modules
+WORKDIR /app
+COPY scripts/funda-core.cjs scripts/funda-browser-session.cjs scripts/huurwoningen-core.cjs scripts/huurwoningen-browser-session.cjs scripts/browser-profile.cjs scripts/huurwoningen-experiment.cjs scripts/huurwoningen-patchright-session.cjs ./scripts/
+COPY REVISION ./REVISION
+ENV PORT=8080
+EXPOSE 8080
+CMD ["node", "scripts/huurwoningen-patchright-session.cjs"]

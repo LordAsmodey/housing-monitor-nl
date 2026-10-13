@@ -1,0 +1,6 @@
+{
+  "name": "housing-huurwoningen-experiment",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": { "patchright": "1.63.0" }
+}
