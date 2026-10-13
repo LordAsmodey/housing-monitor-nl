@@ -21,8 +21,9 @@ railway up /tmp/housing-patchright-release --path-as-root --detach --project <pr
 
 The artifact contains no .env, Git directory, production data or credentials. It includes a REVISION
 file checked at startup and returned by /health, a Dockerfile and pinned npm lockfile. Chrome is installed
-at image build time; its actual version is logged. Rollback reuses the prior Railway build rather than rebuilding
-Chrome. This service uses a normal Node command, without eval or code copied into Start Command.
+at image build time; its actual version is logged. A Railway redeploy of a CLI-uploaded artifact may rebuild the image and reinstall Chrome; verify its version again.
+For a process-only restart, run `railway restart --service <experiment-service-id> --yes` from a directory
+explicitly linked to the experimental project/environment. This service uses a normal Node command, without eval or code copied into Start Command.
 
 Configure independent BROWSER_WORKER_TOKEN, BROWSER_STATE_KEY_HEX, BROWSER_ACCESS_KEY,
 BROWSER_ACCESS_EXPIRES_AT and BROWSER_PUBLIC_ORIGIN. Generate a public domain for human recovery.
