@@ -6,6 +6,7 @@ const require=createRequire(import.meta.url);
 const {SEARCH_URL,allowedUrl,parseCard,parseSearch,collect}=require('../scripts/huurwoningen-core.cjs');
 const {searchReady}=require('../scripts/huurwoningen-browser-session.cjs');
 const card=readFileSync(new URL('./fixtures/huurwoningen-card.html',import.meta.url),'utf8');
+const emptySearch=readFileSync(new URL('./fixtures/huurwoningen-empty-search.html',import.meta.url),'utf8');
 const page=(cards=[card],total=cards.length,next='')=>`<h1>Huurwoningen in een straal van 25km van Groningen</h1><span>${total}</span> Huurwoningen in een straal van 25km van Groningen <span>Binnen 3 maanden</span>${cards.join('')}${next?`<a href="${next.replaceAll('&','&amp;')}">Volgende</a>`:''}`;
 const second=card.replaceAll('83108c92','abcdef12').replaceAll('Eeldersingel','Andere straat');
 
@@ -41,6 +42,29 @@ test('all result pages are collected without visiting every detail page',async()
   const next=SEARCH_URL+'&page=2',calls=[];
   const result=await collect({pause:async()=>{},transport:async(url)=>{calls.push(url);return new Response(url===SEARCH_URL?page([card],2,next):page([second],2),{headers:{'content-type':'text/html'}})}});
   assert.equal(result.inspected,2);assert.equal(result.pages,2);assert.equal(result.listings.length,2);assert.deepEqual(calls,[SEARCH_URL,next]);
+});
+test('real empty-search markup validates an empty collection and recovery',async()=>{
+  assert.deepEqual(parseSearch(emptySearch),{listings:[],total:0,next:undefined});
+  assert.equal(searchReady(emptySearch,SEARCH_URL),true);
+  const calls=[];
+  const result=await collect({transport:async(url)=>{calls.push(url);return new Response(emptySearch,{headers:{'content-type':'text/html'}})}});
+  assert.deepEqual(result,{listings:[],inspected:0,pages:1});
+  assert.deepEqual(calls,[SEARCH_URL]);
+});
+test('empty-search detection rejects missing evidence, changed filters and conflicting results',()=>{
+  for(const html of [
+    emptySearch.replace('Helaas, er zijn geen woningen gevonden','Results unavailable'),
+    emptySearch.replace('class="no-search-results"','class="unrelated"'),
+    emptySearch.replace('Binnen 3 maanden','Binnen 6 maanden'),
+    emptySearch.replace('25km','30km'),
+    emptySearch+card,
+    emptySearch+`<a href="${(SEARCH_URL+'&page=2').replaceAll('&','&amp;')}">Volgende</a>`,
+    emptySearch+page([card],1),
+    emptySearch+' Verify you are human',
+  ]) {
+    assert.throws(()=>parseSearch(html));
+    assert.equal(searchReady(html,SEARCH_URL),false);
+  }
 });
 test('incomplete, repeated, changing or oversized pagination cannot commit partial results',async()=>{
   const next=SEARCH_URL+'&page=2';
