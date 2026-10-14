@@ -19,5 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Inspect public catalog and detail HTML without database or delivery
-        run: node scripts/gruno-inspect.cjs
+      - name: Validate Gruno parser fixtures
+        run: node --test test/gruno.test.mjs
+      - name: Validate complete public catalog and matching details without database or delivery
+        run: node scripts/gruno-check.cjs

@@ -17,6 +17,8 @@ const listingSchema = z.object({
   availabilityStatus: z.enum(['available', 'unavailable', 'unknown']).optional(),
   housingDetails: z.object({
     propertyType: z.enum(['apartment', 'studio']),
+    priceBasis: z.enum(['baseRent', 'advertised']).optional(),
+    serviceCostsIncluded: z.boolean().optional(),
     availableFrom: z.string().regex(/^(now|\d{4}-\d{2}-\d{2})$/).optional(),
     energyLabel: z.string().regex(/^(A\+{0,4}|[B-G])$/).optional(),
     huurtoeslag: z.boolean().optional(),
@@ -69,9 +71,9 @@ export class ListingsService {
         const payload = [item.title, item.city,
           housingDetails ? `Тип: ${housingDetails.propertyType === 'apartment' ? 'квартира' : 'студия'}` : '',
           housingDetails?.availableFrom ? `Доступность: ${housingDetails.availableFrom === 'now' ? 'сейчас' : housingDetails.availableFrom}` : '',
-          item.rentPrice === undefined ? '' : `Аренда: €${item.rentPrice}`,
-          housingDetails ? `Servicekosten: ${item.serviceCosts === undefined ? 'не указаны' : '€' + item.serviceCosts}` : '',
-          housingDetails && item.rentPrice !== undefined && item.serviceCosts !== undefined
+          item.rentPrice === undefined ? '' : `${housingDetails?.priceBasis === 'advertised' ? 'Цена в объявлении' : 'Аренда'}: €${item.rentPrice}`,
+          housingDetails ? `Servicekosten: ${item.serviceCosts === undefined ? 'не указаны' : '€' + item.serviceCosts}${housingDetails.priceBasis === 'advertised' ? housingDetails.serviceCostsIncluded === true ? ' (включены в цену)' : housingDetails.serviceCostsIncluded === false ? ' (отдельно от цены)' : ' (включение в цену не уточнено)' : ''}` : '',
+          housingDetails && housingDetails.priceBasis !== 'advertised' && item.rentPrice !== undefined && item.serviceCosts !== undefined
             ? `Аренда + servicekosten: €${((Math.round(item.rentPrice * 100) + Math.round(item.serviceCosts * 100)) / 100).toFixed(2)}` : '',
           item.areaM2 === undefined ? '' : `Площадь: ${item.areaM2} м²`,
           housingDetails ? `Энергокласс: ${housingDetails.energyLabel ?? 'не указан'}` : '',
