@@ -448,11 +448,18 @@ test('Gruno uses a separate baseline/lease, deduplicates availability events and
     assert.deepEqual(after.baselineAt,before.baselineAt);assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
     assert.equal(after.status,error.blocked?'BLOCKED':'DEGRADED');assert.equal(await db.notificationOutbox.count({where:jobs}),2);
   }
+  const uncertain:ListingInput={...first,externalId:'01888',canonicalUrl:'https://www.grunoverhuur.nl/woningaanbod/huur/groningen/unknownstraat/1',availabilityStatus:'unknown'};
+  await due();await run([first,available,third,uncertain]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),2);
+  assert.equal((await db.housingListing.findFirstOrThrow({where:{sourceId:grunoId,externalId:'01888'}})).availabilityStatus,'unknown');
+  await due();await run([{...uncertain,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),3);
+  const beforeRollback=await db.source.findUniqueOrThrow({where:{id:grunoId}});
   // Rollback includes Gruno listings, baseline and run success if outbox fails.
   const fourth={...first,externalId:'01999',canonicalUrl:'https://www.grunoverhuur.nl/woningaanbod/huur/groningen/teststraat/1'};
   const failing=new ListingsService(db);
   failing.recordValidatedRunInTransaction=async(tx,...args)=>{await service.recordValidatedRunInTransaction(tx,...args);throw Error('rollback')};
   await due();await assert.rejects(runGruno(db,failing,{destination:'-123',collector:async()=>({listings:[fourth],inspected:1})}));
   assert.equal(await db.housingListing.count({where:{sourceId:grunoId,externalId:'01999'}}),0);
-  assert.deepEqual((await db.source.findUniqueOrThrow({where:{id:grunoId}})).lastSuccessAt,before.lastSuccessAt);
+  assert.deepEqual((await db.source.findUniqueOrThrow({where:{id:grunoId}})).lastSuccessAt,beforeRollback.lastSuccessAt);
 });

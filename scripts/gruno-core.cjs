@@ -123,8 +123,8 @@ function parseDetail(html,card) {
   }
   if(fields.get('Referentienummer')!==card.listing.externalId)throw new FundaError('DETAIL_ID_MISMATCH');
   const rent=fields.get('Huurprijs'),type=fields.get('Type object');
-  if(!rent||!type||!fields.get('Status'))throw new FundaError('DETAIL_METADATA_MISSING');
-  const availabilityStatus=availability(fields.get('Status'));
+  if(!rent||!type)throw new FundaError('DETAIL_METADATA_MISSING');
+  const availabilityStatus=fields.has('Status')?availability(fields.get('Status')):card.listing.availabilityStatus;
   if(price(rent)!==card.listing.rentPrice||card.listing.availabilityStatus!=='unknown'&&availabilityStatus!==card.listing.availabilityStatus)throw new FundaError('DETAIL_CONFLICT');
   const description=text(element(html,'description')??'');if(!description)throw new FundaError('DETAIL_METADATA_MISSING');
   // Do not infer independence from an Appartement label: shared sanitary/kitchen facilities are excluded.

@@ -42,7 +42,7 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
       const owned = await tx.source.updateMany({ where: { id: sourceId, monitorLeaseToken: token,
         monitorLeaseUntil: { gt: finishedAt } }, data: { monitorLeaseToken: null, monitorLeaseUntil: null, status: 'HEALTHY' } });
       if (!owned.count) throw new FundaError('LEASE_LOST');
-      const recorded = await listings.recordValidatedRunInTransaction(tx, sourceId, result.listings, destination);
+      const recorded = await listings.recordValidatedRunInTransaction(tx, sourceId, result.listings, destination, { requireAvailable: source.requireAvailable ?? false });
       await tx.monitoringRun.update({ where: { id: run.id }, data: {
         status: 'SUCCEEDED', finishedAt, listingsFound: result.listings.length } });
       return { skipped: false, runId: run.id, inspected: result.inspected, matched: result.listings.length, ...recorded };

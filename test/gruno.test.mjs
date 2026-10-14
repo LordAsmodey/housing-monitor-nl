@@ -89,3 +89,9 @@ test('unrelated repeated feature labels such as furnishing do not conflict with 
   assert.ok(parseDetail(detail+furnishing,parseCard(card)));
   assert.throws(()=>parseDetail(detail+'<table><tr><td>Status</td><td>Verhuurd</td></tr></table>',parseCard(card)),/DETAIL_CONFLICT/);
 });
+
+test('normal details with no status preserve unknown instead of inferring availability',()=>{
+  const noBadge=card.replace(/<span class="object_status new_forrent"><span>Nieuw in verhuur<\/span><\/span>/,'');
+  const noStatus=detail.replace(/<tr> <td class="object_detail_title">Status<\/td>[\s\S]*?<\/tr>/g,'');
+  assert.equal(parseDetail(noStatus,parseCard(noBadge)).availabilityStatus,'unknown');
+});
