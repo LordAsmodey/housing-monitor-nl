@@ -31,7 +31,7 @@ function allowedUrl(value, kind='detail') {
 }
 function guardPage(html) {
   const visible=text(html);
-  if(/captcha|verify you are human|just a moment|unusual traffic|verifieer.{0,20}mens|bevestig.{0,20}mens/i.test(visible))throw new FundaError('HUMAN_CHECK',true);
+  if(/captcha|verify you are human|just a moment|even geduld\s*\.{0,3}|verifiëren dat onze bezoekers echte mensen zijn|unusual traffic|verifieer.{0,20}mens|bevestig.{0,20}mens/i.test(visible)||/id=["']challenge-form["']|window\._cf_chl_opt\s*=/.test(html))throw new FundaError('HUMAN_CHECK',true);
   if(/access denied|forbidden/i.test(visible))throw new FundaError('ACCESS_BLOCKED',true);
 }
 // Scan balanced sections: nested feature lists must not cut a card short.

@@ -3,6 +3,12 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
+  huurwoningen-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --build-arg RAILWAY_GIT_COMMIT_SHA="$GITHUB_SHA" -f Dockerfile.huurwoningen-experiment -t housing-huurwoningen:ci .
+      - run: docker run --rm --entrypoint node housing-huurwoningen:ci -e 'const fs=require("node:fs"),assert=require("node:assert/strict"); assert.equal(fs.readFileSync("/app/REVISION","utf8").trim(),process.argv[1]); assert.equal(typeof require("patchright").chromium.launchPersistentContext,"function");' "$GITHUB_SHA"
   check:
     runs-on: ubuntu-latest
     env:
