@@ -1,0 +1,23 @@
+name: Gruno live smoke
+on:
+  push:
+    branches: [feat/gruno-monitor]
+  pull_request:
+    paths: ['scripts/gruno-*.cjs', 'src/sources/gruno*.ts', 'test/gruno.test.mjs', '.github/workflows/gruno-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gruno-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Inspect public catalog and detail HTML without database or delivery
+        run: node scripts/gruno-inspect.cjs
