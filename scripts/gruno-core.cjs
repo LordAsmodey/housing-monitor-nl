@@ -30,7 +30,7 @@ function checkBlocked(html) {
 function allowedUrl(value,kind='detail') {
   let url;try{url=new URL(value.replace(/&amp;/g,'&'),BASE)}catch{throw new FundaError('INVALID_URL')}
   if(url.protocol!=='https:'||url.hostname!=='www.grunoverhuur.nl'||url.port||url.username||url.password||url.hash)throw new FundaError('URL_NOT_ALLOWED');
-  const allowed=kind==='search'?['moveunavailablelistingstothebottom','skip']:['localityid','moveunavailablelistingstothebottom','take'];
+  const allowed=kind==='search'?['moveunavailablelistingstothebottom','skip']:['localityid','moveunavailablelistingstothebottom','take','skip'];
   for(const [key,val] of url.searchParams) {
     if(!allowed.includes(key)||url.searchParams.getAll(key).length!==1)throw new FundaError('URL_NOT_ALLOWED');
     if(key==='moveunavailablelistingstothebottom'?val!=='true':!/^\d+$/.test(val))throw new FundaError('URL_NOT_ALLOWED');

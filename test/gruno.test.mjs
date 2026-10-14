@@ -57,7 +57,7 @@ test('detail identity, consistency, dates and fields fail closed; optional data 
   const unknownBasis=parseDetail(detail.replace('incl. servicekosten, ',''),parseCard(card));assert.equal(unknownBasis.housingDetails.serviceCostsIncluded,undefined);
 });
 test('URL validation limits navigation to the source, pagination and known search-context parameters',()=>{
-  assert.equal(allowedUrl('/woningaanbod/huur/groningen/straat/1?take=10&localityid=23523'), 'https://www.grunoverhuur.nl/woningaanbod/huur/groningen/straat/1');
+  assert.equal(allowedUrl('/woningaanbod/huur/groningen/straat/1?take=10&localityid=23523&skip=10'), 'https://www.grunoverhuur.nl/woningaanbod/huur/groningen/straat/1');
   for(const url of ['http://www.grunoverhuur.nl/woningaanbod/groningen','https://localhost/woningaanbod/groningen','https://u:p@www.grunoverhuur.nl/woningaanbod/groningen',SEARCH_URL+'?skip=1',SEARCH_URL+'?skip=200',SEARCH_URL+'?skip=10&skip=20',SEARCH_URL+'?redirect=foo',SEARCH_URL+'#x'])assert.throws(()=>allowedUrl(url,'search'));
   assert.throws(()=>allowedUrl('/woningaanbod/huur/groningen/straat/1?print=true'));
 });
