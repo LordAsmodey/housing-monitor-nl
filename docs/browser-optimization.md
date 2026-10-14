@@ -38,7 +38,9 @@ heartbeat не продлевает простой и не будит брауз
 Перед остановкой Funda сохраняет AES-GCM storageState с IndexedDB. Chrome
 Huurwoningen закрывает persistent context, сохраняет полный профиль в зашифрованный
 архив и удаляет временную plaintext-копию после успешного сохранения. Следующий
-запуск восстанавливает архив; лишние восстановленные вкладки закрываются.
+запуск восстанавливает архив и cookies из последнего зашифрованного storageState:
+это сохраняет session cookies, которые Chrome удаляет при штатном закрытии.
+Лишние восстановленные вкладки закрываются.
 
 Логи `collection-resources-start`, `collection-resources-end` и `browser-resources`
 содержат RSS Node, доступное измерение памяти cgroup и число Chrome/Chromium процессов.

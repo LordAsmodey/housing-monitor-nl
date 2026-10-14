@@ -29,7 +29,8 @@ async function main() {
       const { chromium } = require('patchright');
       const context = await chromium.launchPersistentContext(profile, { channel: 'chrome', headless: false, viewport: null,
         args: ['--window-size=1024,768'], proxy: proxyOptions() });
-      if (!restored && saved?.cookies) await context.addCookies(saved.cookies);
+      // Chrome drops session cookies on a clean close; restore the latest encrypted snapshot too.
+      if (saved?.cookies) await context.addCookies(saved.cookies);
       return { browser: context.browser(), context, restored, async close() {
         await context.close(); await saveProfile(profile, archiveFile, stateKey); await fs.rm(profile, { recursive: true, force: true });
       } };
