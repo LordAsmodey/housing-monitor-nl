@@ -75,3 +75,11 @@ test('living area is distinct from plot area on a house card in the unfiltered c
   const withPlot=card.replace('28 m&#178;</span>', '28 m&#178;</span><span title="Perceeloppervlakte">138 m&#178;</span>');
   assert.equal(parseCard(withPlot).listing.areaM2,28);
 });
+
+test('missing catalog badge stays unknown until an explicit detail status confirms availability',()=>{
+  const noBadge=card.replace(/<span class="object_status new_forrent"><span>Nieuw in verhuur<\/span><\/span>/,'');
+  const parsed=parseCard(noBadge);assert.equal(parsed.listing.availabilityStatus,'unknown');
+  assert.equal(parseDetail(detail,parsed).availabilityStatus,'available');
+  assert.equal(parseDetail(detail.replaceAll('Nieuw in verhuur','Verhuurd'),parsed).availabilityStatus,'unavailable');
+  assert.throws(()=>parseDetail(detail.replaceAll('Nieuw in verhuur','Unknown status'),parsed),/AVAILABILITY_UNKNOWN/);
+});

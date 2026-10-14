@@ -68,9 +68,8 @@ function parseCard(html) {
   const canonicalUrl=allowedUrl(attributes(link[0]).href??'');
   const kind=new URL(canonicalUrl).pathname.split('/')[2];
   const status=text(element(html,'object_status')??'');
-  // Ordinary available properties can omit the badge; require their explicit forrent class.
-  const availableClass=[...html.matchAll(/<div\b[^>]*>/gi)].some(m=>hasClass(m[0],'object')&&hasClass(m[0],'forrent'));
-  const availabilityStatus=status?availability(status):availableClass?'available':(()=>{throw new FundaError('AVAILABILITY_MISSING')})();
+  // An absent catalog badge proves no status. Candidate details must resolve it before storage.
+  const availabilityStatus=status?availability(status):'unknown';
   const area=text(html.match(/<span\b[^>]*title="Woonoppervlakte"[^>]*>([\s\S]*?)<\/span>/i)?.[1]??'').match(/^([\d.,]+)\s*m²$/);
   const areaM2=area?Number(area[1].replace(',','.')):NaN;
   const rooms=Number(text(element(html,'object_rooms')??''));
@@ -124,7 +123,8 @@ function parseDetail(html,card) {
   if(fields.get('Referentienummer')!==card.listing.externalId)throw new FundaError('DETAIL_ID_MISMATCH');
   const rent=fields.get('Huurprijs'),type=fields.get('Type object');
   if(!rent||!type||!fields.get('Status'))throw new FundaError('DETAIL_METADATA_MISSING');
-  if(price(rent)!==card.listing.rentPrice||availability(fields.get('Status'))!==card.listing.availabilityStatus)throw new FundaError('DETAIL_CONFLICT');
+  const availabilityStatus=availability(fields.get('Status'));
+  if(price(rent)!==card.listing.rentPrice||card.listing.availabilityStatus!=='unknown'&&availabilityStatus!==card.listing.availabilityStatus)throw new FundaError('DETAIL_CONFLICT');
   const description=text(element(html,'description')??'');if(!description)throw new FundaError('DETAIL_METADATA_MISSING');
   // Do not infer independence from an Appartement label: shared sanitary/kitchen facilities are excluded.
   if(!/\bappartement\b/i.test(type)||/studentenkamer|kamerverhuur/i.test(type)||/\b(?:semi[-\s]?zelfstandig\w*|onzelfstandig\w*)\b/i.test(description)
@@ -138,7 +138,7 @@ function parseDetail(html,card) {
   const included=/\bincl\.\s*servicekosten\b/i.test(rent)?true:/\bexcl\.\s*servicekosten\b/i.test(rent)?false:undefined;
   const energy=fields.get('Energielabel');
   const energyLabel=energy&&/^(A\+{0,4}|[B-G])$/.test(energy)?energy:undefined;
-  return {...card.listing,...(serviceCosts===undefined?{}:{serviceCosts}),...(published?{publishedAt:dutchDate(published)}:{}),
+  return {...card.listing,availabilityStatus,...(serviceCosts===undefined?{}:{serviceCosts}),...(published?{publishedAt:dutchDate(published)}:{}),
     housingDetails:{propertyType:/\bstudio\b/i.test(card.listing.title)?'studio':'apartment',applicationsClosed:false,priceBasis:'advertised',
       ...(included===undefined?{}:{serviceCostsIncluded:included}),...(availableFrom?{availableFrom}:{}),...(energyLabel?{energyLabel}:{})}};
 }
