@@ -114,9 +114,10 @@ function dutchDate(value) {
 }
 function parseDetail(html,card) {
   checkBlocked(html);const fields=new Map();
+  const wanted=new Set(['Referentienummer','Huurprijs','Servicekosten','Status','Type object','Aangeboden sinds','Aanvaarding','Energielabel']);
   for(const row of html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)) {
     const cells=[...row[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(m=>text(m[1]));
-    if(cells.length!==2)continue;
+    if(cells.length!==2||!wanted.has(cells[0]))continue;
     if(fields.has(cells[0])&&fields.get(cells[0])!==cells[1])throw new FundaError('DETAIL_CONFLICT');
     fields.set(cells[0],cells[1]);
   }

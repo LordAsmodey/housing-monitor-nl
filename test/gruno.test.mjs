@@ -83,3 +83,9 @@ test('missing catalog badge stays unknown until an explicit detail status confir
   assert.equal(parseDetail(detail.replaceAll('Nieuw in verhuur','Verhuurd'),parsed).availabilityStatus,'unavailable');
   assert.throws(()=>parseDetail(detail.replaceAll('Nieuw in verhuur','Unknown status'),parsed),/AVAILABILITY_UNKNOWN/);
 });
+
+test('unrelated repeated feature labels such as furnishing do not conflict with monitored fields',()=>{
+  const furnishing='<table><tr><td>Inrichting</td><td>Ja</td></tr><tr><td>Inrichting</td><td>Gestoffeerd</td></tr></table>';
+  assert.ok(parseDetail(detail+furnishing,parseCard(card)));
+  assert.throws(()=>parseDetail(detail+'<table><tr><td>Status</td><td>Verhuurd</td></tr></table>',parseCard(card)),/DETAIL_CONFLICT/);
+});

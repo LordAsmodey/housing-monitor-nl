@@ -11,7 +11,7 @@ collect({transport}).then(r=>console.log(JSON.stringify({inspected:r.inspected,m
   .catch(e=>{
     console.error(e.category||'LIVE_SMOKE_FAILED');
     const cardErrors=[...lastHtml.matchAll(/<article\b[^>]*>[\s\S]*?<\/article>/g)].flatMap(m=>{try{parseCard(m[0]);return []}catch(error){return [{category:error.category,visible:m[0].replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,1200)}]}});
-    console.error(JSON.stringify({cardErrors}));
+    console.error(JSON.stringify({cardErrors,features:[...lastHtml.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map(m=>m[1].replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()).slice(0,65)}));
     // Only public property/pagination URLs; never headers, cookies or form fields.
     console.error(JSON.stringify({lastPath,links:[...new Set([...lastHtml.matchAll(/href="([^"<>]*\/woningaanbod\/[^"<>]*)"/g)].map(m=>m[1]))].slice(0,35)}));
     process.exitCode=1;
