@@ -127,7 +127,7 @@ function parseDetail(html,card) {
   if(price(rent)!==card.listing.rentPrice||availability(fields.get('Status'))!==card.listing.availabilityStatus)throw new FundaError('DETAIL_CONFLICT');
   const description=text(element(html,'description')??'');if(!description)throw new FundaError('DETAIL_METADATA_MISSING');
   // Do not infer independence from an Appartement label: shared sanitary/kitchen facilities are excluded.
-  if(/studentenkamer|kamerverhuur/i.test(type)||/\b(?:semi[-\s]?zelfstandig\w*|onzelfstandig\w*)\b/i.test(description)
+  if(!/\bappartement\b/i.test(type)||/studentenkamer|kamerverhuur/i.test(type)||/\b(?:semi[-\s]?zelfstandig\w*|onzelfstandig\w*)\b/i.test(description)
     ||/(?:gedeeld\w*|gemeenschappelijk\w*)\s+(?:\w+\s+){0,3}(?:keuken|badkamer|toilet|douche|sanitair)|(?:keuken|badkamer|toilet|douche|sanitair)\b[^.!?]{0,100}\b(?:gedeeld|delen)\b/i.test(description))return null;
   const service=fields.get('Servicekosten');
   const serviceCosts=service===undefined?undefined:price(service);

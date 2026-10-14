@@ -38,3 +38,9 @@ test('rejects invalid configuration without leaking secrets', () => {
   assert.throws(() => parseEnvironment({ ...valid, MONITOR_INTERVAL_SECONDS: 0 }));
 });
 
+
+test('Gruno monitoring defaults to enabled and can be paused without resetting source state', () => {
+  assert.equal(parseEnvironment(valid).GRUNO_MONITORING_ENABLED, true);
+  assert.equal(parseEnvironment({...valid,GRUNO_MONITORING_ENABLED:'false'}).GRUNO_MONITORING_ENABLED, false);
+  assert.throws(() => parseEnvironment({...valid,GRUNO_MONITORING_ENABLED:'yes'}), /GRUNO_MONITORING_ENABLED/);
+});

@@ -400,3 +400,59 @@ test('Huurwoningen recovery deduplicates alerts and resumes even when the valida
   }
 });
 
+
+test('Gruno uses a separate baseline/lease, deduplicates availability events and never adds included costs twice', async () => {
+  const {runGruno}=requireFromRoot('./scripts/gruno-runner.cjs');
+  const {SOURCE_ID:grunoId,SEARCH_URL:grunoUrl,FILTERS:grunoFilters,parseCard,parseDetail}=requireFromRoot('./scripts/gruno-core.cjs');
+  const {readFileSync}=await import('node:fs');
+  const {GrunoService}=await import('../../src/sources/gruno.service');
+  const previous=process.env.GRUNO_MONITORING_ENABLED;
+  process.env.GRUNO_MONITORING_ENABLED='false';
+  try {
+    assert.equal((await new GrunoService(db,service).tick()).skipped,true);
+    assert.equal(await db.source.count({where:{id:grunoId}}),0);
+  } finally {
+    if(previous===undefined)delete process.env.GRUNO_MONITORING_ENABLED;
+    else process.env.GRUNO_MONITORING_ENABLED=previous;
+  }
+  ids.push(grunoId);
+  const first:ListingInput=parseDetail(readFileSync('test/fixtures/gruno-detail.html','utf8'),parseCard(readFileSync('test/fixtures/gruno-card.html','utf8')));
+  const second:ListingInput={...first,externalId:'01767',canonicalUrl:'https://www.grunoverhuur.nl/woningaanbod/huur/groningen/hoendiep/29-1',availabilityStatus:'unavailable'};
+  const run=(input:ListingInput[])=>runGruno(db,service,{destination:'-123',collector:async()=>({listings:input,inspected:input.length})});
+  const due=()=>db.source.update({where:{id:grunoId},data:{nextCheckAt:new Date(0)}});
+  const jobs={listing:{sourceId:grunoId}};
+  assert.equal((await run([first,second])).baseline,true);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  const profile=await db.siteProfile.findUniqueOrThrow({where:{sourceId:grunoId}});
+  assert.deepEqual(profile.searchUrls,[grunoUrl]);assert.deepEqual(profile.filters,grunoFilters);assert.equal(profile.authStrategy,'none');
+  assert.equal((await run([first])).skipped,true);
+  const available={...second,availabilityStatus:'available' as const};
+  await due();const concurrent=await Promise.all([run([first,available]),run([first,available])]);
+  assert.equal(concurrent.filter(x=>!x.skipped).length,1);
+  const notification=await db.notificationOutbox.findFirstOrThrow({where:jobs});
+  assert.match(notification.payload,/Цена в объявлении: €1232/);assert.match(notification.payload,/Servicekosten: €130 \(включены в цену\)/);
+  assert.doesNotMatch(notification.payload,/Аренда \+ servicekosten|1362/);
+  const stored=await db.housingListing.findFirstOrThrow({where:{sourceId:grunoId,externalId:second.externalId}});
+  assert.equal(JSON.parse(stored.rawSourceRef!).priceBasis,'advertised');
+  for(const input of [[first,second],[first,available]]) {await due();await run(input);}
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const third={...first,externalId:'01765',canonicalUrl:'https://www.grunoverhuur.nl/woningaanbod/huur/groningen/oudeweg/9-e',
+    housingDetails:{...first.housingDetails!,serviceCostsIncluded:undefined}};
+  await due();await run([first,available,third]);
+  const unknown=await db.notificationOutbox.findFirstOrThrow({where:{listing:{sourceId:grunoId,externalId:'01765'}}});
+  assert.match(unknown.payload,/включение в цену не уточнено/);assert.doesNotMatch(unknown.payload,/Аренда \+ servicekosten|1362/);
+  const before=await db.source.findUniqueOrThrow({where:{id:grunoId}});
+  for(const error of [new FundaError('INCOMPLETE_SEARCH'),new FundaError('ACCESS_BLOCKED',true)]) {
+    await due();await assert.rejects(runGruno(db,service,{destination:'-123',collector:async()=>{throw error}}));
+    const after=await db.source.findUniqueOrThrow({where:{id:grunoId}});
+    assert.deepEqual(after.baselineAt,before.baselineAt);assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
+    assert.equal(after.status,error.blocked?'BLOCKED':'DEGRADED');assert.equal(await db.notificationOutbox.count({where:jobs}),2);
+  }
+  // Rollback includes Gruno listings, baseline and run success if outbox fails.
+  const fourth={...first,externalId:'01999',canonicalUrl:'https://www.grunoverhuur.nl/woningaanbod/huur/groningen/teststraat/1'};
+  const failing=new ListingsService(db);
+  failing.recordValidatedRunInTransaction=async(tx,...args)=>{await service.recordValidatedRunInTransaction(tx,...args);throw Error('rollback')};
+  await due();await assert.rejects(runGruno(db,failing,{destination:'-123',collector:async()=>({listings:[fourth],inspected:1})}));
+  assert.equal(await db.housingListing.count({where:{sourceId:grunoId,externalId:'01999'}}),0);
+  assert.deepEqual((await db.source.findUniqueOrThrow({where:{id:grunoId}})).lastSuccessAt,before.lastSuccessAt);
+});
