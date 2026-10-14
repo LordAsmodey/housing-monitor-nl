@@ -134,6 +134,10 @@ setInterval(refresh,1200);
 }
 async function main(options = {}) {
   const { collect, FundaError, SEARCH_URL } = options.core ?? defaultCore;
+  const { createBrowserLifecycle, idleTimeout } = require('./browser-lifecycle.cjs');
+  const { resources } = require('./browser-resources.cjs');
+  const timeoutMs = idleTimeout();
+  if (timeoutMs && options.experiment) throw Error('EXPERIMENT_IDLE_UNSUPPORTED');
   const name = options.name ?? 'Funda';
   browserName = name;
   const homeUrl = options.homeUrl ?? 'https://www.funda.nl/';
@@ -171,33 +175,49 @@ async function main(options = {}) {
   let saved;
   try { saved = decryptState(await fs.readFile(stateFile), stateKey); }
   catch (error) { if (error.code !== 'ENOENT') throw new Error('STATE_DECRYPT_FAILED'); }
-  let launched;
-  if (options.launchBrowser) launched = await options.launchBrowser({ saved, stateKey, directory });
-  else {
-    const { chromium } = require('/tmp/funda-browser/node_modules/playwright');
-    const browser = await chromium.launch({ headless: false });
-    launched = { browser, context: await browser.newContext({ locale: 'nl-NL', viewport: { width: 1024, height: 768 }, ...(saved ? { storageState: saved } : {}) }) };
-  }
-  const { browser, context } = launched;
+  let launched, browser, context, page, profileRestored = Boolean(saved);
   let collecting=false;
-  // Only the selected source may be navigated; never offer an arbitrary URL or debugger endpoint.
-  await context.route('**/*', route => routeRequest(route, { navigationDomains, collecting,
-    blockThirdPartyDuringCollection: options.blockThirdPartyDuringCollection }, () => emit('route-error')));
-  const page = context.pages()[0] ?? await context.newPage();
-  page.setDefaultTimeout(10000);
-  page.once('crash',()=>{emit('renderer-crashed');process.exit(1)});
-  browser.once('disconnected',()=>{emit('browser-disconnected');process.exit(1)});
-  await page.goto(homeUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
-  await page.waitForTimeout(2000);
-  await page.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
-  await page.waitForTimeout(2000);
-  emit('browser-ready', { restored: launched.restored ?? Boolean(saved), engine: options.engine ?? 'playwright', release: options.release ?? 'legacy', version: browser.version(), expiresAt: new Date(expires).toISOString() });
-  let chain = Promise.resolve(), queued = 0;
-  function serial(task) {
-    if (queued >= 15) return Promise.reject(new Error('BUSY'));
-    queued++; const job = chain.catch(()=>{}).then(task);chain=job.then(()=>{},()=>{});
-    return job.finally(()=>queued--);
+  async function launch() {
+    if (options.launchBrowser) launched = await options.launchBrowser({ saved, stateKey, directory });
+    else {
+      const { chromium } = require('/tmp/funda-browser/node_modules/playwright');
+      const instance = await chromium.launch({ headless: false });
+      try {
+        launched = { browser: instance, context: await instance.newContext({ locale: 'nl-NL', viewport: { width: 1024, height: 768 }, ...(saved ? { storageState: saved } : {}) }) };
+      } catch (error) { await instance.close(); throw error; }
+    }
+    ({ browser, context } = launched);
+    try {
+      await context.route('**/*', route => routeRequest(route, { navigationDomains, collecting,
+        blockThirdPartyDuringCollection: options.blockThirdPartyDuringCollection }, () => emit('route-error')));
+      page = context.pages()[0] ?? await context.newPage();
+      for (const extra of context.pages()) if (extra !== page) await extra.close();
+      page.setDefaultTimeout(10000);
+      page.once('crash',onCrash);
+      browser.once('disconnected',onDisconnect);
+      await page.goto(homeUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
+      await page.waitForTimeout(2000);
+      await page.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
+      await page.waitForTimeout(2000);
+      profileRestored = launched.restored ?? Boolean(saved);
+      emit('browser-ready', { restored: profileRestored, engine: options.engine ?? 'playwright', release: options.release ?? 'legacy', version: browser.version(), expiresAt: new Date(expires).toISOString() });
+      return launched;
+    } catch (error) {
+      browser.removeListener('disconnected',onDisconnect); page?.removeListener('crash',onCrash);
+      await (launched.close ? launched.close() : browser.close()); throw error;
+    }
   }
+  function onCrash(){emit('renderer-crashed');process.exit(1)}
+  function onDisconnect(){emit('browser-disconnected');process.exit(1)}
+  const lifecycle = createBrowserLifecycle({ launch, timeoutMs,
+    async suspend(handle) {
+      if (!handle.statePersisted) { await persist(); handle.statePersisted = true; }
+      handle.browser.removeListener('disconnected',onDisconnect); page.removeListener('crash',onCrash);
+      await (handle.close ? handle.close() : handle.browser.close());
+    },
+    onEvent(event) { emit(event); if(event === 'browser-idle') resources().then(data=>emit('browser-resources',data)).catch(()=>{}); },
+  });
+  const serial = task => lifecycle.run(task);
   async function inspect() {
     const title = await page.title();
     const body = await page.locator('body').innerText().catch(()=>'');
@@ -212,14 +232,17 @@ async function main(options = {}) {
     const state = await context.storageState({ indexedDB: true });
     await fs.writeFile(stateFile+'.tmp', encryptState(state,stateKey), { mode: 0o600 });
     await fs.rename(stateFile+'.tmp',stateFile);
+    saved = state;
   }
   let previous;
   async function report() { const state=await inspect();const encoded=JSON.stringify(state);if(encoded!==previous){emit('page-state',state);previous=encoded}return state; }
   await serial(async()=>{await persist();await report()});
   let heartbeatBusy=false;
-  const heartbeat=setInterval(()=>{if(heartbeatBusy)return;heartbeatBusy=true;serial(async()=>{await persist();await report()}).catch(()=>emit('state-error')).finally(()=>heartbeatBusy=false)},30000);
+  const heartbeat=setInterval(()=>{if(heartbeatBusy)return;heartbeatBusy=true;lifecycle.maintenance(async()=>{await persist();await report()}).catch(()=>emit('state-error')).finally(()=>heartbeatBusy=false)},30000);
   async function collectSearch() {
     collecting = true;
+    const started = Date.now();
+    emit('collection-resources-start',await resources());
     try {
       const transport = async url => {
         const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: options.navigationTimeout ?? 20000 });
@@ -230,14 +253,14 @@ async function main(options = {}) {
       };
       return await collect({ transport, signal: AbortSignal.timeout(300000),
         ...(options.logProgress ? { onPage: stats => emit('collection-page', stats) } : {}) });
-    } finally { collecting = false; }
+    } finally { collecting = false; emit('collection-resources-end',{durationMs:Date.now()-started,...await resources()}); }
   }
   const server=http.createServer(async(req,res)=>{
     res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
     const pathname=new URL(req.url,'http://localhost').pathname;
     const send=(status,data)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(data))};
 
-    if(req.method==='GET'&&pathname==='/health') return send(200,{status:'ready',engine:options.engine??'playwright',release:options.release??'legacy',profileRestored:launched.restored??Boolean(saved)});
+    if(req.method==='GET'&&pathname==='/health') return send(lifecycle.state()==='failed'?503:200,{status:lifecycle.state()==='failed'?'failed':'ready',engine:options.engine??'playwright',release:options.release??'legacy',profileRestored,browserState:lifecycle.state(),idleTimeoutSeconds:timeoutMs/1000});
     if(req.method==='GET'&&pathname==='/'){
       const nonce=randomBytes(16).toString('base64');
       res.setHeader('Content-Security-Policy',`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; img-src 'self' blob:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'`);
@@ -324,11 +347,12 @@ async function main(options = {}) {
       const screenshotWidth=await uiPage.locator('#screen').evaluate(img=>img.naturalWidth);
       await uiContext.close();
       emit('server-ready',{unauthorizedScreen:screen.status,rejectedOrigin:rejectedOrigin.status,rejectedKey:rejectedKey.status,mobileUi:true,screenshotWidth});
+      lifecycle.start();
       if(options.experiment) await options.experiment.init({collect:()=>serial(collectSearch),profileRestored:launched.restored});
     } catch {emit('self-check-failed');await close()}
   });
   let closing=false;
-  async function close(){if(closing)return;closing=true;clearInterval(heartbeat);options.experiment?.stop();server.close();await serial(persist).catch(()=>{});browser.removeAllListeners('disconnected');page.removeAllListeners('crash');await (launched.close?launched.close():browser.close()).catch(()=>emit('profile-save-failed'));display.kill();emit('closed');process.exit(0)}
+  async function close(){if(closing)return;closing=true;clearInterval(heartbeat);options.experiment?.stop();server.close();await lifecycle.close().catch(()=>emit('profile-save-failed'));display.kill();emit('closed');process.exit(0)}
   if(!process.env.BROWSER_WORKER_TOKEN)setTimeout(close,Math.max(1,expires-Date.now())).unref();process.on('SIGTERM',close);process.on('SIGINT',close);
 }
 module.exports={shouldRenewRecovery,routeRequest,humanCheck,recoveryReady,startDisplay,encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};

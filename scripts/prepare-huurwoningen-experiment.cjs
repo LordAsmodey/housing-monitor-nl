@@ -9,7 +9,7 @@ function prepare(target) {
   const git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
   const revision = git(['rev-parse', 'HEAD']).trim();
   const files = ['Dockerfile.huurwoningen-experiment', 'browser-experiment/package.json', 'browser-experiment/package-lock.json',
-    ...['funda-core', 'funda-browser-session', 'huurwoningen-core', 'huurwoningen-browser-session', 'browser-profile', 'huurwoningen-experiment', 'huurwoningen-patchright-session'].map(name => 'scripts/' + name + '.cjs')];
+    ...['browser-lifecycle', 'browser-resources', 'funda-core', 'funda-browser-session', 'huurwoningen-core', 'huurwoningen-browser-session', 'browser-profile', 'huurwoningen-experiment', 'huurwoningen-patchright-session'].map(name => 'scripts/' + name + '.cjs')];
   fs.mkdirSync(target, { recursive: true, mode: 0o700 });
   for (const file of files) {
     const dest = path.join(target, file === 'Dockerfile.huurwoningen-experiment' ? 'Dockerfile' : file);
