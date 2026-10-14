@@ -5,7 +5,10 @@
 Радиус — 25 км, цена `0-1500`, свежесть `since=1`. Параметр `filters[offer_type][0]=homeswap` сохраняется буквально из пользовательской ссылки: по уточнению пользователя он исключает обмен жилья, который включён по умолчанию. Комнаты и студии дополнительно не исключаются.
 Все условия применяет поиск Huurwoningen; сервис не фильтрует повторно цену, дату или тип предложения в карточках.
 
-Постоянный headed Playwright использует отдельный сервис, volume и ключ AES-256-GCM.
+С 13 октября 2026 production использует headed Google Chrome через Patchright 1.63.0
+в отдельном сервисе, с volume и ключом AES-256-GCM. Испытание принято пользователем
+14 октября после 95 успешных проверок; дополнительный observer выключен.
+[Сборка, профиль, деплой и итог испытания](huurwoningen-experiment.md).
 Сессия Funda не используется. Сбор читает только карточки и ссылки пагинации из выдачи,
 проверяет отображение фильтров, полноту относительно общего числа результатов и отсутствие повторов.
 Пределы: 20 страниц, 600 объявлений, 5 МБ HTML на страницу; превышение — ошибка, а не частичный успех.
@@ -28,7 +31,8 @@ Source ID: `huurwoningen:groningen-25km-within-3-months`. Первый успе�
 Без них источник выключен. Origin допускает только HTTPS `*.up.railway.app` или HTTP `*.railway.internal`;
 токен отдельный от Funda и совпадает с `BROWSER_WORKER_TOKEN` нового сервиса.
 
-Контейнер: `Dockerfile.huurwoningen-browser`. Для pinned official Playwright image start command
+Текущий контейнер: `Dockerfile.huurwoningen-experiment`, конфигурация `railway.huurwoningen.json`.
+Старый контейнер: `Dockerfile.huurwoningen-browser`. Для pinned official Playwright image start command
 генерируется `node scripts/huurwoningen-browser-bootstrap.cjs`; он содержит только версионированный код.
 Настройки worker аналогичны Funda: `BROWSER_PUBLIC_ORIGIN`, `BROWSER_ACCESS_KEY`, `BROWSER_ACCESS_EXPIRES_AT`,
 `BROWSER_STATE_KEY_HEX`, `BROWSER_WORKER_TOKEN`, volume `/data`, healthcheck `/health`, память 2 ГБ.

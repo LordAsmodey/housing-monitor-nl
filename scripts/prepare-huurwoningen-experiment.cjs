@@ -15,7 +15,7 @@ function prepare(target) {
     const dest = path.join(target, file === 'Dockerfile.huurwoningen-experiment' ? 'Dockerfile' : file);
     fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.writeFileSync(dest, git(['show', revision + ':' + file]));
   }
-  fs.writeFileSync(path.join(target, 'REVISION'), revision + '\n');
+  fs.writeFileSync(path.join(target, 'browser-experiment/REVISION'), revision + '\n');
   fs.writeFileSync(path.join(target, 'railway.json'), JSON.stringify({ build: { builder: 'DOCKERFILE', dockerfilePath: 'Dockerfile' },
     deploy: { healthcheckPath: '/health', healthcheckTimeout: 180, restartPolicyType: 'ON_FAILURE', restartPolicyMaxRetries: 3 } }, null, 2));
   console.log(JSON.stringify({ artifact: target, revision, files: files.length + 2 }));

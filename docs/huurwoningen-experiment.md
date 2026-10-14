@@ -1,8 +1,9 @@
-# Huurwoningen: isolated Patchright trial
+# Huurwoningen: production Chrome worker and completed Patchright trial
 
 The Patchright service reads the exact existing Groningen search and has no direct database or Telegram access.
-By explicit user decision on 13 October 2026, the production application now uses this worker while
-the 24-hour observer runs in parallel. The existing Source ID, baseline and transactional outbox are retained.
+By explicit user decision on 13 October 2026, the production application uses this worker.
+The trial was accepted by the user on 14 October; its observer is disabled with
+`BROWSER_EXPERIMENT_ENABLED=false`. The existing Source ID, baseline and transactional outbox are retained.
 The old Playwright browser is retained as a separate fallback; it is not used for scheduled Huurwoningen collection.
 
 Runtime: Patchright 1.63.0, Google Chrome, headed persistent context, no user-agent injection,
@@ -14,7 +15,23 @@ Allow 60 seconds of Railway draining for graceful close and archive creation.
 
 ## Build and deploy
 
-Commit all intended files, then export a whitelist directly from that commit:
+For GitHub deployments, connect the service to `LordAsmodey/housing-monitor-nl`, branch `main`,
+with config file `/railway.huurwoningen.json` and repository root `/`.
+This worker config selects its Dockerfile, normal Node start command, `/health` and no database migrations;
+the application keeps its separate root `railway.json`. The image writes Railway's
+`RAILWAY_GIT_COMMIT_SHA` to `/app/REVISION` and rejects a missing or invalid SHA.
+See [Railway build arguments](https://docs.railway.com/builds/dockerfiles) and
+[Git metadata](https://docs.railway.com/variables/reference).
+Verify `/health.release` against the merged commit, `profileRestored=true`, authenticated
+`/worker/state` (`humanCheck=false`, `searchReady=true`), a normal production source run and the Telegram outbox.
+Keep the same service, encrypted volume and variables when changing the deployment source.
+
+At the 14 October completion deployment, the application follows `main` but this worker is still
+a CLI snapshot. The GitHub source/config transition must be applied after PR #18 is merged;
+its worker Dockerfile/config do not exist on `main` before that merge. Do not report staged changes as live.
+
+For a manual emergency deployment, commit all intended files, then export a whitelist directly from that commit:
+
 
 ```
 node scripts/prepare-huurwoningen-experiment.cjs /tmp/housing-patchright-release
@@ -36,6 +53,8 @@ BROWSER_PROXY_USERNAME and BROWSER_PROXY_PASSWORD. Use a provider's sticky/stati
 so the exit IP stays constant during a browser session. No proxy is enabled or purchased by default.
 
 ## Trial gate
+
+The following observer behavior applies only when `BROWSER_EXPERIMENT_ENABLED` is not `false`.
 
 The worker attempts the existing fully validated collection every 15 minutes for 24 hours.
 /data/experiment.json stores only timestamps, counts, safe categories and restart evidence.
