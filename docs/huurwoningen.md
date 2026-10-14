@@ -31,7 +31,8 @@ Source ID: `huurwoningen:groningen-25km-within-3-months`. Первый успе�
 Без них источник выключен. Origin допускает только HTTPS `*.up.railway.app` или HTTP `*.railway.internal`;
 токен отдельный от Funda и совпадает с `BROWSER_WORKER_TOKEN` нового сервиса.
 
-Текущий контейнер: `Dockerfile.huurwoningen-experiment`, конфигурация `railway.huurwoningen.json`.
+Текущий контейнер: `Dockerfile.huurwoningen-experiment`, параметры задаются отдельно в Railway
+по [инструкции деплоя](railway.md); корневой config file не должен переопределять Dockerfile браузера.
 Старый контейнер: `Dockerfile.huurwoningen-browser`. Для pinned official Playwright image start command
 генерируется `node scripts/huurwoningen-browser-bootstrap.cjs`; он содержит только версионированный код.
 Настройки worker аналогичны Funda: `BROWSER_PUBLIC_ORIGIN`, `BROWSER_ACCESS_KEY`, `BROWSER_ACCESS_EXPIRES_AT`,

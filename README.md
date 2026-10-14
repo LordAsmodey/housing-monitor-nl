@@ -104,7 +104,7 @@ Worker и outbox реализованы; включение и диагност�
 
 ## Railway
 
-Целевая площадка — Railway. Конфигурация сборки и health-check: `railway.json`. Настройка GitHub-autodeploy и переменных описана в [docs/railway.md](docs/railway.md).
+Целевая площадка — Railway. Параметры сборки и health-check задаются отдельно для приложения и браузерных сервисов в Railway. Настройка GitHub-autodeploy и переменных описана в [docs/railway.md](docs/railway.md).
 
 ## Sentry
 

@@ -16,9 +16,13 @@ Allow 60 seconds of Railway draining for graceful close and archive creation.
 ## Build and deploy
 
 For GitHub deployments, connect the service to `LordAsmodey/housing-monitor-nl`, branch `main`,
-with config file `/railway.huurwoningen.json` and repository root `/`.
-This worker config selects its Dockerfile, normal Node start command, `/health` and no database migrations;
-the application keeps its separate root `railway.json`. The image writes Railway's
+with repository root `/`. Set its Railway Dockerfile path to `Dockerfile.huurwoningen-experiment`,
+start command to `node scripts/huurwoningen-patchright-session.cjs`, empty pre-deploy commands,
+healthcheck `/health` (180 seconds), ON_FAILURE (3 retries), and draining 60 seconds.
+The application separately uses `Dockerfile`, `/health/ready` and `npm run db:deploy`.
+Do not add a root `railway.json`: it overrides service-specific settings and builds the wrong image
+for the browser. Railway API rejects new custom Config File paths as deprecated; a future full IaC
+migration is separate from these persisted service settings. The image writes Railway's
 `RAILWAY_GIT_COMMIT_SHA` to `/app/REVISION` and rejects a missing or invalid SHA.
 See [Railway build arguments](https://docs.railway.com/builds/dockerfiles) and
 [Git metadata](https://docs.railway.com/variables/reference).
@@ -26,9 +30,12 @@ Verify `/health.release` against the merged commit, `profileRestored=true`, auth
 `/worker/state` (`humanCheck=false`, `searchReady=true`), a normal production source run and the Telegram outbox.
 Keep the same service, encrypted volume and variables when changing the deployment source.
 
-At the 14 October completion deployment, the application follows `main` but this worker is still
-a CLI snapshot. The GitHub source/config transition must be applied after PR #18 is merged;
-its worker Dockerfile/config do not exist on `main` before that merge. Do not report staged changes as live.
+PR #18 was merged on 14 October as `3ca80d7`. Both services are connected to `main`.
+The first GitHub browser deployment built the application's image because root `railway.json`
+overrode the browser Dockerfile path, and failed startup. Working browser deployment
+`6bff73b9-85b4-44e5-b9c5-1590c852ff95` restored release `ece1467`, the full profile and validated
+12 listings without a human challenge. Merge the config-removal fix before the next GitHub browser
+deployment; verify the actual build uses the Chrome Dockerfile and `/health.release` matches the merge.
 
 For a manual emergency deployment, commit all intended files, then export a whitelist directly from that commit:
 
