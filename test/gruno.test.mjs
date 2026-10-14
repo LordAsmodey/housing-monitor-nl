@@ -70,3 +70,8 @@ test('HTTP retries are bounded; blocked/rate-limited/invalid responses and timeo
   await assert.rejects(collect({transport:async()=>new Response('not html')}),/CONTENT_TYPE/);
   await assert.rejects(collect({transport:async()=>response('x'.repeat(8*1024*1024+1))}),/BODY_TOO_LARGE/);
 });
+
+test('living area is distinct from plot area on a house card in the unfiltered catalog',()=>{
+  const withPlot=card.replace('28 m&#178;</span>', '28 m&#178;</span><span title="Perceeloppervlakte">138 m&#178;</span>');
+  assert.equal(parseCard(withPlot).listing.areaM2,28);
+});

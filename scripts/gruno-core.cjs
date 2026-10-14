@@ -71,7 +71,7 @@ function parseCard(html) {
   // Ordinary available properties can omit the badge; require their explicit forrent class.
   const availableClass=[...html.matchAll(/<div\b[^>]*>/gi)].some(m=>hasClass(m[0],'object')&&hasClass(m[0],'forrent'));
   const availabilityStatus=status?availability(status):availableClass?'available':(()=>{throw new FundaError('AVAILABILITY_MISSING')})();
-  const area=text(element(html,'object_sqfeet')??'').match(/^([\d.,]+)\s*m²$/);
+  const area=text(html.match(/<span\b[^>]*title="Woonoppervlakte"[^>]*>([\s\S]*?)<\/span>/i)?.[1]??'').match(/^([\d.,]+)\s*m²$/);
   const areaM2=area?Number(area[1].replace(',','.')):NaN;
   const rooms=Number(text(element(html,'object_rooms')??''));
   const typeDescription=text(html.match(/<li\b[^>]*>([\s\S]*?)<\/li>/i)?.[1]??'');
