@@ -125,7 +125,7 @@ function parseDetail(html,card) {
   const rent=fields.get('Huurprijs'),type=fields.get('Type object');
   if(!rent||!type)throw new FundaError('DETAIL_METADATA_MISSING');
   const availabilityStatus=fields.has('Status')?availability(fields.get('Status')):card.listing.availabilityStatus;
-  if(price(rent)!==card.listing.rentPrice||card.listing.availabilityStatus!=='unknown'&&availabilityStatus!==card.listing.availabilityStatus)throw new FundaError('DETAIL_CONFLICT');
+  if(price(rent)!==card.listing.rentPrice||(card.listing.availabilityStatus!=='unknown'&&availabilityStatus!==card.listing.availabilityStatus))throw new FundaError('DETAIL_CONFLICT');
   const description=text(element(html,'description')??'');if(!description)throw new FundaError('DETAIL_METADATA_MISSING');
   // Do not infer independence from an Appartement label: shared sanitary/kitchen facilities are excluded.
   if(!/\bappartement\b/i.test(type)||/studentenkamer|kamerverhuur/i.test(type)||/\b(?:semi[-\s]?zelfstandig\w*|onzelfstandig\w*)\b/i.test(description)
@@ -160,7 +160,7 @@ async function fetchHtml(url,transport,signal,pause,kind='search') {
   if(!/text\/html/i.test(response.headers.get('content-type')??''))throw new FundaError('CONTENT_TYPE');
   const reader=response.body?.getReader();if(!reader)throw new FundaError('EMPTY_BODY');
   const chunks=[];let size=0;
-  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>8*1024*1024){await reader.cancel();throw new FundaError('BODY_TOO_LARGE')}chunks.push(value)}}catch(e){if(e instanceof FundaError)throw e;throw new FundaError('HTTP_TRANSPORT')}
+  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>8*1024*1024){await reader.cancel();throw new FundaError('BODY_TOO_LARGE')}chunks.push(value)}}catch(e){if(e instanceof FundaError)throw e;throw new FundaError(signal.aborted?'RUN_TIMEOUT':'HTTP_TRANSPORT')}
   return Buffer.concat(chunks).toString('utf8');
 }
 async function collect({transport=fetch,signal=AbortSignal.timeout(120000),pause=ms=>new Promise(r=>setTimeout(r,ms))}={}) {

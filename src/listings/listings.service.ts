@@ -53,7 +53,7 @@ export class ListingsService {
       if (canonicalUrl.length > 2048) throw new Error('Canonical URL exceeds supported length');
       const urlFingerprint = createHash('sha256').update(canonicalUrl).digest('hex');
       const existing = await tx.housingListing.findFirst({ where: { sourceId, OR: [{ externalId: item.externalId }, { urlFingerprint }] } });
-      const transitioned = (existing?.availabilityStatus === 'unavailable' || requireAvailable && existing?.availabilityStatus === 'unknown') && item.availabilityStatus === 'available';
+      const transitioned = (existing?.availabilityStatus === 'unavailable' || (requireAvailable && existing?.availabilityStatus === 'unknown')) && item.availabilityStatus === 'available';
       let listing;
       if (existing) {
         listing = await tx.housingListing.update({ where: { id: existing.id }, data: {
@@ -68,12 +68,17 @@ export class ListingsService {
         created++;
       }
       if (source.baselineAt && item.availabilityStatus !== 'unavailable' && (!requireAvailable || item.availabilityStatus === 'available')) {
+        const advertisedPrice = housingDetails?.priceBasis === 'advertised';
+        const serviceCostsNote = !advertisedPrice ? ''
+          : housingDetails?.serviceCostsIncluded === true ? ' (включены в цену)'
+          : housingDetails?.serviceCostsIncluded === false ? ' (отдельно от цены)'
+          : ' (включение в цену не уточнено)';
         const payload = [item.title, item.city,
           housingDetails ? `Тип: ${housingDetails.propertyType === 'apartment' ? 'квартира' : 'студия'}` : '',
           housingDetails?.availableFrom ? `Доступность: ${housingDetails.availableFrom === 'now' ? 'сейчас' : housingDetails.availableFrom}` : '',
-          item.rentPrice === undefined ? '' : `${housingDetails?.priceBasis === 'advertised' ? 'Цена в объявлении' : 'Аренда'}: €${item.rentPrice}`,
-          housingDetails ? `Servicekosten: ${item.serviceCosts === undefined ? 'не указаны' : '€' + item.serviceCosts}${housingDetails.priceBasis === 'advertised' ? housingDetails.serviceCostsIncluded === true ? ' (включены в цену)' : housingDetails.serviceCostsIncluded === false ? ' (отдельно от цены)' : ' (включение в цену не уточнено)' : ''}` : '',
-          housingDetails && housingDetails.priceBasis !== 'advertised' && item.rentPrice !== undefined && item.serviceCosts !== undefined
+          item.rentPrice === undefined ? '' : `${advertisedPrice ? 'Цена в объявлении' : 'Аренда'}: €${item.rentPrice}`,
+          housingDetails ? `Servicekosten: ${item.serviceCosts === undefined ? 'не указаны' : '€' + item.serviceCosts}${serviceCostsNote}` : '',
+          housingDetails && !advertisedPrice && item.rentPrice !== undefined && item.serviceCosts !== undefined
             ? `Аренда + servicekosten: €${((Math.round(item.rentPrice * 100) + Math.round(item.serviceCosts * 100)) / 100).toFixed(2)}` : '',
           item.areaM2 === undefined ? '' : `Площадь: ${item.areaM2} м²`,
           housingDetails ? `Энергокласс: ${housingDetails.energyLabel ?? 'не указан'}` : '',
