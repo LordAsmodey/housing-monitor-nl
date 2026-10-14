@@ -59,3 +59,14 @@ HUURWONINGEN_BROWSER_TOKEN as a Railway reference to its BROWSER_WORKER_TOKEN. A
 collection with the new worker and deployment configuration, release the previous BLOCKED state
 conditionally (no active lease), without modifying baselineAt or stored listings.
 If rollback is needed, restore the previous origin and token reference; preserve the source history.
+
+## Completion accepted by the user — 14 October 2026
+
+The user accepted the result after 95 consecutive successful observer checks, a confirmed full-profile
+restoration across restart, healthy production collection and successful Telegram delivery. This is
+user acceptance before the original 96-check/24-hour gate, not a claim that the automatic gate passed.
+Set `BROWSER_EXPERIMENT_ENABLED=false` to disable the independent observer and its endpoints;
+the same Chrome worker remains connected to the production 15-minute scheduler and outbox.
+The final observer report is retained on the encrypted-state volume, alongside completion metadata.
+The hourly Codex follow-up is paused. Credentials, baseline, listing history and notification deduplication
+are preserved. The normal browser UI no longer displays the experiment label when disabled.

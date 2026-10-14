@@ -19,10 +19,10 @@ function proxyOptions(env = process.env) {
 async function main() {
   const release = (await fs.readFile('/app/REVISION', 'utf8')).trim();
   if (!/^[a-f0-9]{40}$/.test(release)) throw Error('RELEASE_INVALID');
-  return browserMain({ core, name: 'Huurwoningen · эксперимент', engine: 'patchright-chrome', release,
+  return browserMain({ core, name: process.env.BROWSER_EXPERIMENT_ENABLED === 'false' ? 'Huurwoningen' : 'Huurwoningen · эксперимент', engine: 'patchright-chrome', release,
     homeUrl: 'https://www.huurwoningen.com/', navigationDomains: ['www.huurwoningen.com', 'huurwoningen.com'],
     listingSelector: 'a[href^="/huren/"]', searchReady, navigationTimeout: 30000, collectionSettleMs: 5000,
-    logProgress: true, blockThirdPartyDuringCollection: false, experiment: createExperiment(),
+    logProgress: true, blockThirdPartyDuringCollection: false, experiment: process.env.BROWSER_EXPERIMENT_ENABLED === 'false' ? undefined : createExperiment(),
     async launchBrowser({ stateKey, directory, saved }) {
       const profile = await fs.mkdtemp('/tmp/huur-chrome-'), archiveFile = directory + '/chrome-profile.enc';
       const restored = await restoreProfile(profile, archiveFile, stateKey);
