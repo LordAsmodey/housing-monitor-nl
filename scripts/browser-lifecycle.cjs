@@ -18,8 +18,8 @@ function createBrowserLifecycle({ launch, suspend, timeoutMs = 0, onEvent = () =
   async function sleep() {
     if (!handle) return;
     // A failed save must never be followed by launching from an older archive.
-    failed = true;
-    await suspend(handle);
+    try { await suspend(handle); }
+    catch (error) { failed = true; throw error; }
     handle = undefined;
     failed = false;
     onEvent('browser-idle');
