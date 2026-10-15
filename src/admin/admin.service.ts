@@ -56,6 +56,8 @@ export class AdminService {
         const runtimeEnabled = !(
           (module.key === "vesteda" &&
             process.env.VESTEDA_MONITORING_ENABLED === "false") ||
+          (module.key === "lamberink" &&
+            process.env.LAMBERINK_MONITORING_ENABLED === "false") ||
           (module.key === "gruno" &&
             process.env.GRUNO_MONITORING_ENABLED === "false")
         );
