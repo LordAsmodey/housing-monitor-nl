@@ -27,8 +27,19 @@ function element(html,className) {
 function checkBlocked(html) {
   if(/verify you are human|just a moment|access denied|bevestig.{0,20}mens/i.test(text(html)))throw new FundaError('ACCESS_BLOCKED',true);
 }
+function decodeUrlAttribute(value) {
+  const named={amp:'&',apos:"'",quot:'"',lt:'<',gt:'>'};
+  // Decode once, before URL parsing: the # in &#39; is not a URL fragment.
+  return value.replace(/&(?:amp|apos|quot|lt|gt|#(?:x[\da-f]+|\d+));/gi,entity=>{
+    const key=entity.slice(1,-1).toLowerCase();
+    if(key[0]!=='#')return named[key];
+    const code=key[1]==='x'?parseInt(key.slice(2),16):Number(key.slice(1));
+    if(code===0||code>0x10ffff||code>=0xd800&&code<=0xdfff)throw new FundaError('INVALID_URL');
+    return String.fromCodePoint(code);
+  });
+}
 function allowedUrl(value,kind='detail') {
-  let url;try{url=new URL(value.replace(/&amp;/g,'&'),BASE)}catch{throw new FundaError('INVALID_URL')}
+  let url;try{url=new URL(decodeUrlAttribute(value),BASE)}catch{throw new FundaError('INVALID_URL')}
   if(url.protocol!=='https:'||url.hostname!=='www.grunoverhuur.nl'||url.port||url.username||url.password||url.hash)throw new FundaError('URL_NOT_ALLOWED');
   const allowed=kind==='search'?['moveunavailablelistingstothebottom','skip']:['localityid','moveunavailablelistingstothebottom','take','skip'];
   for(const [key,val] of url.searchParams) {
@@ -39,7 +50,8 @@ function allowedUrl(value,kind='detail') {
     const skip=Number(url.searchParams.get('skip')??0);
     if(url.pathname!=='/woningaanbod/groningen'||skip%10||skip>190)throw new FundaError('URL_NOT_ALLOWED');
   } else {
-    if(!/^\/woningaanbod\/(huur|koop)\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]+$/.test(url.pathname))throw new FundaError('URL_NOT_ALLOWED');
+    if(!/^\/woningaanbod\/(huur|koop)\/[a-z0-9-]+\/(?:[a-z0-9'-]|%27)+\/[a-z0-9-]+$/.test(url.pathname))throw new FundaError('URL_NOT_ALLOWED');
+    url.pathname=url.pathname.replace(/'/g,'%27');
     url.search='';
   }
   return url.href;
