@@ -3,17 +3,11 @@ FROM node:24-bookworm-slim AS build
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package*.json ./
-RUN --mount=type=secret,id=proxy_ca \
-    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
-    npm ci
+RUN npm ci
 COPY prisma ./prisma
-RUN --mount=type=secret,id=proxy_ca \
-    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
-    npm run db:generate
+RUN npm run db:generate
 COPY admin/package*.json ./admin/
-RUN --mount=type=secret,id=proxy_ca \
-    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
-    npm ci --prefix admin --no-audit --no-fund
+RUN npm ci --prefix admin --no-audit --no-fund
 COPY admin ./admin
 COPY tsconfig.json ./
 COPY src ./src

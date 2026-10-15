@@ -43,11 +43,10 @@ node --env-file=.env --import tsx --watch src/main.ts
 Контейнер приложения: `docker compose --profile app up --build -d`.
 Compose использует локальные порты и development-пароль из примера. Для VPS нужны отдельные секреты и эксплуатационная настройка. Пароль с зарезервированными символами требуется URL-кодировать в `DATABASE_URL`; в таком случае задайте полный URL приложения отдельно в Compose.
 
-В управляемой облачной среде с proxy CA образ собирается так:
-
-```sh
-docker build --secret id=proxy_ca,src="$CODEX_PROXY_CERT" -t housing-monitor-nl .
-```
+Production-образ собирается командой `docker build -t housing-monitor-nl .`.
+Dockerfile совместим с Railway Metal builder и не использует secret mounts.
+В среде с собственным proxy CA доверие сертификату нужно настроить отдельно
+в локальном build-процессе, сохраняя проверку TLS.
 
 ## Проверки
 
