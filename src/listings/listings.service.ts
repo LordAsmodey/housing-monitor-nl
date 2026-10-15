@@ -27,6 +27,8 @@ const listingSchema = z.object({
   }).optional(),
 });
 export type ListingInput = z.infer<typeof listingSchema>;
+const { matches } = require('../../scripts/search-settings.cjs');
+export type RunSearch = { filters?: Record<string, number | null>; suppressNotifications?: boolean; requireAvailable?: boolean };
 
 @Injectable()
 export class ListingsService {
@@ -37,7 +39,7 @@ export class ListingsService {
     return this.db.$transaction(tx => this.recordValidatedRunInTransaction(tx, sourceId, input, destinationRef), { timeout: 30000 });
   }
 
-  async recordValidatedRunInTransaction(tx: Prisma.TransactionClient, sourceId: string, input: ListingInput[], destinationRef: string, { requireAvailable = false } = {}) {
+  async recordValidatedRunInTransaction(tx: Prisma.TransactionClient, sourceId: string, input: ListingInput[], destinationRef: string, search: RunSearch = {}) {
     if (!/^-[1-9]\d*$/.test(destinationRef)) throw new Error('Invalid Telegram destination');
     const listings = z.array(listingSchema).parse(input);
     // Lock the source so parallel first runs cannot publish the baseline.
@@ -53,7 +55,7 @@ export class ListingsService {
       if (canonicalUrl.length > 2048) throw new Error('Canonical URL exceeds supported length');
       const urlFingerprint = createHash('sha256').update(canonicalUrl).digest('hex');
       const existing = await tx.housingListing.findFirst({ where: { sourceId, OR: [{ externalId: item.externalId }, { urlFingerprint }] } });
-      const transitioned = (existing?.availabilityStatus === 'unavailable' || (requireAvailable && existing?.availabilityStatus === 'unknown')) && item.availabilityStatus === 'available';
+      const transitioned = (existing?.availabilityStatus === 'unavailable' || (search.requireAvailable && existing?.availabilityStatus === 'unknown')) && item.availabilityStatus === 'available';
       let listing;
       if (existing) {
         listing = await tx.housingListing.update({ where: { id: existing.id }, data: {
@@ -67,7 +69,7 @@ export class ListingsService {
           ...(housingDetails ? { rawSourceRef: JSON.stringify(housingDetails) } : {}) } });
         created++;
       }
-      if (source.baselineAt && item.availabilityStatus !== 'unavailable' && (!requireAvailable || item.availabilityStatus === 'available')) {
+      if (source.baselineAt && !search.suppressNotifications && matches(search.filters,item,sourceId) && item.availabilityStatus !== 'unavailable' && (!search.requireAvailable || item.availabilityStatus === 'available')) {
         const advertisedPrice = housingDetails?.priceBasis === 'advertised';
         const serviceCostsNote = !advertisedPrice ? ''
           : housingDetails?.serviceCostsIncluded === true ? ' (включены в цену)'

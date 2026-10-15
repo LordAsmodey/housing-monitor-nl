@@ -37,6 +37,8 @@ export class FundaService implements OnModuleInit, OnModuleDestroy {
     }).finally(() => { this.active = undefined; });
   }
   async tick() {
+    const search=await this.db.searchConfiguration.findUnique({where:{sourceId:'funda:groningen-30km-1500-3d'}});
+    if(search&&!search.enabled)return {skipped:true as const};
     const client = this.config.FUNDA_BROWSER_ORIGIN ? browserClient(this.config.FUNDA_BROWSER_ORIGIN,this.config.FUNDA_BROWSER_TOKEN) : undefined;
     const sourceId = 'funda:groningen-30km-1500-3d';
     if(client) {

@@ -11,8 +11,8 @@ export const API_URL = 'https://www.vesteda.com/api/units/search/facet';
 export const FILTERS = { city: 'Groningen', radiusKm: 20, minRent: 500, maxRent: 1500, filtering: 'vesteda-search' };
 
 // Mirrors setInitialFilter in Vesteda's public client, including Number('') = 0.
-export function searchPayload() {
-  const q = new URL(SEARCH_URL).searchParams;
+export function searchPayload(settings?: Record<string, number | null>) {
+  const q = new URL(settings ? require('../../scripts/search-settings.cjs').queryUrl(SOURCE_ID, SEARCH_URL, settings) : SEARCH_URL).searchParams;
   return { filters: q.get('filters')!.split(',').map(Number), latitude: Number(q.get('latitude')),
     longitude: Number(q.get('longitude')), place: q.get('s'),
     placeObject: { latitude: q.get('latitude'), longitude: q.get('longitude'), placeType: q.get('placeType'), name: q.get('s') },
@@ -65,15 +65,15 @@ export function parseSearch(input: unknown) {
     available: listings.filter(x => x.availabilityStatus === 'available').length };
 }
 
-export async function collect({ transport = fetch, signal = AbortSignal.timeout(120000),
+export async function collect({ settings, transport = fetch, signal = AbortSignal.timeout(120000),
   pause = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)) }:
-  { transport?: typeof fetch; signal?: AbortSignal; pause?: (ms: number) => Promise<void> } = {}) {
+  { settings?: Record<string, number | null>; transport?: typeof fetch; signal?: AbortSignal; pause?: (ms: number) => Promise<void> } = {}) {
   let response: Response | undefined;
   for (let attempt = 0; attempt < 3; attempt++) {
     if (signal.aborted) throw new SourceError('RUN_TIMEOUT');
     try {
       response = await transport(API_URL, { method: 'POST', redirect: 'manual', signal,
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(searchPayload()) });
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify(searchPayload(settings)) });
     } catch {
       if (attempt === 2 || signal.aborted) throw new SourceError(signal.aborted ? 'RUN_TIMEOUT' : 'HTTP_TRANSPORT');
       await pause(1000); continue;

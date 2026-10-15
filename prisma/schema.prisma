@@ -47,6 +47,7 @@ model Source {
   profile           SiteProfile?
   runs              MonitoringRun[]
   listings          HousingListing[]
+  search            SearchConfiguration?
 }
 
 model SiteProfile {
@@ -73,6 +74,8 @@ model MonitoringRun {
   listingsFound     Int?
   errorCategory     String?
   usedLlm           Boolean   @default(false)
+  searchRevision    Int?
+  searchSnapshot    Json?
 
   @@index([sourceId, startedAt])
 }
@@ -127,4 +130,36 @@ model NotificationOutbox {
 model DeliveryGate {
   id            String   @id
   nextAttemptAt DateTime @default(now())
+}
+
+// One owner for v1. Future subscriptions can reference searches without owning adapters.
+model SearchConfiguration {
+  sourceId        String @id
+  source          Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  ownerKey        String @default("admin")
+  enabled         Boolean @default(true)
+  filters         Json
+  revision        Int @default(1)
+  appliedRevision Int @default(1)
+  updatedAt       DateTime @updatedAt
+  changes         SearchChange[]
+}
+
+model SearchChange {
+  id        String @id @default(cuid())
+  sourceId  String
+  search    SearchConfiguration @relation(fields: [sourceId], references: [sourceId], onDelete: Cascade)
+  revision  Int
+  enabled   Boolean
+  filters   Json
+  actor     String
+  createdAt DateTime @default(now())
+  @@unique([sourceId, revision])
+}
+
+model AdminSession {
+  tokenHash String @id
+  csrf      String
+  expiresAt DateTime
+  @@index([expiresAt])
 }

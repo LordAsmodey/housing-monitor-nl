@@ -9,7 +9,9 @@ import { HuurwoningenService } from './sources/huurwoningen.service';
 import { WoldringService } from './sources/woldring.service';
 import { GrunoService } from './sources/gruno.service';
 import { VestedaService } from './sources/vesteda.service';
+import { AdminController } from './admin/admin.controller';
+import { AdminService } from './admin/admin.service';
 
-@Module({ controllers: [HealthController], providers: [PrismaService, ListingsService, OutboxService, FundaService, HuurwoningenService, WoldringService, VestedaService, GrunoService] })
+@Module({ controllers: [HealthController, AdminController], providers: [PrismaService, ListingsService, OutboxService, FundaService, HuurwoningenService, WoldringService, VestedaService, GrunoService, AdminService] })
 export class AppModule {}
 

@@ -19,12 +19,15 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "test:integration": "node --import tsx --test test/integration/*.test.ts",
+    "test:integration": "node --import tsx --test --test-concurrency=1 test/integration/*.test.ts",
     "outbox:admin": "node --env-file-if-exists=.env scripts/outbox-admin.mjs",
     "outbox:smoke": "node --env-file-if-exists=.env scripts/outbox-smoke.mjs",
     "funda:check": "node --env-file-if-exists=.env scripts/funda-check.cjs",
     "test:funda": "node --test test/funda.test.mjs",
-    "sentry:smoke": "node --env-file-if-exists=.env scripts/sentry-smoke.cjs"
+    "sentry:smoke": "node --env-file-if-exists=.env scripts/sentry-smoke.cjs",
+    "admin:dev": "npm --prefix admin run dev",
+    "admin:build": "npm --prefix admin run build",
+    "build:all": "npm run build && npm run admin:build"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",

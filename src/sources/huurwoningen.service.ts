@@ -30,6 +30,8 @@ export class HuurwoningenService implements OnModuleInit, OnModuleDestroy {
     }).finally(() => { this.active = undefined; });
   }
   async tick() {
+    const search=await this.db.searchConfiguration.findUnique({where:{sourceId:SOURCE_ID}});
+    if(search&&!search.enabled)return {skipped:true as const};
     if (!this.config.HUURWONINGEN_BROWSER_ORIGIN) return { skipped: true };
     const client = browserClient(this.config.HUURWONINGEN_BROWSER_ORIGIN, this.config.HUURWONINGEN_BROWSER_TOKEN);
     const source = await this.db.source.findUnique({ where: { id: SOURCE_ID } });

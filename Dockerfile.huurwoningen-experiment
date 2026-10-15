@@ -4,9 +4,10 @@ COPY browser-experiment/ ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && npx patchright install chrome
 ENV NODE_PATH=/opt/housing-browser/node_modules
 WORKDIR /app
-COPY scripts/browser-lifecycle.cjs scripts/browser-resources.cjs scripts/funda-core.cjs scripts/funda-browser-session.cjs scripts/huurwoningen-core.cjs scripts/huurwoningen-browser-session.cjs scripts/browser-profile.cjs scripts/huurwoningen-experiment.cjs scripts/huurwoningen-patchright-session.cjs ./scripts/
+COPY scripts/search-settings.cjs scripts/browser-lifecycle.cjs scripts/browser-resources.cjs scripts/funda-core.cjs scripts/funda-browser-session.cjs scripts/huurwoningen-core.cjs scripts/huurwoningen-browser-session.cjs scripts/browser-profile.cjs scripts/huurwoningen-experiment.cjs scripts/huurwoningen-patchright-session.cjs ./scripts/
 ARG RAILWAY_GIT_COMMIT_SHA
 RUN node -e "const fs=require('node:fs'); const p='/opt/housing-browser/REVISION'; const sha=process.env.RAILWAY_GIT_COMMIT_SHA || (fs.existsSync(p) ? fs.readFileSync(p,'utf8').trim() : ''); if(!/^[a-f0-9]{40}$/.test(sha)) throw Error('RELEASE_INVALID'); fs.writeFileSync('/app/REVISION',sha+'\n');"
+COPY scripts/search-modules ./scripts/search-modules
 ENV PORT=8080
 EXPOSE 8080
 CMD ["node", "scripts/huurwoningen-patchright-session.cjs"]

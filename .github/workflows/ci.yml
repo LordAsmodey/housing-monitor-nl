@@ -32,6 +32,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm ci --prefix admin --no-audit --no-fund
+      - run: npm run admin:build
       - run: npm run db:generate
       - run: npm run db:deploy
       - run: npm run typecheck
