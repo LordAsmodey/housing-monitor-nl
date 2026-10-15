@@ -239,7 +239,7 @@ async function main(options = {}) {
   await serial(async()=>{await persist();await report()});
   let heartbeatBusy=false;
   const heartbeat=setInterval(()=>{if(heartbeatBusy)return;heartbeatBusy=true;lifecycle.maintenance(async()=>{await persist();await report()}).catch(()=>emit('state-error')).finally(()=>heartbeatBusy=false)},30000);
-  async function collectSearch() {
+  async function collectSearch(settings) {
     collecting = true;
     const started = Date.now();
     emit('collection-resources-start',await resources());
@@ -251,8 +251,9 @@ async function main(options = {}) {
         await persist();
         return new Response(content, { status: response?.status() ?? 502, headers: { 'content-type': 'text/html' } });
       };
-      return await collect({ transport, signal: AbortSignal.timeout(300000),
+      const result = await collect({ ...(settings ? {settings} : {}), transport, signal: AbortSignal.timeout(300000),
         ...(options.logProgress ? { onPage: stats => emit('collection-page', stats) } : {}) });
+      return {...result,...(settings?{settingsFingerprint:require('./search-settings.cjs').fingerprint(settings)}:{})};
     } finally { collecting = false; emit('collection-resources-end',{durationMs:Date.now()-started,...await resources()}); }
   }
   const server=http.createServer(async(req,res)=>{
@@ -275,7 +276,11 @@ async function main(options = {}) {
         if(req.method==='POST'&&pathname==='/worker/recovery') return send(200,await serial(recoveryLink));
         if(req.method==='POST'&&pathname==='/worker/recovery/renew') return send(200,await serial(()=>recoveryLink(true)));
         if(req.method==='POST'&&pathname==='/worker/collect') {
-          const result=await serial(collectSearch);
+          let body='';
+          for await (const chunk of req) { body+=chunk; if(body.length>4096)throw new FundaError('SETTINGS_BODY_TOO_LARGE'); }
+          const settings=body?JSON.parse(body).settings:undefined;
+          if(settings)require('./search-settings.cjs').validate((options.core??defaultCore).SOURCE_ID,settings);
+          const result=await serial(()=>collectSearch(settings));
           emit('collection-complete',{inspected:result.inspected,pages:result.pages,matched:result.listings.length});
           return send(200,result);
         }

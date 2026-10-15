@@ -1,8 +1,11 @@
 'use strict';
 const { FundaError } = require('./funda-core.cjs');
+function createCore(settings) {
 const SOURCE_ID = 'huurwoningen:groningen-25km-within-3-months';
-const SEARCH_URL = 'https://www.huurwoningen.com/in/groningen/?price=0-1500&radius=25&since=1&available_from=within_3_months&filters%5Boffer_type%5D%5B0%5D=homeswap';
+const DEFAULT_SEARCH_URL = 'https://www.huurwoningen.com/in/groningen/?price=0-1500&radius=25&since=1&available_from=within_3_months&filters%5Boffer_type%5D%5B0%5D=homeswap';
 const FILTERS = Object.freeze({city:'Groningen',radiusKm:25,maxRent:1500,since:'1',availableFrom:'within_3_months',excludedOfferTypes:['homeswap'],filtering:'huurwoningen-search'});
+const SEARCH_URL = settings ? require('./search-settings.cjs').queryUrl(SOURCE_ID, DEFAULT_SEARCH_URL, settings) : DEFAULT_SEARCH_URL;
+const radius = new URL(SEARCH_URL).searchParams.get('radius');
 function text(html) {
   return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'')
     .replace(/<[^>]*>/g,' ').replace(/&(?:nbsp|#160);/g,' ').replace(/&amp;/g,'&').replace(/&(?:euro|#8364);/g,'€')
@@ -72,8 +75,8 @@ function parseSearch(html,currentUrl=SEARCH_URL) {
   const visible=text(html);
   // Confirm the rendered page retained both selected filters, rather than trusting the requested URL alone.
   const heading=html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
-  if(!heading||!/huurwoningen in een straal van 25\s*km van Groningen/i.test(text(heading[1]))||!/Binnen 3 maanden/i.test(visible))throw new FundaError('SEARCH_FILTER_CHANGED');
-  const count=visible.match(/\b([\d.]+)\s+Huurwoningen in een straal van 25\s*km van Groningen/i);
+  if(!heading||!new RegExp('huurwoningen in een straal van '+radius+'\\s*km van Groningen','i').test(text(heading[1]))||!/Binnen 3 maanden/i.test(visible))throw new FundaError('SEARCH_FILTER_CHANGED');
+  const count=visible.match(new RegExp('\\b([\\d.]+)\\s+Huurwoningen in een straal van '+radius+'\\s*km van Groningen','i'));
   // Empty searches use a separate section without the usual numeric heading.
   // Nearby suggestions have their own count and must not establish an empty run.
   const emptySection=[...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/gi)]
@@ -120,7 +123,8 @@ async function fetchHtml(url,signal,transport,pause) {
   try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>5*1024*1024){await reader.cancel();throw new FundaError('BODY_TOO_LARGE')}chunks.push(value)}}catch(e){if(e instanceof FundaError)throw e;throw new FundaError('HTTP_TRANSPORT')}
   return Buffer.concat(chunks).toString('utf8');
 }
-async function collect({transport=fetch,maxPages=20,maxListings=600,signal=AbortSignal.timeout(120000),pause=ms=>new Promise(r=>setTimeout(r,ms)),onPage=()=>{}}={}) {
+async function collect({settings,transport=fetch,maxPages=20,maxListings=600,signal=AbortSignal.timeout(120000),pause=ms=>new Promise(r=>setTimeout(r,ms)),onPage=()=>{}}={}) {
+  if (settings) return createCore(settings).collect({transport,maxPages,maxListings,signal,pause,onPage});
   const listings=new Map(),pages=new Set();let url=SEARCH_URL,total;
   while(url) {
     if(signal.aborted)throw new FundaError('RUN_TIMEOUT');
@@ -140,4 +144,7 @@ async function collect({transport=fetch,maxPages=20,maxListings=600,signal=Abort
   if(listings.size!==total)throw new FundaError('INCOMPLETE_SEARCH');
   return {listings:[...listings.values()],inspected:listings.size,pages:pages.size};
 }
-module.exports={SOURCE_ID,SEARCH_URL,FILTERS,FundaError,allowedUrl,parseSearch,parseCard,collect};
+return {SOURCE_ID,SEARCH_URL,FILTERS,FundaError,allowedUrl,parseSearch,parseCard,collect};
+
+}
+module.exports = { ...createCore(), createCore };

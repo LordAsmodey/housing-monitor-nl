@@ -1,19 +1,21 @@
 'use strict';
 
-// Deterministic HTTP fast path. Never executes page scripts or LLM-generated code.
-const FILTERS = Object.freeze({ city: 'Groningen', radiusKm: 30, maxRent: 1500,
-  publication: 'today', filtering: 'funda-search', priceBasis: 'advertised-monthly-rent' });
-// Retain the historical source ID to preserve baseline and notification deduplication.
-const SOURCE_ID = 'funda:groningen-30km-1500-3d';
-const SEARCH_URL = 'https://www.funda.nl/zoeken/huur?' + new URLSearchParams({
-  selected_area: 'groningen', radius_search: '30', price: '0-1500', publication_date: '1',
-}).toString();
 class FundaError extends Error {
   constructor(category, blocked = false, retryAfterSeconds = 0) {
     super(category); this.category = category; this.blocked = blocked;
     this.retryAfterSeconds = retryAfterSeconds;
   }
 }
+function createCore(settings) {
+// Deterministic HTTP fast path. Never executes page scripts or LLM-generated code.
+const FILTERS = Object.freeze({ city: 'Groningen', radiusKm: 30, maxRent: 1500,
+  publication: 'today', filtering: 'funda-search', priceBasis: 'advertised-monthly-rent' });
+// Retain the historical source ID to preserve baseline and notification deduplication.
+const SOURCE_ID = 'funda:groningen-30km-1500-3d';
+const DEFAULT_SEARCH_URL = 'https://www.funda.nl/zoeken/huur?' + new URLSearchParams({
+  selected_area: 'groningen', radius_search: '30', price: '0-1500', publication_date: '1',
+}).toString();
+const SEARCH_URL = settings ? require('./search-settings.cjs').queryUrl(SOURCE_ID, DEFAULT_SEARCH_URL, settings) : DEFAULT_SEARCH_URL;
 function text(html) {
   return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<[^>]*>/g, ' ').replace(/&(?:nbsp|#160);/g, ' ').replace(/&amp;/g, '&')
@@ -171,7 +173,8 @@ async function fetchHtml(url, kind, signal, transport = fetch) {
   return Buffer.concat(chunks).toString('utf8');
 }
 async function collect({ transport = fetch, maxPages = 5, maxListings = 60,
-  signal = AbortSignal.timeout(120000), pause = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+  settings, signal = AbortSignal.timeout(120000), pause = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+  if (settings) return createCore(settings).collect({ transport, maxPages, maxListings, signal, pause });
   const urls = new Set(), pages = new Set(); let url = SEARCH_URL, total;
   while (url) {
     if (pages.has(url) || pages.size >= maxPages) throw new FundaError('PAGINATION_LIMIT');
@@ -204,5 +207,8 @@ async function collect({ transport = fetch, maxPages = 5, maxListings = 60,
   }
   return { listings, inspected: urls.size, pages: pages.size };
 }
-module.exports = { FILTERS, SOURCE_ID, SEARCH_URL, FundaError, allowedUrl, parseSearch, parseDetail,
+return { FILTERS, SOURCE_ID, SEARCH_URL, FundaError, allowedUrl, parseSearch, parseDetail,
   publicationDate, collect };
+
+}
+module.exports = { ...createCore(), createCore };

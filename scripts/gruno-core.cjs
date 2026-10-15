@@ -1,8 +1,9 @@
 'use strict';
 const {FundaError}=require('./funda-core.cjs');
+function createCore(settings) {
 const SOURCE_ID='gruno:groningen-apartments-studios-1500';
 const SEARCH_URL='https://www.grunoverhuur.nl/woningaanbod/groningen';
-const FILTERS=Object.freeze({city:'Groningen',maxAdvertisedRent:1500,propertyTypes:['apartment','studio'],excludeStudentRooms:true,publishedSince:null,filtering:'module'});
+const FILTERS=Object.freeze({city:'Groningen',maxAdvertisedRent:settings?.maxRent??1500,propertyTypes:['apartment','studio'],excludeStudentRooms:true,publishedSince:null,filtering:'module'});
 const BASE='https://www.grunoverhuur.nl';
 function text(html) {
   return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,'').replace(/<[^>]*>/g,' ')
@@ -163,7 +164,8 @@ async function fetchHtml(url,transport,signal,pause,kind='search') {
   try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>8*1024*1024){await reader.cancel();throw new FundaError('BODY_TOO_LARGE')}chunks.push(value)}}catch(e){if(e instanceof FundaError)throw e;throw new FundaError(signal.aborted?'RUN_TIMEOUT':'HTTP_TRANSPORT')}
   return Buffer.concat(chunks).toString('utf8');
 }
-async function collect({transport=fetch,signal=AbortSignal.timeout(120000),pause=ms=>new Promise(r=>setTimeout(r,ms))}={}) {
+async function collect({settings,transport=fetch,signal=AbortSignal.timeout(120000),pause=ms=>new Promise(r=>setTimeout(r,ms))}={}) {
+  if(settings)return createCore(settings).collect({transport,signal,pause});
   const all=[],ids=new Set(),urls=new Set();let next=SEARCH_URL,total,pages=0;
   while(next) {
     if(++pages>20)throw new FundaError('PAGE_LIMIT');
@@ -184,4 +186,7 @@ async function collect({transport=fetch,signal=AbortSignal.timeout(120000),pause
   }
   return {listings,inspected:all.length,total,pages,details:candidates.length,available:listings.filter(x=>x.availabilityStatus==='available').length};
 }
-module.exports={SOURCE_ID,SEARCH_URL,FILTERS,FundaError,allowedUrl,parseCard,parseSearch,parseDetail,candidate,dutchDate,collect};
+return {SOURCE_ID,SEARCH_URL,FILTERS,FundaError,allowedUrl,parseCard,parseSearch,parseDetail,candidate,dutchDate,collect};
+
+}
+module.exports={...createCore(),createCore};

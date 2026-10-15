@@ -252,7 +252,7 @@ test('browser CAPTCHA creates one recovery alert and saving the session resumes 
     if(path==='/worker/state')return Response.json({humanCheck:!recovered,accessDenied:false,recovered,listingLinks:recovered?1:0});
     if(path==='/worker/recovery')return Response.json({id:'a'.repeat(32),url:process.env.FUNDA_BROWSER_ORIGIN+'/#key='+'y'.repeat(43)});
     collections++;
-    return recovered?Response.json({listings:[],inspected:1}):Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
+    return recovered?Response.json({listings:[],inspected:1,settingsFingerprint:requireFromRoot('./scripts/search-settings.cjs').fingerprint(requireFromRoot('./scripts/search-settings.cjs').defaults(SOURCE_ID))}):Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
   };
   try {
     const monitor=new FundaService(db,service);
@@ -325,8 +325,8 @@ test('Vesteda baseline, lease, availability updates without housingDetails and f
   if (!baseline.skipped) assert.equal(baseline.baseline,true);
   assert.equal(await db.notificationOutbox.count({where:jobs}),0);
   const profile = await db.siteProfile.findUniqueOrThrow({where:{sourceId:VESTEDA_SOURCE_ID}});
-  assert.deepEqual(profile.searchUrls,[VESTEDA_URL]); assert.equal(profile.authStrategy,'none');
-  assert.deepEqual(profile.filters,{city:'Groningen',radiusKm:20,minRent:500,maxRent:1500,filtering:'vesteda-search'});
+  assert.deepEqual(profile.searchUrls,[requireFromRoot('./scripts/search-settings.cjs').queryUrl(VESTEDA_SOURCE_ID,VESTEDA_URL,requireFromRoot('./scripts/search-settings.cjs').defaults(VESTEDA_SOURCE_ID))]); assert.equal(profile.authStrategy,'none');
+  assert.deepEqual(profile.filters,{city:'Groningen',radiusKm:20,minRent:500,maxRent:1500,minArea:null,filtering:'vesteda-search'});
   assert.equal((await run([first])).skipped,true);
   const available = {...reserved,availabilityStatus:'available' as const,rentPrice:1138.85};
   await due();
@@ -358,7 +358,7 @@ test('Huurwoningen has its own baseline, lease, filters and transactional notifi
   assert.equal(await db.notificationOutbox.count({ where: { listing: { sourceId: HUUR_SOURCE_ID } } }), 0);
   const profile = await db.siteProfile.findUniqueOrThrow({ where: { sourceId: HUUR_SOURCE_ID } });
   assert.deepEqual(profile.searchUrls, [HUUR_SEARCH_URL]);
-  assert.deepEqual(profile.filters, {city:'Groningen',radiusKm:25,maxRent:1500,since:'1',availableFrom:'within_3_months',excludedOfferTypes:['homeswap'],filtering:'huurwoningen-search'});
+  assert.deepEqual(profile.filters, {city:'Groningen',radiusKm:25,maxRent:1500,since:'1',availableFrom:'within_3_months',excludedOfferTypes:['homeswap'],minRent:0,minArea:null,filtering:'huurwoningen-search'});
   assert.match(profile.browserStateRef!, /huurwoningen-browser-session/);
   assert.equal((await run([first])).skipped, true);
   await db.source.update({ where: { id: HUUR_SOURCE_ID }, data: { nextCheckAt: new Date(0) } });
@@ -380,7 +380,7 @@ test('Huurwoningen recovery deduplicates alerts and resumes even when the valida
     if (path === '/worker/state') return Response.json({humanCheck:!recovered,accessDenied:false,recovered,listingLinks:0,searchReady:recovered});
     if (path === '/worker/recovery') return Response.json({id:'b'.repeat(32),url:process.env.HUURWONINGEN_BROWSER_ORIGIN+'/#key='+'y'.repeat(43)});
     collections++;
-    return recovered ? Response.json({listings:[],inspected:0}) : Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
+    return recovered ? Response.json({listings:[],inspected:0,settingsFingerprint:requireFromRoot('./scripts/search-settings.cjs').fingerprint(requireFromRoot('./scripts/search-settings.cjs').defaults(HUUR_SOURCE_ID))}) : Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
   };
   try {
     const monitor = new HuurwoningenService(db,service);
@@ -424,7 +424,7 @@ test('Gruno uses a separate baseline/lease, deduplicates availability events and
   assert.equal((await run([first,second])).baseline,true);
   assert.equal(await db.notificationOutbox.count({where:jobs}),0);
   const profile=await db.siteProfile.findUniqueOrThrow({where:{sourceId:grunoId}});
-  assert.deepEqual(profile.searchUrls,[grunoUrl]);assert.deepEqual(profile.filters,grunoFilters);assert.equal(profile.authStrategy,'none');
+  assert.deepEqual(profile.searchUrls,[grunoUrl]);assert.deepEqual(profile.filters,{...grunoFilters,...requireFromRoot('./scripts/search-settings.cjs').defaults(grunoId)});assert.equal(profile.authStrategy,'none');
   assert.equal((await run([first])).skipped,true);
   const available={...second,availabilityStatus:'available' as const};
   await due();const concurrent=await Promise.all([run([first,available]),run([first,available])]);
