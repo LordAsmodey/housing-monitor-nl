@@ -127,3 +127,5 @@ Worker и outbox реализованы; включение и диагност�
 Настройка, проверка доставки и ограничения Crons: [docs/sentry.md](docs/sentry.md).
 
 Lamberink: аренда домов и квартир во всех городах, без гаражей. [Подключение и проверка](docs/lamberink.md).
+
+Solide Verhuur: Groningen, аренда до €1500. [Подключение и проверка](docs/solide.md).
