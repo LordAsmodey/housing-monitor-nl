@@ -5,6 +5,7 @@ import core from '../scripts/gruno-core.cjs';
 const {SEARCH_URL,parseCard,parseSearch,parseDetail,candidate,collect,allowedUrl,dutchDate}=core;
 const card=fs.readFileSync(new URL('./fixtures/gruno-card.html',import.meta.url),'utf8');
 const detail=fs.readFileSync(new URL('./fixtures/gruno-detail.html',import.meta.url),'utf8');
+const apostropheCard=fs.readFileSync(new URL('./fixtures/gruno-apostrophe-card.html',import.meta.url),'utf8');
 const page=(cards=[card],total=cards.length,next='')=>`<h1>Zoekresultaten</h1><span>${total} objecten gevonden</span>${cards.join('')}${next?`<a class="sys_paging next-page" href="${next.replaceAll('&','&amp;')}">&gt;</a>`:''}`;
 const response=html=>new Response(html,{headers:{'content-type':'text/html'}});
 function unique(i) {return card.replaceAll('01768',String(1700+i)).replaceAll('/45-2','/45-'+(i+100))}
@@ -60,6 +61,48 @@ test('URL validation limits navigation to the source, pagination and known searc
   assert.equal(allowedUrl('/woningaanbod/huur/groningen/straat/1?take=10&localityid=23523&skip=10'), 'https://www.grunoverhuur.nl/woningaanbod/huur/groningen/straat/1');
   for(const url of ['http://www.grunoverhuur.nl/woningaanbod/groningen','https://localhost/woningaanbod/groningen','https://u:p@www.grunoverhuur.nl/woningaanbod/groningen',SEARCH_URL+'?skip=1',SEARCH_URL+'?skip=200',SEARCH_URL+'?skip=10&skip=20',SEARCH_URL+'?redirect=foo',SEARCH_URL+'#x'])assert.throws(()=>allowedUrl(url,'search'));
   assert.throws(()=>allowedUrl('/woningaanbod/huur/groningen/straat/1?print=true'));
+});
+
+test('real apostrophe card does not abort collection before the student-room filter',async()=>{
+  const parsed=parseCard(apostropheCard);
+  assert.equal(parsed.listing.externalId,'01783');
+  assert.equal(parsed.listing.canonicalUrl,"https://www.grunoverhuur.nl/woningaanbod/huur/groningen/oude-kijk-in-%27t-jatstraat/46-a");
+  assert.equal(candidate(parsed),false);
+  const eligible=card.replaceAll('jozef-israelsstraat','oude-kijk-in-&#39;t-jatstraat');
+  const detailUrl='https://www.grunoverhuur.nl/woningaanbod/huur/groningen/oude-kijk-in-%27t-jatstraat/45-2';
+  const calls=[];
+  const result=await collect({transport:async url=>{
+    calls.push(url);
+    if(url===SEARCH_URL)return response(page([apostropheCard,eligible]));
+    assert.equal(url,detailUrl);
+    return response(detail);
+  }});
+  assert.equal(result.inspected,2);
+  assert.equal(result.details,1);
+  assert.equal(result.listings.length,1);
+  assert.equal(result.listings[0].canonicalUrl,detailUrl);
+  assert.deepEqual(calls,[SEARCH_URL,detailUrl]);
+});
+
+test('URL attributes decode entities once and canonicalize apostrophes without relaxing navigation guards',()=>{
+  const path='/woningaanbod/huur/groningen/oude-kijk-in-APOSTROPHEt-jatstraat/46-a';
+  const expected='https://www.grunoverhuur.nl'+path.replace('APOSTROPHE','%27');
+  for(const apostrophe of ["'",'&#39;','&#039;','&#x27;','&#X27;','&apos;','%27']) {
+    assert.equal(allowedUrl(path.replace('APOSTROPHE',apostrophe)+'?localityid=23523&amp;take=10'),expected);
+  }
+  assert.equal(allowedUrl(expected),expected);
+  for(const url of [
+    path.replace('APOSTROPHE','&amp;#39;'), // Nested entities are not decoded twice.
+    path.replace('APOSTROPHE','%2527'),
+    path.replace('APOSTROPHE','%2f'),
+    path.replace('APOSTROPHE','&#47;'),
+    path.replace('APOSTROPHE','&#35;'),
+    path.replace('APOSTROPHE',"'")+'#photos',
+    path.replace('APOSTROPHE',"'")+'?print=true',
+    'https://evil.example'+path.replace('APOSTROPHE','&#39;'),
+    'http://www.grunoverhuur.nl'+path.replace('APOSTROPHE','&#39;'),
+    'https://www.grunoverhuur.nl&#64;evil.example'+path.replace('APOSTROPHE','&#39;'),
+  ])assert.throws(()=>allowedUrl(url));
 });
 test('HTTP retries are bounded; blocked/rate-limited/invalid responses and timeouts cannot record empty runs',async()=>{
   let calls=0;
