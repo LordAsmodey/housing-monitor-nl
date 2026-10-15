@@ -3,6 +3,19 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
+  application-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t housing-app:ci .
+      - name: Verify runtime includes admin bundle and generated Prisma models
+        run: >-
+          docker run --rm --network none --entrypoint node housing-app:ci -e
+          'const fs=require("node:fs"),assert=require("node:assert/strict");
+          assert.ok(fs.existsSync("admin/dist/index.html"));
+          const client=new(require("@prisma/client").PrismaClient)();
+          assert.equal(typeof client.searchConfiguration.findUnique,"function");
+          void client.$disconnect();'
   huurwoningen-image:
     runs-on: ubuntu-latest
     steps:
