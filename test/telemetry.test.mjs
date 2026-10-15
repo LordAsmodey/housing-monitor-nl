@@ -108,3 +108,12 @@ test('real SDK sends only sanitized error fields through its transport', async (
   assert.equal(item[1].exception.values[0].value, 'DELIVERY_DEAD_LETTER');
   await Sentry.close();
 });
+
+test('Gruno shares source error tags and cron check-ins with the existing monitors', () => {
+  const sdk=fakeSdk();const telemetry=createTelemetry(sdk,{SENTRY_DSN:dsn,SENTRY_CRONS_ENABLED:'true'});
+  telemetry.report(Error('private'),'gruno','INCOMPLETE_SEARCH');
+  assert.equal(sdk.calls[1][2].tags.source,'gruno');
+  const id=telemetry.start('gruno',900);telemetry.finish('gruno',id,'ok');
+  assert.equal(sdk.calls[2][1].monitorSlug,'housing-gruno');assert.equal(sdk.calls[3][1].status,'ok');
+  assert.equal(sanitizeEvent({tags:{source:'gruno',category:'INCOMPLETE_SEARCH'}}).tags.source,'gruno');
+});

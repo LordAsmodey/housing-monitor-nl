@@ -95,6 +95,13 @@ DATABASE_URL=postgresql://housing:test@localhost:55432/housing npm run test:inte
 уведомления о новых доступных квартирах и повторной доступности:
 [инструкция](docs/vesteda.md). Первый запуск не рассылает существующие объявления.
 
+## Gruno Verhuur
+
+Groningen, отдельные квартиры и студии до объявленных €1500; фильтрация в модуле,
+без ограничения даты публикации. HTTP, отдельный baseline без первой рассылки,
+существующие scheduler и Telegram outbox. `GRUNO_MONITORING_ENABLED=false` приостанавливает источник.
+Состав цены, ограничения отбора и проверки: [инструкция](docs/gruno.md).
+
 ## Telegram
 
 Подготовлены команды подключения группы: `npm run telegram:check`,

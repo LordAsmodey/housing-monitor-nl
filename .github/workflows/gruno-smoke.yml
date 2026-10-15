@@ -1,0 +1,25 @@
+name: Gruno live smoke
+on:
+  push:
+    branches: [feat/gruno-monitor]
+  pull_request:
+    paths: ['scripts/gruno-*.cjs', 'src/sources/gruno*.ts', 'test/gruno.test.mjs', '.github/workflows/gruno-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gruno-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate Gruno parser fixtures
+        run: node --test test/gruno.test.mjs
+      - name: Validate complete public catalog and matching details without database or delivery
+        run: node scripts/gruno-check.cjs

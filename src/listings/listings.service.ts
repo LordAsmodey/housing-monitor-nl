@@ -17,6 +17,8 @@ const listingSchema = z.object({
   availabilityStatus: z.enum(['available', 'unavailable', 'unknown']).optional(),
   housingDetails: z.object({
     propertyType: z.enum(['apartment', 'studio']),
+    priceBasis: z.enum(['baseRent', 'advertised']).optional(),
+    serviceCostsIncluded: z.boolean().optional(),
     availableFrom: z.string().regex(/^(now|\d{4}-\d{2}-\d{2})$/).optional(),
     energyLabel: z.string().regex(/^(A\+{0,4}|[B-G])$/).optional(),
     huurtoeslag: z.boolean().optional(),
@@ -35,7 +37,7 @@ export class ListingsService {
     return this.db.$transaction(tx => this.recordValidatedRunInTransaction(tx, sourceId, input, destinationRef), { timeout: 30000 });
   }
 
-  async recordValidatedRunInTransaction(tx: Prisma.TransactionClient, sourceId: string, input: ListingInput[], destinationRef: string) {
+  async recordValidatedRunInTransaction(tx: Prisma.TransactionClient, sourceId: string, input: ListingInput[], destinationRef: string, { requireAvailable = false } = {}) {
     if (!/^-[1-9]\d*$/.test(destinationRef)) throw new Error('Invalid Telegram destination');
     const listings = z.array(listingSchema).parse(input);
     // Lock the source so parallel first runs cannot publish the baseline.
@@ -51,7 +53,7 @@ export class ListingsService {
       if (canonicalUrl.length > 2048) throw new Error('Canonical URL exceeds supported length');
       const urlFingerprint = createHash('sha256').update(canonicalUrl).digest('hex');
       const existing = await tx.housingListing.findFirst({ where: { sourceId, OR: [{ externalId: item.externalId }, { urlFingerprint }] } });
-      const transitioned = existing?.availabilityStatus === 'unavailable' && item.availabilityStatus === 'available';
+      const transitioned = (existing?.availabilityStatus === 'unavailable' || (requireAvailable && existing?.availabilityStatus === 'unknown')) && item.availabilityStatus === 'available';
       let listing;
       if (existing) {
         listing = await tx.housingListing.update({ where: { id: existing.id }, data: {
@@ -65,13 +67,18 @@ export class ListingsService {
           ...(housingDetails ? { rawSourceRef: JSON.stringify(housingDetails) } : {}) } });
         created++;
       }
-      if (source.baselineAt && item.availabilityStatus !== 'unavailable') {
+      if (source.baselineAt && item.availabilityStatus !== 'unavailable' && (!requireAvailable || item.availabilityStatus === 'available')) {
+        const advertisedPrice = housingDetails?.priceBasis === 'advertised';
+        const serviceCostsNote = !advertisedPrice ? ''
+          : housingDetails?.serviceCostsIncluded === true ? ' (включены в цену)'
+          : housingDetails?.serviceCostsIncluded === false ? ' (отдельно от цены)'
+          : ' (включение в цену не уточнено)';
         const payload = [item.title, item.city,
           housingDetails ? `Тип: ${housingDetails.propertyType === 'apartment' ? 'квартира' : 'студия'}` : '',
           housingDetails?.availableFrom ? `Доступность: ${housingDetails.availableFrom === 'now' ? 'сейчас' : housingDetails.availableFrom}` : '',
-          item.rentPrice === undefined ? '' : `Аренда: €${item.rentPrice}`,
-          housingDetails ? `Servicekosten: ${item.serviceCosts === undefined ? 'не указаны' : '€' + item.serviceCosts}` : '',
-          housingDetails && item.rentPrice !== undefined && item.serviceCosts !== undefined
+          item.rentPrice === undefined ? '' : `${advertisedPrice ? 'Цена в объявлении' : 'Аренда'}: €${item.rentPrice}`,
+          housingDetails ? `Servicekosten: ${item.serviceCosts === undefined ? 'не указаны' : '€' + item.serviceCosts}${serviceCostsNote}` : '',
+          housingDetails && !advertisedPrice && item.rentPrice !== undefined && item.serviceCosts !== undefined
             ? `Аренда + servicekosten: €${((Math.round(item.rentPrice * 100) + Math.round(item.serviceCosts * 100)) / 100).toFixed(2)}` : '',
           item.areaM2 === undefined ? '' : `Площадь: ${item.areaM2} м²`,
           housingDetails ? `Энергокласс: ${housingDetails.energyLabel ?? 'не указан'}` : '',
