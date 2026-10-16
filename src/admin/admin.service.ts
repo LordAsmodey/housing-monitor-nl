@@ -58,6 +58,8 @@ export class AdminService {
             process.env.VESTEDA_MONITORING_ENABLED === "false") ||
           (module.key === "solide" &&
             process.env.SOLIDE_MONITORING_ENABLED === "false") ||
+          (module.key === "rentsolutions" &&
+            process.env.RENTSOLUTIONS_MONITORING_ENABLED === "false") ||
           (module.key === "maxx" &&
             process.env.MAXX_MONITORING_ENABLED === "false") ||
           (module.key === "vandermeulen" &&
