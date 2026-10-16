@@ -1,6 +1,6 @@
 "use strict";
 // Source modules describe editable fields and where they are applied. No user URLs.
-const modules = ["funda", "huurwoningen", "woldring", "vesteda", "gruno", "lamberink", "solide", "vandermeulen"].map(
+const modules = ["funda", "huurwoningen", "woldring", "vesteda", "gruno", "lamberink", "solide", "vandermeulen", "maxx"].map(
   (name) => require("./search-modules/" + name + ".cjs"),
 );
 function definition(id) {

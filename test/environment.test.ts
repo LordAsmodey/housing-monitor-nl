@@ -44,3 +44,9 @@ test('Gruno monitoring defaults to enabled and can be paused without resetting s
   assert.equal(parseEnvironment({...valid,GRUNO_MONITORING_ENABLED:'false'}).GRUNO_MONITORING_ENABLED, false);
   assert.throws(() => parseEnvironment({...valid,GRUNO_MONITORING_ENABLED:'yes'}), /GRUNO_MONITORING_ENABLED/);
 });
+
+test('Maxx is enabled by default and can be disabled explicitly', () => {
+  assert.equal(parseEnvironment(valid).MAXX_MONITORING_ENABLED, true);
+  assert.equal(parseEnvironment({...valid, MAXX_MONITORING_ENABLED:'false'}).MAXX_MONITORING_ENABLED, false);
+  assert.throws(() => parseEnvironment({...valid, MAXX_MONITORING_ENABLED:'yes'}));
+});
