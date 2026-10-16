@@ -133,3 +133,5 @@ Solide Verhuur: Groningen, аренда до €1500. [Подключение и
 Van der Meulen: Groningen, статус Nieuw, €10–1500 в месяц. [Подключение и проверка](docs/vandermeulen.md).
 
 Maxx Huren: Groningen, отдельное жильё (квартиры, студии и дома), без комнат, объявленная аренда до €1500 в месяц. [Подключение и проверка](docs/maxx.md).
+
+Rent Solutions: Groningen, все типы жилья, аренда до €1500/месяц включительно. [Подключение и проверка](docs/rentsolutions.md).
