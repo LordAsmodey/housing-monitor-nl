@@ -15,6 +15,7 @@ const environmentSchema = z.object({
   HUURWONINGEN_BROWSER_TOKEN: z.string().min(32).optional(),
   MONITOR_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(900),
   SOLIDE_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
+  VANDERMEULEN_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   LAMBERINK_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   GRUNO_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   VESTEDA_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),

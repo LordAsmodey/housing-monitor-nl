@@ -129,3 +129,5 @@ Worker и outbox реализованы; включение и диагност�
 Lamberink: аренда домов и квартир во всех городах, без гаражей. [Подключение и проверка](docs/lamberink.md).
 
 Solide Verhuur: Groningen, аренда до €1500. [Подключение и проверка](docs/solide.md).
+
+Van der Meulen: Groningen, статус Nieuw, €10–1500 в месяц. [Подключение и проверка](docs/vandermeulen.md).
