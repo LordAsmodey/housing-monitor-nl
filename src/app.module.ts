@@ -9,11 +9,12 @@ import { HuurwoningenService } from './sources/huurwoningen.service';
 import { WoldringService } from './sources/woldring.service';
 import { GrunoService } from './sources/gruno.service';
 import { SolideService } from './sources/solide.service';
+import { VandermeulenService } from './sources/vandermeulen.service';
 import { LamberinkService } from './sources/lamberink.service';
 import { VestedaService } from './sources/vesteda.service';
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 
-@Module({ controllers: [HealthController, AdminController], providers: [PrismaService, ListingsService, OutboxService, FundaService, HuurwoningenService, WoldringService, VestedaService, GrunoService, LamberinkService, SolideService, AdminService] })
+@Module({ controllers: [HealthController, AdminController], providers: [PrismaService, ListingsService, OutboxService, FundaService, HuurwoningenService, WoldringService, VestedaService, GrunoService, LamberinkService, VandermeulenService, SolideService, AdminService] })
 export class AppModule {}
 

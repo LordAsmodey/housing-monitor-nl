@@ -542,3 +542,42 @@ test('Solide has an independent baseline, strict availability, admin filters and
   assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
   assert.equal(await db.notificationOutbox.count({where:jobs}),1);
 });
+
+test('Vandermeulen has an independent baseline, strict availability, admin filters and transactional failure handling', async () => {
+  const { runVandermeulen } = await import('../../src/sources/vandermeulen-runner');
+  const { VandermeulenService } = await import('../../src/sources/vandermeulen.service');
+  const { parseSearch, SOURCE_ID: id, SEARCH_URL } = await import('../../src/sources/vandermeulen-core');
+  const { readFileSync } = await import('node:fs');
+  const registry = requireFromRoot('./scripts/search-settings.cjs');
+  const old = process.env.VANDERMEULEN_MONITORING_ENABLED;
+  try {
+    process.env.VANDERMEULEN_MONITORING_ENABLED = 'false';
+    assert.equal((await new VandermeulenService(db,service).tick()).skipped, true);
+    assert.equal(await db.source.count({where:{id}}), 0);
+  } finally { if (old === undefined) delete process.env.VANDERMEULEN_MONITORING_ENABLED; else process.env.VANDERMEULEN_MONITORING_ENABLED = old; }
+  ids.push(id);
+  const parsed = parseSearch(readFileSync('test/fixtures/vandermeulen-search.html','utf8'));
+  const run = (input:ListingInput[]) => runVandermeulen(db,service,{destination:'-123',collector:async()=>({...parsed,listings:input})});
+  const due = () => db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
+  const jobs = {listing:{sourceId:id}};
+  assert.equal((await run(parsed.listings) as any).baseline, true);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  const profile = await db.siteProfile.findUniqueOrThrow({where:{sourceId:id}});
+  assert.deepEqual(profile.searchUrls,[SEARCH_URL]); assert.equal(profile.authStrategy,'none');
+  await due(); assert.equal((await run(parsed.listings) as any).created,0);
+  const home:ListingInput = {...parsed.listings[0]!,externalId:'NEW1',canonicalUrl:'https://www.vandermeulenmakelaars.nl/huurwoningen/test-h90001/',availabilityStatus:'unknown'};
+  await due(); await run([...parsed.listings,home]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await db.searchConfiguration.update({where:{sourceId:id},data:{filters:{...registry.defaults(id),minArea:20}}});
+  await due(); await run([{...home,externalId:'NEW2',canonicalUrl:'https://www.vandermeulenmakelaars.nl/huurwoningen/test-h90002/',availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const before = await db.source.findUniqueOrThrow({where:{id}});
+  await due(); await assert.rejects(runVandermeulen(db,service,{destination:'-123',collector:async()=>{throw new FundaError('INCOMPLETE_SEARCH')}}),/INCOMPLETE_SEARCH/);
+  const after = await db.source.findUniqueOrThrow({where:{id}});
+  assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+});
