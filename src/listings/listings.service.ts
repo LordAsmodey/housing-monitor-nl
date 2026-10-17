@@ -15,6 +15,9 @@ const listingSchema = z.object({
   rooms: z.number().positive().max(999).optional(),
   publishedAt: z.date().optional(),
   availabilityStatus: z.enum(['available', 'unavailable', 'unknown']).optional(),
+  pricingDetails: z.object({
+    baseRent: z.boolean(), totalRentPrice: z.number().nonnegative().max(99999999).optional(),
+  }).optional(),
   housingDetails: z.object({
     propertyType: z.enum(['apartment', 'studio']),
     priceBasis: z.enum(['baseRent', 'advertised']).optional(),
@@ -49,7 +52,7 @@ export class ListingsService {
     const now = new Date();
     let created = 0;
     for (const item of listings) {
-      const { housingDetails, ...storedItem } = item;
+      const { housingDetails, pricingDetails, ...storedItem } = item;
       const url = new URL(item.canonicalUrl); url.hash = '';
       const canonicalUrl = url.href;
       if (canonicalUrl.length > 2048) throw new Error('Canonical URL exceeds supported length');
@@ -61,12 +64,12 @@ export class ListingsService {
         listing = await tx.housingListing.update({ where: { id: existing.id }, data: {
           lastSeenAt: now,
           ...storedItem, canonicalUrl,
-          ...(housingDetails ? { rawSourceRef: JSON.stringify(housingDetails) } : {}),
+          ...(housingDetails || pricingDetails ? { rawSourceRef: JSON.stringify({...housingDetails, ...pricingDetails}) } : {}),
         } });
         if (!transitioned) continue;
       } else {
         listing = await tx.housingListing.create({ data: { ...storedItem, canonicalUrl, urlFingerprint, sourceId,
-          ...(housingDetails ? { rawSourceRef: JSON.stringify(housingDetails) } : {}) } });
+          ...(housingDetails || pricingDetails ? { rawSourceRef: JSON.stringify({...housingDetails, ...pricingDetails}) } : {}) } });
         created++;
       }
       if (source.baselineAt && !search.suppressNotifications && matches(search.filters,item,sourceId) && item.availabilityStatus !== 'unavailable' && (!search.requireAvailable || item.availabilityStatus === 'available')) {
@@ -78,7 +81,8 @@ export class ListingsService {
         const payload = [item.title, item.city,
           housingDetails ? `Тип: ${housingDetails.propertyType === 'apartment' ? 'квартира' : 'студия'}` : '',
           housingDetails?.availableFrom ? `Доступность: ${housingDetails.availableFrom === 'now' ? 'сейчас' : housingDetails.availableFrom}` : '',
-          item.rentPrice === undefined ? '' : `${advertisedPrice ? 'Цена в объявлении' : 'Аренда'}: €${item.rentPrice}`,
+          item.rentPrice === undefined ? '' : `${pricingDetails ? (pricingDetails.baseRent ? 'Базовая аренда' : 'Цена в объявлении') : advertisedPrice ? 'Цена в объявлении' : 'Аренда'}: €${item.rentPrice}`,
+          pricingDetails?.totalRentPrice === undefined ? '' : `Полная стоимость по данным сайта: €${pricingDetails.totalRentPrice}`,
           housingDetails ? `Servicekosten: ${item.serviceCosts === undefined ? 'не указаны' : '€' + item.serviceCosts}${serviceCostsNote}` : '',
           housingDetails && !advertisedPrice && item.rentPrice !== undefined && item.serviceCosts !== undefined
             ? `Аренда + servicekosten: €${((Math.round(item.rentPrice * 100) + Math.round(item.serviceCosts * 100)) / 100).toFixed(2)}` : '',

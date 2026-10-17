@@ -50,3 +50,10 @@ test('Maxx is enabled by default and can be disabled explicitly', () => {
   assert.equal(parseEnvironment({...valid, MAXX_MONITORING_ENABLED:'false'}).MAXX_MONITORING_ENABLED, false);
   assert.throws(() => parseEnvironment({...valid, MAXX_MONITORING_ENABLED:'yes'}));
 });
+
+test('Pararius is opt-in and requires its own origin and token pair', () => {
+  assert.equal(parseEnvironment(valid).PARARIUS_BROWSER_ORIGIN, undefined);
+  assert.throws(() => parseEnvironment({ ...valid, PARARIUS_BROWSER_ORIGIN: 'https://pararius.up.railway.app' }), /PARARIUS_BROWSER_ORIGIN/);
+  assert.throws(() => parseEnvironment({ ...valid, PARARIUS_BROWSER_TOKEN: 'x'.repeat(43) }), /PARARIUS_BROWSER_ORIGIN/);
+  assert.equal(parseEnvironment({ ...valid, PARARIUS_BROWSER_ORIGIN: 'https://pararius.up.railway.app', PARARIUS_BROWSER_TOKEN: 'x'.repeat(43) }).PARARIUS_BROWSER_TOKEN?.length, 43);
+});

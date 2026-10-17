@@ -23,6 +23,12 @@ jobs:
       - run: docker build --build-arg RAILWAY_GIT_COMMIT_SHA="$GITHUB_SHA" -f Dockerfile.huurwoningen-experiment -t housing-huurwoningen:ci .
       - run: docker run --rm --entrypoint node housing-huurwoningen:ci -e 'const fs=require("node:fs"),assert=require("node:assert/strict"); assert.equal(fs.readFileSync("/app/REVISION","utf8").trim(),process.argv[1]); assert.equal(typeof require("patchright").chromium.launchPersistentContext,"function");' "$GITHUB_SHA"
       - run: docker run --rm --init --network none --entrypoint node -v "$PWD/scripts/browser-profile-smoke.cjs:/app/scripts/browser-profile-smoke.cjs:ro" housing-huurwoningen:ci scripts/browser-profile-smoke.cjs
+  pararius-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.pararius-browser -t housing-pararius:ci .
+      - run: docker run --rm --network none --entrypoint node housing-pararius:ci -e 'const assert=require("node:assert/strict"); assert.equal(typeof require("./scripts/pararius-browser-session.cjs").searchReady,"function"); assert.equal(require("./scripts/pararius-core.cjs").SOURCE_ID,"pararius:groningen-25km-homes");'
   check:
     runs-on: ubuntu-latest
     env:
