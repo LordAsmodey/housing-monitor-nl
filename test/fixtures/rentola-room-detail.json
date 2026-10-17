@@ -1,0 +1,55 @@
+{
+  "@context": "https://schema.org",
+  "@type": "RealEstateListing",
+  "name": "Woning te huur: Jennerstraat 12 9728GX Groningen",
+  "description": "Per direct komen er 3 studentenkamers beschikbaar aan de Jennerstraat 12 in Groningen. Locatie: De woning ligt in de wijk Corpus den Hoorn. Op loopafstand bevindt zich het Overwinningsplein, waar je een ruim aanbod aan supermarkten en winkels vindt. Het centrum van Groningen is binnen ongeveer tien minuten fietsen te bereiken. Indeling: De woning bevindt zich op de eerste verdieping van het pand. Je komt binnen in de gedeelde hal, die toegang geeft tot de gemeenschappelijke keuken, welke is voorzien van een afzuigkap, gaskookplaat, oven en vaatwasser, evenals tot de woonkamer van circa 22 m² en het toilet. Op de tweede verdieping liggen de slaapkamers. Kamer 1 heeft een oppervlakte van circa 11 m² (foto 2), kamer 2 circa 13 m² (foto 3) en kamer 3 circa 6 m² (foto 4). Tot slot is er een badkamer van ongeveer 3 m², uitgerust met een douche en een wastafel. Huurprijs en borg: De huurprijs van kamer 1 bedraagt €664,- per maand. inclusief een voorschot van €75,- op gas, water en elektra. De huurprijs van kamer 2 bedraagt €680,- per maand. inclusief een voorschot van €75,- op gas, water en elektra. De huurprijs van kamer 3 bedraagt €595,- per maand. inclusief een voorschot van €75,- op gas, water en elektra. De waarborgsom bedraagt één maand huur. Beschikbaarheid en huurperiode: De kamers zijn per direct beschikbaar. De huurovereenkomst wordt aangegaan voor onbepaalde tijd. Interesse: Reacties kunnen uitsluitend via onze website worden ingediend door te klikken op ‘Reageer op dit object’. Telefonische reacties kunnen wij helaas niet in behandeling nemen. De volgorde van binnengekomen reacties bepaalt welke kandidaten worden uitgenodigd voor de eerste selectie. Vanwege het grote aantal aanvragen kunnen wij niet op iedereen reageren. Wij nodigen doorgaans circa 5 kandidaten uit voor een bezichtiging. We kunnen helaas niet iedereen persoonlijk beantwoorden of uitnodigen.",
+  "datePosted": "2025-12-03T06:35:53Z",
+  "url": "https://rentola.nl/en/listings/woning-te-huur-jennerstraat-12-9728gx-groningen-p9f332c",
+  "image": [
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904611/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19950359/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904615/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19950362/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904618/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904617/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904616/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19950366/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904612/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904613/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904614/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19904619/.jpg",
+    "https://d1zsattj8yq64o.cloudfront.net/media/19950373/.jpg"
+  ],
+  "offers": {
+    "@type": "Offer",
+    "availability": "https://schema.org/InStock",
+    "price": 595,
+    "priceCurrency": "EUR",
+    "url": "https://rentola.nl/en/listings/woning-te-huur-jennerstraat-12-9728gx-groningen-p9f332c",
+    "validFrom": "2025-12-03T06:35:53Z",
+    "itemOffered": {
+      "@type": "Apartment",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Jennerstraat 12, 9728 GX Groningen, Netherlands",
+        "addressCountry": "NL",
+        "addressLocality": "Groningen",
+        "addressRegion": "Groningen"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 53.1976479,
+        "longitude": 6.5592547
+      },
+      "floorSize": {
+        "@type": "QuantitativeValue",
+        "value": 12,
+        "unitCode": "MTK"
+      },
+      "numberOfRooms": {
+        "@type": "QuantitativeValue",
+        "value": 1
+      }
+    }
+  }
+}
