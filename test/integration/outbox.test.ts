@@ -699,3 +699,80 @@ test('Rentola has an independent baseline, strict availability, admin filters an
   assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
   assert.equal(await db.notificationOutbox.count({where:jobs}),1);
 });
+
+test('Pararius has an independent baseline, strict availability, admin filters and transactional failure handling', async () => {
+  const { runPararius } = requireFromRoot('./scripts/pararius-runner.cjs');
+  const { ParariusService } = await import('../../src/sources/pararius.service');
+  const { parseSearch, SOURCE_ID: id, SEARCH_URL } = requireFromRoot('./scripts/pararius-core.cjs');
+  const { readFileSync } = await import('node:fs');
+  const registry = requireFromRoot('./scripts/search-settings.cjs');
+  const old = process.env.PARARIUS_BROWSER_ORIGIN;
+  const oldToken = process.env.PARARIUS_BROWSER_TOKEN;
+  try {
+    delete process.env.PARARIUS_BROWSER_ORIGIN; delete process.env.PARARIUS_BROWSER_TOKEN;
+    assert.equal((await new ParariusService(db,service).tick()).skipped, true);
+    assert.equal(await db.source.count({where:{id}}), 0);
+  } finally { if (old === undefined) delete process.env.PARARIUS_BROWSER_ORIGIN; else process.env.PARARIUS_BROWSER_ORIGIN = old;
+    if(oldToken===undefined) delete process.env.PARARIUS_BROWSER_TOKEN; else process.env.PARARIUS_BROWSER_TOKEN=oldToken; }
+  ids.push(id);
+  const data = parseSearch(readFileSync('test/fixtures/pararius-last.html','utf8'),SEARCH_URL+'/page-4');
+  const parsed = {listings:data.listings.filter(requireFromRoot('./scripts/pararius-core.cjs').candidate),total:data.total,inspected:data.total,pages:4,available:data.listings.length};
+  const run = (input:ListingInput[]) => runPararius(db,service,{destination:'-123',collector:async()=>({...parsed,listings:input})});
+  const due = () => db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
+  const jobs = {listing:{sourceId:id}};
+  assert.equal((await run(parsed.listings) as any).baseline, true);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  const profile = await db.siteProfile.findUniqueOrThrow({where:{sourceId:id}});
+  assert.deepEqual(profile.searchUrls,[SEARCH_URL]); assert.equal(profile.authStrategy,'browser-session');
+  await due(); assert.equal((await run(parsed.listings) as any).created,0);
+  const home:ListingInput = {...parsed.listings[0]!,pricingDetails:{baseRent:true,totalRentPrice:1000},externalId:'NEW1',rentPrice:900,canonicalUrl:'https://www.pararius.nl/appartement-te-huur/groningen/00090001/test',availabilityStatus:'unknown'};
+  await due(); await run([...parsed.listings,home]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const sent=await db.notificationOutbox.findFirstOrThrow({where:jobs});
+  assert.match(sent.payload,/Базовая аренда: €900/); assert.match(sent.payload,/Полная стоимость по данным сайта: €1000/);
+  const stored=await db.housingListing.findFirstOrThrow({where:{sourceId:id,externalId:'NEW1'}});
+  assert.equal(JSON.parse(stored.rawSourceRef!).totalRentPrice,1000);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await db.searchConfiguration.update({where:{sourceId:id},data:{filters:{...registry.defaults(id),minArea:100}}});
+  await due(); await run([{...home,externalId:'NEW2',canonicalUrl:'https://www.pararius.nl/appartement-te-huur/groningen/00090002/test',availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const before = await db.source.findUniqueOrThrow({where:{id}});
+  await due(); await assert.rejects(runPararius(db,service,{destination:'-123',collector:async()=>{throw new FundaError('INCOMPLETE_SEARCH')}}),/INCOMPLETE_SEARCH/);
+  const after = await db.source.findUniqueOrThrow({where:{id}});
+  assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+});
+
+test('Pararius recovery deduplicates alerts and resumes after a validated collection', async () => {
+  const { SOURCE_ID: PARARIUS_SOURCE_ID } = requireFromRoot('./scripts/pararius-core.cjs');
+  const { ParariusService } = await import('../../src/sources/pararius.service');
+  process.env.PARARIUS_BROWSER_ORIGIN = 'https://pararius-browser-session-production.up.railway.app';
+  process.env.PARARIUS_BROWSER_TOKEN = 'x'.repeat(43);
+  const original = globalThis.fetch; let recovered = false, collections = 0;
+  globalThis.fetch = async input => {
+    const path = new URL(String(input)).pathname;
+    if (path === '/worker/state') return Response.json({humanCheck:!recovered,accessDenied:false,recovered,listingLinks:0,searchReady:recovered});
+    if (path === '/worker/recovery') return Response.json({id:'b'.repeat(32),url:process.env.PARARIUS_BROWSER_ORIGIN+'/#key='+'y'.repeat(43)});
+    collections++;
+    return recovered ? Response.json({listings:[{externalId:'recovered',canonicalUrl:'https://www.pararius.nl/huis-te-huur/groningen/00099999/recovered',title:'Huis',city:'Groningen',rentPrice:900,availabilityStatus:'available'}],inspected:1,settingsFingerprint:requireFromRoot('./scripts/search-settings.cjs').fingerprint(requireFromRoot('./scripts/search-settings.cjs').defaults(PARARIUS_SOURCE_ID))}) : Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
+  };
+  try {
+    const monitor = new ParariusService(db,service);
+    const before = await db.source.findUniqueOrThrow({where:{id:PARARIUS_SOURCE_ID}});
+    await db.source.update({where:{id:PARARIUS_SOURCE_ID},data:{nextCheckAt:new Date(0)}});
+    await assert.rejects(monitor.tick(),/HUMAN_CHECK/);
+    const blocked = await db.source.findUniqueOrThrow({where:{id:PARARIUS_SOURCE_ID}});
+    assert.equal(blocked.status,'BLOCKED');assert.deepEqual(blocked.lastSuccessAt,before.lastSuccessAt);
+    await monitor.tick();await monitor.tick();assert.equal(collections,1);
+    assert.equal(await db.notificationOutbox.count({where:{idempotencyKey:'pararius-recovery:'+'b'.repeat(32)}}),1);
+    recovered=true;assert.equal((await monitor.tick()).skipped,false);
+    assert.equal((await db.source.findUniqueOrThrow({where:{id:PARARIUS_SOURCE_ID}})).status,'HEALTHY');
+    assert.equal(collections,2);
+  } finally {
+    globalThis.fetch=original;delete process.env.PARARIUS_BROWSER_ORIGIN;delete process.env.PARARIUS_BROWSER_TOKEN;
+    await db.notificationOutbox.deleteMany({where:{idempotencyKey:'pararius-recovery:'+'b'.repeat(32)}});
+  }
+});

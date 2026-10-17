@@ -51,8 +51,8 @@ export class AdminService {
       sources: registry.modules.map((module) => {
         const source = sources.find((s) => s.id === module.id);
         const runtimeAvailable =
-          module.key !== "huurwoningen" ||
-          Boolean(process.env.HUURWONINGEN_BROWSER_ORIGIN);
+          (module.key !== "huurwoningen" || Boolean(process.env.HUURWONINGEN_BROWSER_ORIGIN)) &&
+          (module.key !== "pararius" || Boolean(process.env.PARARIUS_BROWSER_ORIGIN));
         const runtimeEnabled = !(
           (module.key === "vesteda" &&
             process.env.VESTEDA_MONITORING_ENABLED === "false") ||

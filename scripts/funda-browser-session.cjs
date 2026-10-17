@@ -248,6 +248,7 @@ async function main(options = {}) {
         const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: options.navigationTimeout ?? 20000 });
         await page.waitForTimeout(options.collectionSettleMs ?? 1200);
         const content = await page.content();
+        if (options.enforceCollectionUrl && page.url() !== url) throw new FundaError('UNEXPECTED_REDIRECT');
         await persist();
         return new Response(content, { status: response?.status() ?? 502, headers: { 'content-type': 'text/html' } });
       };
