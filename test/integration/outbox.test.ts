@@ -752,12 +752,12 @@ test('Pararius recovery deduplicates alerts and resumes after a validated collec
   process.env.PARARIUS_BROWSER_ORIGIN = 'https://pararius-browser-session-production.up.railway.app';
   process.env.PARARIUS_BROWSER_TOKEN = 'x'.repeat(43);
   const original = globalThis.fetch; let recovered = false, collections = 0;
-  globalThis.fetch = async input => {
+  globalThis.fetch = async (input, options) => {
     const path = new URL(String(input)).pathname;
     if (path === '/worker/state') return Response.json({humanCheck:!recovered,accessDenied:false,recovered,listingLinks:0,searchReady:recovered});
     if (path === '/worker/recovery') return Response.json({id:'b'.repeat(32),url:process.env.PARARIUS_BROWSER_ORIGIN+'/#key='+'y'.repeat(43)});
     collections++;
-    return recovered ? Response.json({listings:[{externalId:'recovered',canonicalUrl:'https://www.pararius.nl/huis-te-huur/groningen/00099999/recovered',title:'Huis',city:'Groningen',rentPrice:900,availabilityStatus:'available'}],inspected:1,settingsFingerprint:requireFromRoot('./scripts/search-settings.cjs').fingerprint(requireFromRoot('./scripts/search-settings.cjs').defaults(PARARIUS_SOURCE_ID))}) : Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
+    return recovered ? Response.json({listings:[{externalId:'recovered',canonicalUrl:'https://www.pararius.nl/huis-te-huur/groningen/00099999/recovered',title:'Huis',city:'Groningen',rentPrice:900,availabilityStatus:'available'}],inspected:1,settingsFingerprint:requireFromRoot('./scripts/search-settings.cjs').fingerprint(JSON.parse(String(options!.body)).settings)}) : Response.json({category:'HUMAN_CHECK',blocked:true},{status:422});
   };
   try {
     const monitor = new ParariusService(db,service);
