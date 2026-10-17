@@ -1,0 +1,24 @@
+name: Rentola live smoke
+on:
+  pull_request:
+    paths: ['scripts/rentola-*.cjs', 'scripts/search-modules/rentola.cjs', 'src/sources/rentola*.ts', 'test/rentola.test.ts', '.github/workflows/rentola-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rentola-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node --import tsx --test test/rentola.test.ts
+      - name: Read and validate filtered public search without database or delivery
+        run: node --import tsx -e 'require("./src/sources/rentola-core.ts").collect().then(r=>console.log(JSON.stringify({inspected:r.inspected,matched:r.listings.length,available:r.available,pages:r.pages}))).catch(e=>{console.error(e.category||"LIVE_SMOKE_FAILED");process.exitCode=1})'
