@@ -49,4 +49,15 @@ DATABASE_URL=postgresql://housing:test@localhost:55439/housing npm run test:inte
 
 Fixtures сокращены по наблюдённым DOM-данным последней страницы и карточки Kraneweg (базовая €799, полная €979). Пагинация в unit-тестах синтетическая. На исследовании Chrome показал 100 объектов, четыре страницы, 10 карточек на последней; шесть из них — жильё без комнат, четыре доступны по данным сайта. Полный живой проход адаптером ещё не подтверждён.
 
-Локально прошли 145 unit-тестов, backend/React build и Prisma validate. Временная PostgreSQL не стартовала из-за read-only Docker overlay2; PostgreSQL integration и Docker build должны быть проверены в CI. Production worker, его smoke и production baseline пока не выполнены. Доставку естественно появившегося объявления и длительную стабильность проверить после включения.
+Локально прошли 145 unit-тестов, backend/React build и Prisma validate. Временная PostgreSQL не стартовала из-за read-only Docker overlay2; CI коммита `7b18181` прошёл: 145 unit-тестов, 29 PostgreSQL integration, typecheck, backend/React build, Prisma validate, application/Pararius/Huurwoningen images и browser-profile smoke. Доставку естественно появившегося объявления и длительную стабильность проверить после включения.
+
+
+## Railway: запуск 18 октября 2026
+
+По явному разрешению пользователя запущен отдельный `pararius-browser-session` в проекте housing-monitor-nl/production. Service ID: `f23bd83d-c47e-4910-a9d6-f1412fba7c85`. Deployment `4fa80d75-ecc1-4573-b96d-0d478a71d667` — SUCCESS, код закреплён на `7b18181f95ae17ed70fd30e9ab0216a8327cc04c`. Собственный volume `/data` 500 МБ в us-west2, свежие ключи, `BROWSER_IDLE_TIMEOUT_SECONDS=60`.
+
+[Worker](https://pararius-browser-session-production.up.railway.app/) отвечает `/health` HTTP 200; без авторизации `/worker/state` и `/api/screen` возвращают 401. Секреты и recovery-ссылки не публикуются в репозитории.
+
+Read-only smoke завершился `ACCESS_BLOCKED`: браузер показывает Cloudflare «Even geduld…», `humanCheck=true`, `searchReady=false`, ссылок на объявления 0. Это ошибка доступа, не пустая выдача. Подготовлена одноразовая recovery-ссылка для пользователя; после ручной проверки нужно открыть «Поиск жилья», сохранить сессию и повторить полный smoke.
+
+В приложении переменные Pararius не заданы: мониторинг источника, production baseline и Telegram для Pararius не включены. PR #31 остаётся draft до успешного реального прохода.
