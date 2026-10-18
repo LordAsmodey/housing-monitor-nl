@@ -97,6 +97,30 @@ test('consumed recovery grants remain stable for scheduler deduplication, but ca
   assert.equal(shouldRenewRecovery(null,now),true);
 });
 
+test('browser lifecycle handles cannot rotate an outstanding recovery key or invalidate its session',async()=>{
+  const {createBrowserLifecycle}=require('../scripts/browser-lifecycle.cjs');
+  const now=Date.now(),handle={browser:{},context:{}};
+  const lifecycle=createBrowserLifecycle({launch:async()=>handle,suspend:async()=>{}});
+  let recovery={id:'existing-grant',key:randomBytes(32).toString('base64url'),expires:now+60000,consumed:false,resolved:false};
+  const original={...recovery},cookie=issueCookie(recovery.key,recovery.expires);
+  function grant(renew=false){
+    if(shouldRenewRecovery(recovery,now,renew))recovery={...recovery,key:randomBytes(32).toString('base64url'),consumed:false};
+    return {...recovery};
+  }
+  try {
+    // Exercise the actual lifecycle callback contract that caused the production bug.
+    for(let poll=0;poll<5;poll++)assert.deepEqual(await lifecycle.run(grant),original);
+    recovery.consumed=true;
+    for(let poll=0;poll<5;poll++)assert.deepEqual(await lifecycle.run(grant),{...original,consumed:true});
+    assert.equal(validCookie(cookie,recovery.key,now),true);
+    assert.equal(shouldRenewRecovery(recovery,now,{browser:{}}),false);
+    assert.equal(shouldRenewRecovery(recovery,now,'true'),false);
+    grant(true);
+    assert.notEqual(recovery.key,original.key);
+    assert.equal(validCookie(cookie,recovery.key,now),false);
+  } finally {await lifecycle.close()}
+});
+
 test('fresh validated Pararius first document is reused without another navigation',async()=>{
   const {readBrowserPage}=require('../scripts/funda-browser-session.cjs');
   const url='https://www.pararius.nl/huurwoningen/groningen/0-1500/straal-25';

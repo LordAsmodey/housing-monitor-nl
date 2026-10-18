@@ -71,7 +71,7 @@ function humanCheck(title, body, content = '') {
     || /id=["']challenge-form["']|window\._cf_chl_opt\s*=/.test(content);
 }
 function shouldRenewRecovery(recovery, now = Date.now(), renew = false) {
-  return !recovery || recovery.resolved || recovery.expires <= now || renew;
+  return !recovery || recovery.resolved || recovery.expires <= now || renew === true;
 }
 function recoveryReady(state, url, searchPath) {
   return !state.humanCheck && !state.accessDenied && (state.searchReady ?? state.listingLinks > 0)
@@ -305,7 +305,8 @@ async function main(options = {}) {
         if(options.experiment && req.method==='GET'&&pathname==='/worker/experiment') return send(200,options.experiment.state());
         if(options.experiment && req.method==='POST'&&pathname==='/worker/experiment/start') {await options.experiment.start();return send(200,options.experiment.state());}
         if(req.method==='GET'&&pathname==='/worker/state') return send(200,{...await serial(inspect),recovered:recovery?.resolved===true});
-        if(req.method==='POST'&&pathname==='/worker/recovery') return send(200,await serial(recoveryLink));
+        // lifecycle.run passes its browser handle to callbacks, not a renewal flag.
+        if(req.method==='POST'&&pathname==='/worker/recovery') return send(200,await serial(()=>recoveryLink()));
         if(req.method==='POST'&&pathname==='/worker/recovery/renew') return send(200,await serial(()=>recoveryLink(true)));
         if(req.method==='POST'&&pathname==='/worker/collect') {
           let body='';
