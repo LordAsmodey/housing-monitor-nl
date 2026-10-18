@@ -55,7 +55,8 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
         monitorLeaseUntil: { gt: finishedAt } }, data: { monitorLeaseToken: null, monitorLeaseUntil: null, status: 'HEALTHY' } });
       if (!owned.count) throw new FundaError('LEASE_LOST');
       const recorded = await listings.recordValidatedRunInTransaction(tx, sourceId, result.listings, destination,
-        {requireAvailable: source.requireAvailable ?? false, ...(search ? {filters:search.filters,suppressNotifications:search.revision!==search.appliedRevision} : {})});
+        {requireAvailable: source.requireAvailable ?? false, stableExternalId: source.stableExternalId ?? false,
+          ...(search ? {filters:search.filters,suppressNotifications:search.revision!==search.appliedRevision} : {})});
       if (search) await tx.searchConfiguration.updateMany({where:{sourceId,revision:search.revision},data:{appliedRevision:search.revision}});
       await tx.monitoringRun.update({ where: { id: run.id }, data: {
         status: 'SUCCEEDED', finishedAt, listingsFound: result.listings.length } });

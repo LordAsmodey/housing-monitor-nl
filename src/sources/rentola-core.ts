@@ -11,7 +11,7 @@ const property = z.object({ id: z.string().regex(/^\d{1,15}$/), type: z.literal(
   relationships: z.object({city:z.object({data:z.object({id:z.literal('240117'),type:z.literal('geocomponents')})})}),
   attributes: z.object({title:z.string().min(1).max(500),address:z.string().min(1).max(500),
     propertyType:z.string().min(1),monthlyRent:positive.max(99999999),rentCurrency:z.literal('EUR'),
-    rentFrequency:z.literal('monthly'),countryCode:z.literal('nl'),slug:z.string().regex(/^[a-z0-9-]+-(?:p[a-z0-9]+|[a-f0-9]{6})$/),
+    rentFrequency:z.literal('monthly'),countryCode:z.literal('nl'),slug:z.string().regex(/^[a-z0-9_-]+-(?:p[a-z0-9]+|[a-f0-9]{6})$/),
     area:z.string().regex(/^\d+(?:\.\d+)?$/).nullable(),rooms:positive.max(999).nullable(),estimatedArea:z.boolean()}) });
 const searchSchema = z.object({data:z.array(property), included:z.array(z.object({id:z.string(),type:z.string(),
   attributes:z.object({name:z.string(),countryCode:z.string(),level:z.string()})})),
@@ -44,7 +44,7 @@ function objectField(stream: string, field: string) {
 export function allowedDetailUrl(value: string) {
   let u: URL; try { u = new URL(value, SEARCH_URL); } catch { throw new SourceError('INVALID_URL'); }
   if (u.protocol !== 'https:' || u.hostname !== 'rentola.nl' || u.port || u.username || u.password || u.search || u.hash ||
-      !/^\/en\/listings\/[a-z0-9-]+-(?:p[a-z0-9]+|[a-f0-9]{6})$/.test(u.pathname)) throw new SourceError('URL_NOT_ALLOWED');
+      !/^\/en\/listings\/[a-z0-9_-]+-(?:p[a-z0-9]+|[a-f0-9]{6})$/.test(u.pathname)) throw new SourceError('URL_NOT_ALLOWED');
   return u.href;
 }
 export function independentHousing(type: string, title: string) {

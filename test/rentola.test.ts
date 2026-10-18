@@ -56,6 +56,18 @@ test('URLs reject foreign domains, credentials, query, hash and insecure protoco
  for(const path of ['/en/listings/home-p123abc','/en/listings/home-123abc']) assert.equal(allowedDetailUrl(path),'https://rentola.nl'+path);
  for(const url of ['https://evil.test/en/listings/home-p123abc','http://rentola.nl/en/listings/home-p123abc','https://user@rentola.nl/en/listings/home-p123abc','/en/listings/home-p123abc?q=1','/en/listings/home-p123abc#x','/en/listings/home']) assert.throws(()=>allowedDetailUrl(url));
 });
+test('underscore slugs validate even on excluded student cards without weakening URL checks',()=>{
+ const {d,l}=single();
+ const slug='student_apartment-for-rent-at-bottelroosstraat-1-groningen-p39bae8';
+ d.searchPropertiesData.data[0].attributes.slug=slug;
+ const url='https://rentola.nl/en/listings/'+slug;
+ const item=l.mainEntity.itemListElement[0];item.url=item.item.url=item.item.offers.url=url;
+ assert.equal(parseSearch(render(d,l)).listings[0]!.canonicalUrl,url);
+ d.searchPropertiesData.data[0].attributes.propertyType='student apartment';
+ assert.equal(parseSearch(render(d,l)).listings.length,0);
+ assert.equal(parseSearch(render(d,l)).ids.length,1);
+ for(const value of [url+'?x=1',url+'#x',url.replace('rentola.nl','evil.example'),url.replace('student_apartment','student%2Fapartment')]) assert.throws(()=>allowedDetailUrl(value));
+});
 test('collector preserves exact search; price and area boundaries apply before details',async()=>{
  const {d,l}=single();d.searchPropertiesData.data[0].attributes.monthlyRent=1500;l.mainEntity.itemListElement[0].item.offers.price=1500;
  const body=render(d,l);const item=parseSearch(body).listings[0]!;let calls=0;

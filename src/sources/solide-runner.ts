@@ -7,7 +7,7 @@ type Result = { skipped: true } | { skipped: false; runId: string; inspected: nu
 // Existing runner provides the PostgreSQL lease, cooldown and transactional outbox.
 const runFunda: (db: PrismaService, listings: ListingsService, options: Options & { definition: typeof definition }) => Promise<Result> =
   require('../../scripts/funda-runner.cjs').runFunda;
-const definition = { SOURCE_ID, SEARCH_URL, FILTERS, requireAvailable: true, name: 'Solide Verhuur — Groningen',
+const definition = { SOURCE_ID, SEARCH_URL, FILTERS, requireAvailable: true, stableExternalId: true, name: 'Solide Verhuur — Groningen',
   baseUrl: 'https://solideverhuur.nl', allowedDomains: ['solideverhuur.nl'] };
 export function runSolide(db: PrismaService, listings: ListingsService, options: Options) {
   return runFunda(db, listings, { ...options, collector: options.collector ?? collect, definition });
