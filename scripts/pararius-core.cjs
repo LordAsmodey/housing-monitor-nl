@@ -81,21 +81,27 @@ function parseCard(html) {
     rentPrice,pricingDetails:{baseRent:prices[0].startsWith('Kale huurprijs '),...(totalRentPrice===undefined?{}:{totalRentPrice})},areaM2:Number(area[1].replace(',','.')),rooms:Number(rooms[1]),
     availabilityStatus:unavailable?'unavailable':unknown?'unknown':'available'};
 }
+function filterError(field, actual) {
+  const error=new FundaError('SEARCH_FILTER_CHANGED');
+  // Only fixed field names and numeric filter values, never raw HTML, cookies or URLs.
+  error.diagnostic={field,actual};
+  return error;
+}
 function selectedValues(html, name) {
   return [...html.matchAll(/<select\b([^>]*)>([\s\S]*?)<\/select>/gi)]
     .filter(m=>attributes(m[1]).name===name).map(m=>{
       const selected=[...m[2].matchAll(/<option\b([^>]*)>[\s\S]*?<\/option>/gi)].filter(o=>/\sselected(?:\s|=|>)/i.test(o[0]));
-      if(selected.length!==1)throw new FundaError('SEARCH_FILTER_CHANGED');
+      if(selected.length!==1)throw filterError(name+'-selected-count',selected.length);
       return attributes(selected[0][1]).value;
     });
 }
 function parseSearch(html,currentUrl=SEARCH_URL) {
   guardPage(html);allowedUrl(currentUrl,'search');
   const heading=html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
-  if(!heading||text(heading[1])!=='Huurwoningen Groningen')throw new FundaError('SEARCH_FILTER_CHANGED');
+  if(!heading||text(heading[1])!=='Huurwoningen Groningen')throw filterError('heading',heading?'unexpected':'missing');
   for(const [name,value] of [['filters[price][min]',''],['filters[price][max]','1500'],['filters[radius][value]','25']]) {
     const values=selectedValues(html,name);
-    if(!values.length||values.some(v=>v!==value))throw new FundaError('SEARCH_FILTER_CHANGED');
+    if(!values.length||values.some(v=>v!==value))throw filterError(name,values.map(v=>/^\d{0,8}$/.test(v??'')?v:'unexpected'));
   }
   const counts=classContent(html,'search-list-header__count','span');
   if(counts.length!==1||!/^\d+(?:\.\d{3})*$/.test(counts[0]))throw new FundaError('SEARCH_COUNT_MISSING');
@@ -106,7 +112,7 @@ function parseSearch(html,currentUrl=SEARCH_URL) {
   if(new Set(listings.map(x=>x.canonicalUrl)).size!==listings.length||new Set(listings.map(x=>x.externalId)).size!==listings.length)throw new FundaError('DUPLICATE_CARD');
   const page=pageNumber(currentUrl),pages=Math.ceil(total/30);
   if(page>pages||listings.length!==Math.min(30,total-(page-1)*30))throw new FundaError('SEARCH_COUNT_MISMATCH');
-  if(listings.some(x=>x.rentPrice>1500))throw new FundaError('SEARCH_FILTER_CHANGED');
+  if(listings.some(x=>x.rentPrice>1500))throw filterError('card-price',Math.max(...listings.map(x=>x.rentPrice)));
   let next;
   for(const match of html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const attr=attributes(match[1]);
