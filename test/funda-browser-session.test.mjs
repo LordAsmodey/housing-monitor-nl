@@ -96,3 +96,36 @@ test('consumed recovery grants remain stable for scheduler deduplication, but ca
   assert.equal(shouldRenewRecovery({...recovery,resolved:true},now),true);
   assert.equal(shouldRenewRecovery(null,now),true);
 });
+
+test('fresh validated Pararius first document is reused without another navigation',async()=>{
+  const {readBrowserPage}=require('../scripts/funda-browser-session.cjs');
+  const url='https://www.pararius.nl/huurwoningen/groningen/0-1500/straal-25';
+  let persisted=0;
+  const page={url:()=>url,content:async()=>'<h1>valid search</h1>',goto:()=>{throw Error('UNEXPECTED_RELOAD')}};
+  const r=await readBrowserPage(page,url,{reuseFreshSearch:true,searchUrl:url,snapshot:{url,status:200,loadedAt:1000},now:2000,
+    searchReady:html=>html.includes('valid search'),persist:async()=>{persisted++}});
+  assert.equal(r.status,200);assert.match(await r.text(),/valid search/);assert.equal(persisted,1);
+});
+test('stale, denied, changed or invalid first documents and later pages must navigate normally',async()=>{
+  const {readBrowserPage}=require('../scripts/funda-browser-session.cjs');
+  const url='https://www.pararius.nl/huurwoningen/groningen/0-1500/straal-25';
+  for(const patch of [{reuseFreshSearch:false},{now:62001},{now:999},{snapshot:{url,status:403,loadedAt:1000}},
+    {snapshot:{url,status:429,loadedAt:1000}},{snapshot:undefined},{snapshot:{url:url+'/page-2',status:200,loadedAt:1000}},
+    {searchReady:()=>false},{searchUrl:url+'/page-2'}]) {
+    let navigations=0;const page={url:()=>url,content:async()=>'<h1>valid search</h1>',
+      goto:async()=>{navigations++;return {status:()=>403}},waitForTimeout:async()=>{}};
+    const r=await readBrowserPage(page,url,{reuseFreshSearch:true,searchUrl:url,snapshot:{url,status:200,loadedAt:1000},now:2000,searchReady:()=>true,...patch});
+    assert.equal(navigations,1);assert.equal(r.status,403);
+  }
+});
+test('document tracker records completed main-frame status and discards it on the next navigation',()=>{
+  const {trackDocument}=require('../scripts/funda-browser-session.cjs');
+  const callbacks={},main={},child={},page={on:(event,fn)=>{callbacks[event]=fn},mainFrame:()=>main};
+  const snapshot=trackDocument(page,()=>1234);
+  const request=frame=>({isNavigationRequest:()=>true,frame:()=>frame});
+  const response=(frame,status)=>({request:()=>request(frame),frame:()=>frame,status:()=>status,url:()=>'https://www.pararius.nl/search'});
+  callbacks.response(response(main,200));callbacks.domcontentloaded();assert.equal(snapshot().loadedAt,1234);assert.equal(snapshot().status,200);
+  callbacks.request(request(child));assert.equal(snapshot().status,200);
+  callbacks.request(request(main));assert.equal(snapshot(),undefined);
+  callbacks.response(response(main,403));callbacks.domcontentloaded();assert.equal(snapshot().status,403);
+});

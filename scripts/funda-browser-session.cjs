@@ -100,6 +100,42 @@ async function startDisplay(spawnProcess = spawn) {
     return { display, name: ':' + number };
   } catch (error) { display.kill(); throw error; }
 }
+// Track the actual main-document HTTP response; reuse never turns a 403 into 200.
+function trackDocument(page, now = Date.now) {
+  let snapshot;
+  page.on('request', request => {
+    if (!request.isNavigationRequest()) return;
+    try { if (request.frame() === page.mainFrame()) snapshot = undefined; }
+    catch { snapshot = undefined; }
+  });
+  page.on('response', response => {
+    try {
+      if (response.request().isNavigationRequest() && response.frame() === page.mainFrame()) {
+        snapshot = { url: response.url(), status: response.status() };
+      }
+    } catch { /* Unknown frames cannot establish a reusable document. */ }
+  });
+  page.on('domcontentloaded', () => { if (snapshot) snapshot.loadedAt = now(); });
+  return () => snapshot;
+}
+async function readBrowserPage(page, url, options = {}) {
+  const snapshot = options.snapshot, age = (options.now ?? Date.now()) - (snapshot?.loadedAt ?? NaN);
+  if (options.reuseFreshSearch && url === options.searchUrl && page.url() === url && snapshot?.url === url
+      && snapshot.status >= 200 && snapshot.status < 300 && age >= 0 && age <= 60000) {
+    const content = await page.content();
+    if (await options.searchReady?.(content, url)) {
+      await options.persist?.();
+      if (options.logProgress) emit('collection-page-reused', { ageMs: age });
+      return new Response(content, { status: snapshot.status, headers: { 'content-type': 'text/html' } });
+    }
+  }
+  const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: options.navigationTimeout ?? 20000 });
+  await page.waitForTimeout(options.collectionSettleMs ?? 1200);
+  const content = await page.content();
+  if (options.enforceCollectionUrl && page.url() !== url) throw new defaultCore.FundaError('UNEXPECTED_REDIRECT');
+  await options.persist?.();
+  return new Response(content, { status: response?.status() ?? 502, headers: { 'content-type': 'text/html' } });
+}
 let browserName = 'Funda';
 const emit = (event, data = {}) => console.log(JSON.stringify({ message: browserName + ' browser session', event, at: new Date().toISOString(), ...data }));
 function html(nonce, name = 'Funda') {
@@ -177,6 +213,7 @@ async function main(options = {}) {
   catch (error) { if (error.code !== 'ENOENT') throw new Error('STATE_DECRYPT_FAILED'); }
   let launched, browser, context, page, profileRestored = Boolean(saved);
   let collecting=false;
+  let documentSnapshot=()=>undefined;
   async function launch() {
     if (options.launchBrowser) launched = await options.launchBrowser({ saved, stateKey, directory });
     else {
@@ -193,6 +230,7 @@ async function main(options = {}) {
       page = context.pages()[0] ?? await context.newPage();
       for (const extra of context.pages()) if (extra !== page) await extra.close();
       page.setDefaultTimeout(10000);
+      documentSnapshot=options.reuseFreshSearch?trackDocument(page):()=>undefined;
       page.once('crash',onCrash);
       browser.once('disconnected',onDisconnect);
       await page.goto(homeUrl, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(()=>{});
@@ -244,13 +282,7 @@ async function main(options = {}) {
     const started = Date.now();
     emit('collection-resources-start',await resources());
     try {
-      const transport = async url => {
-        const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: options.navigationTimeout ?? 20000 });
-        await page.waitForTimeout(options.collectionSettleMs ?? 1200);
-        const content = await page.content();
-        await persist();
-        return new Response(content, { status: response?.status() ?? 502, headers: { 'content-type': 'text/html' } });
-      };
+      const transport = url => readBrowserPage(page,url,{...options,searchUrl:SEARCH_URL,snapshot:documentSnapshot(),persist});
       const result = await collect({ ...(settings ? {settings} : {}), transport, signal: AbortSignal.timeout(300000),
         ...(options.logProgress ? { onPage: stats => emit('collection-page', stats) } : {}) });
       return {...result,...(settings?{settingsFingerprint:require('./search-settings.cjs').fingerprint(settings)}:{})};
@@ -360,6 +392,6 @@ async function main(options = {}) {
   async function close(){if(closing)return;closing=true;clearInterval(heartbeat);options.experiment?.stop();server.close();await lifecycle.close().catch(()=>emit('profile-save-failed'));display.kill();emit('closed');process.exit(0)}
   if(!process.env.BROWSER_WORKER_TOKEN)setTimeout(close,Math.max(1,expires-Date.now())).unref();process.on('SIGTERM',close);process.on('SIGINT',close);
 }
-module.exports={shouldRenewRecovery,routeRequest,humanCheck,recoveryReady,startDisplay,encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};
+module.exports={trackDocument,readBrowserPage,shouldRenewRecovery,routeRequest,humanCheck,recoveryReady,startDisplay,encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};
 if(require.main===module)main().catch(()=>{emit('startup-failed');process.exit(1)});
 

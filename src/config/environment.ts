@@ -11,6 +11,8 @@ const environmentSchema = z.object({
   TELEGRAM_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
   FUNDA_BROWSER_ORIGIN: z.url().optional(),
   FUNDA_BROWSER_TOKEN: z.string().min(32).optional(),
+  PARARIUS_BROWSER_ORIGIN: z.url().optional(),
+  PARARIUS_BROWSER_TOKEN: z.string().min(32).optional(),
   HUURWONINGEN_BROWSER_ORIGIN: z.url().optional(),
   HUURWONINGEN_BROWSER_TOKEN: z.string().min(32).optional(),
   MONITOR_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(900),
@@ -24,6 +26,7 @@ const environmentSchema = z.object({
   VESTEDA_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
 }).superRefine((v, ctx) => {
   if (Boolean(v.FUNDA_BROWSER_ORIGIN) !== Boolean(v.FUNDA_BROWSER_TOKEN)) ctx.addIssue({code:'custom',path:['FUNDA_BROWSER_ORIGIN'],message:'Browser origin and token must be configured together'});
+  if (Boolean(v.PARARIUS_BROWSER_ORIGIN) !== Boolean(v.PARARIUS_BROWSER_TOKEN)) ctx.addIssue({code:'custom',path:['PARARIUS_BROWSER_ORIGIN'],message:'Browser origin and token must be configured together'});
   if (Boolean(v.HUURWONINGEN_BROWSER_ORIGIN) !== Boolean(v.HUURWONINGEN_BROWSER_TOKEN)) ctx.addIssue({code:'custom',path:['HUURWONINGEN_BROWSER_ORIGIN'],message:'Browser origin and token must be configured together'});
   if (v.TELEGRAM_DELIVERY_ENABLED) for (const key of ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'] as const) {
     if (!v[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'Required for delivery' });
