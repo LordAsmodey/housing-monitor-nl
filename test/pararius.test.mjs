@@ -56,10 +56,10 @@ test('search/detail URLs reject SSRF, changed filters, query, hash, unexpected p
  assert.throws(()=>core.allowedUrl('/appartement-te-huur/groningen/not-an-id/home'));
 });
 test('collector validates complete pagination before returning, with independent server filtering',async()=>{
- const calls=[];const result=await core.collect({pause:async()=>{},transport:async(url,opts)=>{
+ const calls=[],delays=[];const result=await core.collect({pause:async ms=>{delays.push(ms)},transport:async(url,opts)=>{
   calls.push(url);assert.equal(opts.redirect,'manual');return response(page(url.endsWith('page-2')?2:1));
  }});
- assert.deepEqual(calls,[SEARCH_URL,SEARCH_URL+'/page-2']);assert.equal(result.inspected,31);assert.equal(result.listings.length,31);assert.equal(result.pages,2);
+ assert.deepEqual(calls,[SEARCH_URL,SEARCH_URL+'/page-2']);assert.deepEqual(delays,[5000]);assert.equal(result.inspected,31);assert.equal(result.listings.length,31);assert.equal(result.pages,2);
  const narrow=await core.collect({settings:{...registry.defaults(SOURCE_ID),maxRent:798},pause:async()=>{},transport:async url=>response(page(url.endsWith('page-2')?2:1))});
  assert.equal(narrow.inspected,31);assert.equal(narrow.listings.length,0);
 });

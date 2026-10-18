@@ -167,7 +167,7 @@ async function collect({settings,transport=fetch,maxPages=20,maxListings=600,sig
     url=page.next;if(url) {
       const current=Number(pageNumber([...pages].at(-1)));
       if(Number(pageNumber(url))!==current+1)throw new FundaError('PAGINATION_NOT_ADVANCING');
-      await pause(1000);
+      await pause(5000);
     }
   }
   if(listings.size!==total)throw new FundaError('INCOMPLETE_SEARCH');
