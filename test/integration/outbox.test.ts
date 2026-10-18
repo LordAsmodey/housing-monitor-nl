@@ -526,6 +526,25 @@ test('Solide has an independent baseline, strict availability, admin filters and
   const profile = await db.siteProfile.findUniqueOrThrow({where:{sourceId:id}});
   assert.deepEqual(profile.searchUrls,[SEARCH_URL]); assert.equal(profile.authStrategy,'none');
   await due(); assert.equal((await run(parsed.listings) as any).created,0);
+  // Production regression: WordPress reassigned slugs between existing post IDs.
+  // Start with legacy URL fingerprints, then swap two URLs in reverse row order.
+  const {createHash} = await import('node:crypto');
+  const original = await db.housingListing.findMany({where:{sourceId:id}});
+  for (const row of original) await db.housingListing.update({where:{id:row.id},data:{
+    urlFingerprint:createHash('sha256').update(row.canonicalUrl).digest('hex')
+  }});
+  const swapped = parsed.listings.map((item,index)=>({...item,canonicalUrl:index===0
+    ? parsed.listings[1]!.canonicalUrl : index===1 ? parsed.listings[0]!.canonicalUrl : item.canonicalUrl})).reverse();
+  await due(); assert.equal((await run(swapped) as any).created,0);
+  for (const item of swapped) {
+    const row = await db.housingListing.findUniqueOrThrow({where:{sourceId_externalId:{sourceId:id,externalId:item.externalId}}});
+    assert.equal(row.id,original.find(x=>x.externalId===item.externalId)!.id);
+    assert.equal(row.canonicalUrl,item.canonicalUrl);
+    assert.equal(row.urlFingerprint,createHash('sha256').update(`externalId:${item.externalId}`).digest('hex'));
+  }
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  await due(); await run(swapped);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
   const home:ListingInput = {...parsed.listings[0]!,externalId:'NEW1',canonicalUrl:'https://solideverhuur.nl/huurwoningen/groningen/test-new1',availabilityStatus:'unknown'};
   await due(); await run([...parsed.listings,home]);
   assert.equal(await db.notificationOutbox.count({where:jobs}),0);
@@ -541,6 +560,21 @@ test('Solide has an independent baseline, strict availability, admin filters and
   const after = await db.source.findUniqueOrThrow({where:{id}});
   assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
   assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+});
+
+test('stable post identity preserves history when a new post reuses an absent post URL', async () => {
+  const s=await source();
+  const old={...item('old-post'),availabilityStatus:'available' as const};
+  // Seed the legacy identity scheme, as already stored production rows use it.
+  await service.recordValidatedRun(s.id,[old],'-123');
+  const stored=await db.housingListing.findFirstOrThrow({where:{sourceId:s.id}});
+  const incoming={...old,externalId:'new-post'};
+  const record=()=>db.$transaction(tx=>service.recordValidatedRunInTransaction(tx,s.id,[incoming],'-123',{stableExternalId:true}));
+  assert.equal((await record()).created,1);
+  assert.equal((await record()).created,0);
+  assert.equal(await db.housingListing.count({where:{sourceId:s.id}}),2);
+  assert.equal((await db.housingListing.findUniqueOrThrow({where:{id:stored.id}})).externalId,'old-post');
+  assert.equal(await db.notificationOutbox.count({where:{listing:{sourceId:s.id}}}),1);
 });
 
 test('Vandermeulen has an independent baseline, strict availability, admin filters and transactional failure handling', async () => {

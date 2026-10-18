@@ -31,7 +31,7 @@ const listingSchema = z.object({
 });
 export type ListingInput = z.infer<typeof listingSchema>;
 const { matches } = require('../../scripts/search-settings.cjs');
-export type RunSearch = { filters?: Record<string, number | null>; suppressNotifications?: boolean; requireAvailable?: boolean };
+export type RunSearch = { filters?: Record<string, number | null>; suppressNotifications?: boolean; requireAvailable?: boolean; stableExternalId?: boolean };
 
 @Injectable()
 export class ListingsService {
@@ -56,14 +56,20 @@ export class ListingsService {
       const url = new URL(item.canonicalUrl); url.hash = '';
       const canonicalUrl = url.href;
       if (canonicalUrl.length > 2048) throw new Error('Canonical URL exceeds supported length');
-      const urlFingerprint = createHash('sha256').update(canonicalUrl).digest('hex');
-      const existing = await tx.housingListing.findFirst({ where: { sourceId, OR: [{ externalId: item.externalId }, { urlFingerprint }] } });
+      // Some sources reassign slugs between distinct listings. Their stable IDs
+      // own identity; a historical URL must never rename another listing's ID.
+      // Namespace the fingerprint too, so old URL keys migrate on the next run
+      // without deleting history or colliding when slugs swap.
+      const urlFingerprint = createHash('sha256').update(search.stableExternalId ? `externalId:${item.externalId}` : canonicalUrl).digest('hex');
+      const existing = await tx.housingListing.findFirst({ where: search.stableExternalId
+        ? { sourceId, externalId: item.externalId }
+        : { sourceId, OR: [{ externalId: item.externalId }, { urlFingerprint }] } });
       const transitioned = (existing?.availabilityStatus === 'unavailable' || (search.requireAvailable && existing?.availabilityStatus === 'unknown')) && item.availabilityStatus === 'available';
       let listing;
       if (existing) {
         listing = await tx.housingListing.update({ where: { id: existing.id }, data: {
           lastSeenAt: now,
-          ...storedItem, canonicalUrl,
+          ...storedItem, canonicalUrl, ...(search.stableExternalId ? {urlFingerprint} : {}),
           ...(housingDetails || pricingDetails ? { rawSourceRef: JSON.stringify({...housingDetails, ...pricingDetails}) } : {}),
         } });
         if (!transitioned) continue;
