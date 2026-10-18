@@ -27,8 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -f Dockerfile.pararius-browser -t housing-pararius:ci .
+      - run: docker build --build-arg RAILWAY_GIT_COMMIT_SHA="$GITHUB_SHA" -f Dockerfile.pararius-browser -t housing-pararius:ci .
       - run: docker run --rm --network none --entrypoint node housing-pararius:ci -e 'const assert=require("node:assert/strict"); assert.equal(typeof require("./scripts/pararius-browser-session.cjs").searchReady,"function"); assert.equal(require("./scripts/pararius-core.cjs").SOURCE_ID,"pararius:groningen-25km-homes");'
+      - run: docker run --rm --init --network none --entrypoint node -v "$PWD/scripts/pararius-profile-smoke.cjs:/app/scripts/pararius-profile-smoke.cjs:ro" housing-pararius:ci scripts/pararius-profile-smoke.cjs
   check:
     runs-on: ubuntu-latest
     env:
