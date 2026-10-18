@@ -35,7 +35,7 @@ async function main(){
   if(!/^[a-f0-9]{40}$/.test(release))throw Error('RELEASE_INVALID');
   return browserMain({core,name:'Pararius',engine:'patchright-chrome',release,homeUrl:'https://www.pararius.nl/',
     navigationDomains:['www.pararius.nl','pararius.nl'],listingSelector:'a.listing-search-item__link--title',searchReady,
-    enforceCollectionUrl:true,blockThirdPartyDuringCollection:false,navigationTimeout:30000,collectionSettleMs:5000,logProgress:true,
+    reuseFreshSearch:true,enforceCollectionUrl:true,blockThirdPartyDuringCollection:false,navigationTimeout:30000,collectionSettleMs:5000,logProgress:true,
     launchBrowser:launchProfile});
 }
 module.exports={main,searchReady,launchProfile};
