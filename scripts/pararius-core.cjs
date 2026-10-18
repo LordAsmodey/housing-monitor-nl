@@ -90,9 +90,12 @@ function filterError(field, actual) {
 function selectedValues(html, name) {
   return [...html.matchAll(/<select\b([^>]*)>([\s\S]*?)<\/select>/gi)]
     .filter(m=>attributes(m[1]).name===name).map(m=>{
-      const selected=[...m[2].matchAll(/<option\b([^>]*)>[\s\S]*?<\/option>/gi)].filter(o=>/\sselected(?:\s|=|>)/i.test(o[0]));
-      if(selected.length!==1)throw filterError(name+'-selected-count',selected.length);
-      return attributes(selected[0][1]).value;
+      if(/\smultiple(?:\s|=|$)/i.test(m[1]))throw filterError(name+'-multiple','unexpected');
+      const selected=[...m[2].matchAll(/<option\b([^>]*)>[\s\S]*?<\/option>/gi)].filter(o=>/\sselected(?:\s|=|$)/i.test(o[1]));
+      if(!selected.length)throw filterError(name+'-selected-count',0);
+      // HTML single-select reset rules keep the last selected option. Pararius
+      // renders both its default radius and the requested radius as selected.
+      return attributes(selected.at(-1)[1]).value;
     });
 }
 function parseSearch(html,currentUrl=SEARCH_URL) {

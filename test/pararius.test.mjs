@@ -75,3 +75,11 @@ test('HTTP failures, throttling, timeouts, redirects and oversized bodies never 
  await assert.rejects(core.collect({transport:async()=>response(' '.repeat(5*1024*1024+1))}),/BODY_TOO_LARGE/);
  let calls=0;await assert.rejects(core.collect({pause:async()=>{},transport:async()=>{calls++;return new Response('',{status:503})}}),/HTTP_STATUS/);assert.equal(calls,3);
 });
+
+test('single-select radius follows the last selected option just like the browser',()=>{
+ const duplicated=fixture.replace('<option value="25" selected="selected">25 km</option>', '<option value="0" selected="selected">+0 km</option><option value="25" selected="selected">25 km</option>');
+ assert.equal(core.parseSearch(duplicated,SEARCH_URL+'/page-4').total,100);
+ const wrongLast=fixture.replace('<option value="25" selected="selected">25 km</option>', '<option value="25" selected="selected">25 km</option><option value="0" selected="selected">+0 km</option>');
+ assert.throws(()=>core.parseSearch(wrongLast,SEARCH_URL+'/page-4'),/SEARCH_FILTER_CHANGED/);
+ assert.throws(()=>core.parseSearch(duplicated.replace('name="filters[radius][value]"','multiple name="filters[radius][value]"'),SEARCH_URL+'/page-4'),/SEARCH_FILTER_CHANGED/);
+});
