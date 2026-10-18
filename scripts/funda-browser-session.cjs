@@ -164,7 +164,9 @@ $('type').addEventListener('click',()=>action({type:'text',text:$('text').value}
 $('check').addEventListener('click',()=>action({type:'check'}));$('save').addEventListener('click',()=>action({type:'save'}));
 $('screen').addEventListener('click',e=>{const r=$('screen').getBoundingClientRect();action({type:'click',x:(e.clientX-r.left)*$('screen').naturalWidth/r.width,y:(e.clientY-r.top)*$('screen').naturalHeight/r.height})});
 const key=new URLSearchParams(location.hash.slice(1)).get('key');history.replaceState(null,'',location.pathname);
-if(key)login(key);else api('/api/state').then(()=>{active=true;$('login').style.display='none';$('work').style.display='block';refresh()}).catch(()=>{});
+// A link is single-use, but its existing browser session can be resumed.
+async function resume(){try{await api('/api/state')}catch(e){if(key)await login(key);return}active=true;$('login').style.display='none';$('work').style.display='block';await refresh()}
+resume();
 setInterval(refresh,1200);
 </script></html>`.replaceAll('Funda', name);
 }
@@ -329,14 +331,14 @@ async function main(options = {}) {
       try{let size=0,chunks=[];for await(const chunk of req){size+=chunk.length;if(size>8192)throw Error();chunks.push(chunk)}body=JSON.parse(Buffer.concat(chunks).toString())}catch{return send(400,{message:'Invalid input'})}
     }
     if(req.method==='POST'&&pathname==='/api/login'){
-      if(Date.now()>=expires||consumed||!equalSecret(body?.key,authKey)) return send(401,{message:'Access denied'});
+      if(Date.now()>=expires||consumed||!equalSecret(body?.key,authKey)) return send(401,{message:'Ссылка недействительна, уже использована или истекла. Открой её в браузере, где вход уже выполнен, либо запроси новую ссылку доступа.'});
       consumed=true;if(recovery){recovery.consumed=true;await saveRecovery()}await fs.writeFile(consumedFile,'1',{mode:0o600});
       const cookie=issueCookie(authKey,expires);
       res.setHeader('Set-Cookie',`funda_session=${cookie}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${Math.floor((expires-Date.now())/1000)}`);
       emit('human-connected');return send(200,{ok:true});
     }
     const cookie=(req.headers.cookie??'').split(';').map(v=>v.trim()).find(v=>v.startsWith('funda_session='))?.slice(14);
-    if(!validCookie(cookie,authKey)) return send(401,{message:'Access denied'});
+    if(!validCookie(cookie,authKey)) return send(401,{message:'Сессия доступа недействительна или истекла. Открой новую ссылку доступа.'});
     try{
       if(req.method==='GET'&&pathname==='/api/state')return send(200,await serial(inspect));
       if(req.method==='GET'&&pathname==='/api/screen'){
@@ -393,6 +395,6 @@ async function main(options = {}) {
   async function close(){if(closing)return;closing=true;clearInterval(heartbeat);options.experiment?.stop();server.close();await lifecycle.close().catch(()=>emit('profile-save-failed'));display.kill();emit('closed');process.exit(0)}
   if(!process.env.BROWSER_WORKER_TOKEN)setTimeout(close,Math.max(1,expires-Date.now())).unref();process.on('SIGTERM',close);process.on('SIGINT',close);
 }
-module.exports={trackDocument,readBrowserPage,shouldRenewRecovery,routeRequest,humanCheck,recoveryReady,startDisplay,encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};
+module.exports={html,trackDocument,readBrowserPage,shouldRenewRecovery,routeRequest,humanCheck,recoveryReady,startDisplay,encryptState,decryptState,equalSecret,issueCookie,validCookie,validOrigin,validateAction,main};
 if(require.main===module)main().catch(()=>{emit('startup-failed');process.exit(1)});
 
