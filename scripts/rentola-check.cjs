@@ -67,13 +67,13 @@ async function probe(label, target, page, revalidate = false) {
 
 async function main() {
   for (const method of ['GET', 'POST']) {
-    const target = 'https://rentola.nl/api/properties/search' + (method === 'GET' ? '?location=240117&order=desc&page=1' : '');
+    const target = 'https://rentola.nl/api/properties/search' + (method === 'GET' ? '?location=240117&order=desc' : '');
     const result = await fetch(target, { method, redirect: 'manual', signal: AbortSignal.timeout(15000), headers: {
-      Accept: 'application/json', 'Accept-Language': 'en', 'Content-Type': 'application/json',
+      Accept: 'application/json', 'Accept-Language': 'en', 'Content-Type': 'application/json', RentolaHost: 'rentola.nl',
     }, ...(method === 'POST' ? { body: JSON.stringify({ data: { location: '240117', order: 'desc', page: '1', propertyType: [], facility: [] } }) } : {}) });
     const raw = await result.text();
     let data; try { data = JSON.parse(raw); } catch {}
-    console.log(JSON.stringify({ api: method, status: result.status, keys: Object.keys(data || {}),
+    console.log(JSON.stringify({ api: method, status: result.status, location: result.headers.get('location'), keys: Object.keys(data || {}),
       meta: data?.meta, errors: data?.errors, type: typeof data?.data, count: data?.data?.length }));
   }
   const second = SEARCH_URL + '&page=2';
