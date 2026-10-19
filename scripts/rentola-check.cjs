@@ -61,6 +61,10 @@ async function probe(label, target, page, revalidate = false) {
         const at = source.indexOf('searchProperties:s(');
         console.log(JSON.stringify({ routes: source.slice(Math.max(0, at - 3000), at + 100) }));
       }
+      for (const module of ['59889:', '61983:']) {
+        const at = source.indexOf(module);
+        if (at >= 0) console.log(JSON.stringify({ module, source: source.slice(at, at + 5000) }));
+      }
     }
   }
 }
@@ -87,6 +91,10 @@ async function main() {
     ['zero-min-second', SEARCH_URL + '&priceMin=0&page=2', 2],
     ['budget-first', SEARCH_URL + '&priceMin=0&priceMax=1500', 1],
     ['budget-second', SEARCH_URL + '&priceMin=0&priceMax=1500&page=2', 2],
+    ['default-order-first', 'https://rentola.nl/en/rent?location=240117', 1],
+    ['default-order-second', 'https://rentola.nl/en/rent?location=240117&page=2', 2],
+    ['monthly-first', SEARCH_URL + '&rent_per=monthly', 1],
+    ['monthly-second', SEARCH_URL + '&rent_per=monthly&page=2', 2],
     ['default-third', SEARCH_URL + '&page=3', 3],
     ['last-thirteenth', SEARCH_URL + '&page=13', 13],
     ['last-fourteenth', SEARCH_URL + '&page=14', 14],
