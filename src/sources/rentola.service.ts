@@ -3,7 +3,7 @@ import { PrismaService } from '../database/prisma.service';
 import { ListingsService } from '../listings/listings.service';
 import { parseEnvironment } from '../config/environment';
 import { runRentola } from './rentola-runner';
-import { SourceError, SearchChangedError } from './rentola-core';
+import { collect, SourceError, SearchChangedError } from './rentola-core';
 
 @Injectable()
 export class RentolaService implements OnModuleInit, OnModuleDestroy {
@@ -35,7 +35,13 @@ export class RentolaService implements OnModuleInit, OnModuleDestroy {
   tick() {
     if (!this.config.RENTOLA_MONITORING_ENABLED) return Promise.resolve({ skipped: true as const });
     return runRentola(this.db, this.listings, { destination: this.config.TELEGRAM_CHAT_ID,
-      intervalSeconds: this.config.MONITOR_INTERVAL_SECONDS });
+      intervalSeconds: this.config.MONITOR_INTERVAL_SECONDS, collector: async options => {
+        const result = await collect(options);
+        if (result.recoveredFrom) this.logger.log(`Rentola search recovered: ${JSON.stringify({
+          order: result.searchOrder, ...result.recoveredFrom,
+        })}`);
+        return result;
+      } });
   }
   async onModuleDestroy() { clearInterval(this.timer); await this.active; }
 }
