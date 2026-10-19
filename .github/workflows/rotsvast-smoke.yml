@@ -1,0 +1,24 @@
+name: Rotsvast live smoke
+on:
+  pull_request:
+    paths: ['scripts/rotsvast-*.cjs', 'scripts/search-modules/rotsvast.cjs', 'src/sources/rotsvast*.ts', 'test/rotsvast.test.ts', '.github/workflows/rotsvast-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rotsvast-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node --import tsx --test test/rotsvast.test.ts
+      - name: Read and validate all public search pages without database or delivery
+        run: node --import tsx -e 'require("./src/sources/rotsvast-core.ts").collect().then(r=>console.log(JSON.stringify({inspected:r.inspected,matched:r.listings.length,available:r.available,pages:r.pages}))).catch(e=>{console.error(e.category||"LIVE_SMOKE_FAILED");process.exitCode=1})'
