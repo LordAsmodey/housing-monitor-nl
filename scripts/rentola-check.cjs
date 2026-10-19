@@ -55,7 +55,7 @@ async function probe(label, target, page, revalidate = false) {
       if (!script.ok) { await script.body?.cancel(); continue; }
       const source = await script.text();
       if (source.length > 2 * 1024 * 1024) continue;
-      const snippets = [...source.matchAll(/.{0,120}(?:searchPropertiesData|listingsParams|totalCount|getProperties|searchProperties|apiBaseUrl|api\/v\d).{0,160}/g)].map(m => m[0]).slice(0, 12);
+      const snippets = [...source.matchAll(/.{0,180}(?:searchPropertiesData|listingsParams|totalCount|getProperties|searchProperties|apiBaseUrl|api\/v\d|NEXT_PUBLIC_API|function s\(|function a\(|\/api"|\/api').{0,240}/g)].map(m => m[0]).slice(0, 18);
       if (snippets.length) console.log(JSON.stringify({ script: path, snippets }));
     }
   }
@@ -69,6 +69,10 @@ async function main() {
     ['explicit-first', SEARCH_URL + '&page=1', 1, true],
     ['reordered-second', 'https://rentola.nl/en/rent?page=2&location=240117&order=desc', 2, true],
     ['reordered-first', 'https://rentola.nl/en/rent?order=desc&location=240117', 1, true],
+    ['zero-min-first', SEARCH_URL + '&priceMin=0', 1],
+    ['zero-min-second', SEARCH_URL + '&priceMin=0&page=2', 2],
+    ['budget-first', SEARCH_URL + '&priceMin=0&priceMax=1500', 1],
+    ['budget-second', SEARCH_URL + '&priceMin=0&priceMax=1500&page=2', 2],
     ['default-third', SEARCH_URL + '&page=3', 3],
     ['last-thirteenth', SEARCH_URL + '&page=13', 13],
     ['last-fourteenth', SEARCH_URL + '&page=14', 14],
