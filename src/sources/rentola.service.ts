@@ -3,7 +3,7 @@ import { PrismaService } from '../database/prisma.service';
 import { ListingsService } from '../listings/listings.service';
 import { parseEnvironment } from '../config/environment';
 import { runRentola } from './rentola-runner';
-import { SourceError } from './rentola-core';
+import { SourceError, SearchChangedError } from './rentola-core';
 
 @Injectable()
 export class RentolaService implements OnModuleInit, OnModuleDestroy {
@@ -27,7 +27,9 @@ export class RentolaService implements OnModuleInit, OnModuleDestroy {
     }).catch((error: unknown) => {
       const category = error instanceof SourceError ? error.category : 'RUN_FAILED';
       require('../../scripts/telemetry.cjs').init().report(error, 'rentola', category);
-      this.logger.warn(`Rentola check failed: category=${category}`);
+      const details = error instanceof SearchChangedError
+        ? ` order=${error.order} page=${error.page} expected=${JSON.stringify(error.expected)} actual=${JSON.stringify(error.actual)}` : '';
+      this.logger.warn(`Rentola check failed: category=${category}${details}`);
     }).finally(() => { this.active = undefined; });
   }
   tick() {

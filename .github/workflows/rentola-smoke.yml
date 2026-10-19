@@ -20,13 +20,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node --import tsx --test test/rentola.test.ts
-      - name: Diagnose public pagination and cache consistency without database or delivery
+      - name: Read and validate complete public search without database or delivery
         run: node --import tsx scripts/rentola-check.cjs
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: rentola-public-pages
-          path: .diagnostics/rentola
-          retention-days: 1
-      - name: Read and validate filtered public search without database or delivery
-        run: node --import tsx -e 'require("./src/sources/rentola-core.ts").collect().then(r=>console.log(JSON.stringify({inspected:r.inspected,matched:r.listings.length,available:r.available,pages:r.pages}))).catch(e=>{console.error(e.category||"LIVE_SMOKE_FAILED");process.exitCode=1})'
