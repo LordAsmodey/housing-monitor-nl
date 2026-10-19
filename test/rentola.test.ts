@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseSearch,parseDetail,collect,independentHousing,allowedDetailUrl,SOURCE_ID,SEARCH_URL,SearchChangedError} from '../src/sources/rentola-core';
+import {parseSearch,parseDetail,collect,independentHousing,allowedDetailUrl,SOURCE_ID,SEARCH_URL,SearchChangedError,RunTimeoutError,RUN_TIMEOUT_MS} from '../src/sources/rentola-core';
 const registry = require('../scripts/search-settings.cjs');
 const fixture = (name = 'search') => readFileSync(`test/fixtures/rentola-${name}.html`,'utf8');
 const defaults = registry.defaults(SOURCE_ID);
@@ -81,6 +81,48 @@ test('collector preserves exact search; price and area boundaries apply before d
  const r=await collect({transport,pause:async()=>{}});assert.equal(r.listings.length,1);assert.equal(calls,2);
  calls=0;const narrow=await collect({settings:{...defaults,maxRent:1499},transport,pause:async()=>{}});assert.equal(narrow.listings.length,0);assert.equal(calls,1);
  assert.equal(registry.matches({...defaults,minArea:63},item,SOURCE_ID),false);
+});
+test('unavailable and unknown cards are fully parsed without fetching descriptions that cannot qualify',async()=>{
+ for(const availability of ['https://schema.org/OutOfStock','https://schema.org/SoldOut','https://schema.org/PreOrder']){
+  const {d,l}=single();d.searchPropertiesData.data[0].attributes.monthlyRent=900;
+  l.mainEntity.itemListElement[0].item.offers.price=900;
+  l.mainEntity.itemListElement[0].item.offers.availability=availability;
+  let calls=0;
+  const result=await collect({pause:async()=>{},transport:async url=>{
+   calls++;assert.equal(String(url),SEARCH_URL);return response(render(d,l));
+  }});
+  assert.equal(calls,1);assert.equal(result.inspected,1);assert.equal(result.listings.length,0);
+  assert.equal(result.diagnostics.detailCandidates,0);
+ }
+});
+test('default Rentola deadline covers a bounded full restart and remains cancellable',async t=>{
+ const budgets:number[]=[];
+ t.mock.method(AbortSignal,'timeout',(ms:number)=>{budgets.push(ms);return AbortSignal.abort();});
+ await assert.rejects(collect(),RunTimeoutError);
+ assert.deepEqual(budgets,[240000]);assert.equal(RUN_TIMEOUT_MS,240000);
+});
+test('timeout reports only technical phase and progress for the original cancellation signal',async()=>{
+ const {d,l}=single();d.searchPropertiesData.data[0].attributes.monthlyRent=900;
+ l.mainEntity.itemListElement[0].item.offers.price=900;
+ const controller=new AbortController();let calls=0;
+ await assert.rejects(collect({signal:controller.signal,pause:async()=>{},transport:async(url,options)=>{
+  calls++;assert.equal(options!.signal,controller.signal);
+  if(String(url)===SEARCH_URL)return response(render(d,l));
+  controller.abort();throw Error('network aborted');
+ }}),error=>{
+  assert.ok(error instanceof RunTimeoutError);assert.equal(error.category,'RUN_TIMEOUT');
+  const {elapsedMs,...progress}=error.progress;
+  assert.ok(Number.isFinite(elapsedMs)&&elapsedMs>=0);
+  assert.deepEqual(progress,{phase:'details',order:'desc',pages:1,detailCandidates:1,detailsCompleted:0});
+  return true;
+ });
+ assert.equal(calls,2);
+});
+test('runner rejects invalid source budgets before acquiring a lease',async()=>{
+ const {runFunda}=require('../scripts/funda-runner.cjs');
+ for(const runTimeoutMs of [0,999,-1,300001,Infinity,NaN,1000.5]){
+  await assert.rejects(runFunda({}, {}, {destination:'-123',definition:{SOURCE_ID,SEARCH_URL,FILTERS:{},runTimeoutMs}}),/RUN_BUDGET_INVALID/);
+ }
 });
 test('collector validates all pages and refuses overlapping or changing results',async()=>{
  const {d,l}=single();d.searchPropertiesData.data=Array(21).fill(null).map((_,i)=>({...d.searchPropertiesData.data[0],id:String(100+i),attributes:{...d.searchPropertiesData.data[0].attributes,slug:`home-p${i}`}}));

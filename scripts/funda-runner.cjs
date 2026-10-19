@@ -11,6 +11,11 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
     name: 'Funda — Groningen +30 km', baseUrl: 'https://www.funda.nl', allowedDomains: ['www.funda.nl'] };
   const { SOURCE_ID: sourceId, SEARCH_URL: searchUrl, FILTERS: filters, BROWSER_SCENARIO: scenario } = source;
   if (!/^-[1-9]\d*$/.test(destination ?? '')) throw new FundaError('DESTINATION_MISSING');
+  if (source.runTimeoutMs !== undefined && (!Number.isSafeInteger(source.runTimeoutMs) || source.runTimeoutMs < 1000 || source.runTimeoutMs > 300000)) {
+    throw new FundaError('RUN_BUDGET_INVALID');
+  }
+  // Keep collection plus 30s commit inside the lease, with another 30s margin.
+  const leaseMs = Math.max(browser ? 360000 : 180000, (source.runTimeoutMs ?? 0) + 60000);
   const now = new Date(), token = randomUUID();
   let search;
   const run = await db.$transaction(async tx => {
@@ -30,7 +35,7 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
     const claim = await tx.source.updateMany({ where: { id: sourceId, AND: [
       { OR: [{ nextCheckAt: null }, { nextCheckAt: { lte: now } }] },
       { OR: [{ monitorLeaseUntil: null }, { monitorLeaseUntil: { lte: now } }] },
-    ] }, data: { monitorLeaseToken: token, monitorLeaseUntil: new Date(now.getTime() + (browser?360000:180000)),
+    ] }, data: { monitorLeaseToken: token, monitorLeaseUntil: new Date(now.getTime() + leaseMs),
       lastAttemptAt: now, nextCheckAt: new Date(now.getTime() + intervalSeconds * 1000) } });
     if (!claim.count) return null;
     await tx.monitoringRun.updateMany({ where: { sourceId: sourceId, status: 'RUNNING' },
