@@ -6,7 +6,7 @@ const settings = require('./search-settings.cjs');
 
 // Network I/O is outside transactions. A durable lease prevents replica overlap;
 // ownership is checked under the source row lock before committing any findings.
-async function runFunda(db, listings, { destination, intervalSeconds = 900, collector = collect, browser = false, definition } = {}) {
+async function runFunda(db, listings, { destination, intervalSeconds = 900, collector = collect, browser = false, definition, persistCollection } = {}) {
   const source = definition ?? { SOURCE_ID, SEARCH_URL, FILTERS, BROWSER_SCENARIO,
     name: 'Funda — Groningen +30 km', baseUrl: 'https://www.funda.nl', allowedDomains: ['www.funda.nl'] };
   const { SOURCE_ID: sourceId, SEARCH_URL: searchUrl, FILTERS: filters, BROWSER_SCENARIO: scenario } = source;
@@ -59,13 +59,17 @@ async function runFunda(db, listings, { destination, intervalSeconds = 900, coll
       const owned = await tx.source.updateMany({ where: { id: sourceId, monitorLeaseToken: token,
         monitorLeaseUntil: { gt: finishedAt } }, data: { monitorLeaseToken: null, monitorLeaseUntil: null, status: 'HEALTHY' } });
       if (!owned.count) throw new FundaError('LEASE_LOST');
+      // Adapter state may only advance after the same lease check as the outbox.
+      if (persistCollection) await persistCollection(tx, result);
       const recorded = await listings.recordValidatedRunInTransaction(tx, sourceId, result.listings, destination,
         {requireAvailable: source.requireAvailable ?? false, stableExternalId: source.stableExternalId ?? false,
           ...(search ? {filters:search.filters,suppressNotifications:search.revision!==search.appliedRevision} : {})});
       if (search) await tx.searchConfiguration.updateMany({where:{sourceId,revision:search.revision},data:{appliedRevision:search.revision}});
       await tx.monitoringRun.update({ where: { id: run.id }, data: {
-        status: 'SUCCEEDED', finishedAt, listingsFound: result.listings.length } });
-      return { skipped: false, runId: run.id, inspected: result.inspected, matched: result.listings.length, ...recorded };
+        status: 'SUCCEEDED', finishedAt, listingsFound: result.listings.length,
+        ...(result.coverage ? {collectionScope: result.coverage} : {}) } });
+      return { skipped: false, runId: run.id, inspected: result.inspected, matched: result.listings.length,
+        ...(result.coverage ? {coverage:result.coverage, diagnostics:result.diagnostics} : {}), ...recorded };
     }, { timeout: 30000 });
     telemetry.finish(monitorSource, checkInId, 'ok');
     return completed;

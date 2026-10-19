@@ -11,7 +11,7 @@ concurrency:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,5 +20,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node --import tsx --test test/rentola.test.ts
-      - name: Read and validate complete public search without database or delivery
+      - name: Validate daily discovery and cached head scan without database or delivery
         run: node --import tsx scripts/rentola-check.cjs
