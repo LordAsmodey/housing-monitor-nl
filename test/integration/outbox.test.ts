@@ -810,3 +810,43 @@ test('Pararius recovery deduplicates alerts and resumes after a validated collec
     await db.notificationOutbox.deleteMany({where:{idempotencyKey:'pararius-recovery:'+'b'.repeat(32)}});
   }
 });
+
+test('Wonen123 has an independent baseline, strict availability, admin filters and transactional failure handling', async () => {
+  const { runWonen123 } = await import('../../src/sources/wonen123-runner');
+  const { Wonen123Service } = await import('../../src/sources/wonen123.service');
+  const { parseSearch, SOURCE_ID: id, SEARCH_URL } = await import('../../src/sources/wonen123-core');
+  const { readFileSync } = await import('node:fs');
+  const registry = requireFromRoot('./scripts/search-settings.cjs');
+  const old = process.env.WONEN123_MONITORING_ENABLED;
+  try {
+    process.env.WONEN123_MONITORING_ENABLED = 'false';
+    assert.equal((await new Wonen123Service(db,service).tick()).skipped, true);
+    assert.equal(await db.source.count({where:{id}}), 0);
+  } finally { if (old === undefined) delete process.env.WONEN123_MONITORING_ENABLED; else process.env.WONEN123_MONITORING_ENABLED = old; }
+  ids.push(id);
+  const data = parseSearch(readFileSync('test/fixtures/wonen123-search.html','utf8'));
+  const parsed = {...data, total: data.listings.length, inspected: data.listings.length, listings: data.listings.filter(x => registry.matches(registry.defaults(id),x,id)).map(({propertyType, ...item}) => item)};
+  const run = (input:ListingInput[]) => runWonen123(db,service,{destination:'-123',collector:async()=>({...parsed,listings:input})});
+  const due = () => db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
+  const jobs = {listing:{sourceId:id}};
+  assert.equal((await run(parsed.listings) as any).baseline, true);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  const profile = await db.siteProfile.findUniqueOrThrow({where:{sourceId:id}});
+  assert.deepEqual(profile.searchUrls,[SEARCH_URL]); assert.equal(profile.authStrategy,'none');
+  await due(); assert.equal((await run(parsed.listings) as any).created,0);
+  const home:ListingInput = {...parsed.listings[0]!,externalId:'NEW1',canonicalUrl:'https://www.123wonen.nl/huur/groningen/appartement/test-90001-2',availabilityStatus:'unknown'};
+  await due(); await run([...parsed.listings,home]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await db.searchConfiguration.update({where:{sourceId:id},data:{filters:{...registry.defaults(id),minArea:100}}});
+  await due(); await run([{...home,externalId:'NEW2',canonicalUrl:'https://www.123wonen.nl/huur/groningen/appartement/test-90002-2',availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const before = await db.source.findUniqueOrThrow({where:{id}});
+  await due(); await assert.rejects(runWonen123(db,service,{destination:'-123',collector:async()=>{throw new FundaError('INCOMPLETE_SEARCH')}}),/INCOMPLETE_SEARCH/);
+  const after = await db.source.findUniqueOrThrow({where:{id}});
+  assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+});
