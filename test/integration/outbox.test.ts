@@ -222,6 +222,7 @@ test('Funda durable lease prevents overlap and stale workers cannot commit findi
   await started;
   assert.equal((await runFunda(db, service, { destination: '-123', collector: async () => { throw new Error('must not run'); } })).skipped, true);
   const previous = await db.source.findUniqueOrThrow({ where: { id: SOURCE_ID } });
+  assert.equal(previous.monitorLeaseUntil!.getTime()-previous.lastAttemptAt!.getTime(),180000);
   await db.source.update({ where: { id: SOURCE_ID }, data: { monitorLeaseUntil: new Date(0) } });
   const rejected = assert.rejects(running, /LEASE_LOST/);
   release(); await rejected;
@@ -732,6 +733,32 @@ test('Rentola has an independent baseline, strict availability, admin filters an
   const after = await db.source.findUniqueOrThrow({where:{id}});
   assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
   assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+});
+
+test('Rentola lease covers its extended deadline, prevents overlap and rejects an expired worker',async()=>{
+  const {runRentola}=await import('../../src/sources/rentola-runner');
+  const {SOURCE_ID:id,RUN_TIMEOUT_MS}=await import('../../src/sources/rentola-core');
+  await db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
+  let release!:()=>void,entered!:()=>void;
+  const waiting=new Promise<void>(resolve=>{release=resolve;});
+  const started=new Promise<void>(resolve=>{entered=resolve;});
+  const running=runRentola(db,service,{destination:'-123',collector:async()=>{
+    entered();await waiting;
+    return {listings:[],total:0,inspected:0,pages:0,available:0,searchOrder:'desc' as const,
+      diagnostics:{phase:'details' as const,order:'desc' as const,pages:0,detailCandidates:0,detailsCompleted:0,elapsedMs:0}};
+  }});
+  await started;
+  const claimed=await db.source.findUniqueOrThrow({where:{id}});
+  const leaseMs=claimed.monitorLeaseUntil!.getTime()-claimed.lastAttemptAt!.getTime();
+  assert.equal(leaseMs,300000);assert.equal(leaseMs-RUN_TIMEOUT_MS,60000);
+  await db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
+  assert.equal((await runRentola(db,service,{destination:'-123',collector:async()=>{throw Error('overlap');}})).skipped,true);
+  const outboxBefore=await db.notificationOutbox.count({where:{listing:{sourceId:id}}});
+  await db.source.update({where:{id},data:{monitorLeaseUntil:new Date(0)}});
+  const rejected=assert.rejects(running,/LEASE_LOST/);release();await rejected;
+  const after=await db.source.findUniqueOrThrow({where:{id}});
+  assert.deepEqual(after.lastSuccessAt,claimed.lastSuccessAt);assert.deepEqual(after.baselineAt,claimed.baselineAt);
+  assert.equal(await db.notificationOutbox.count({where:{listing:{sourceId:id}}}),outboxBefore);
 });
 
 test('Pararius has an independent baseline, strict availability, admin filters and transactional failure handling', async () => {

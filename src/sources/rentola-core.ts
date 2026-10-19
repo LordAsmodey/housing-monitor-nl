@@ -5,7 +5,13 @@ export const SourceError: new (category: string, blocked?: boolean, retryAfterSe
 export const SOURCE_ID = 'rentola:groningen-homes';
 export const SEARCH_URL = 'https://rentola.nl/en/rent?location=240117&order=desc';
 export const FILTERS = { city: 'Groningen', minRent: 0, maxRent: 1500, independentHousing: true };
+export const RUN_TIMEOUT_MS = 240000;
 type SearchOrder = 'desc' | 'rent_asc';
+type CollectionProgress = { phase: 'search' | 'details'; order: SearchOrder; pages: number;
+  detailCandidates: number; detailsCompleted: number };
+export class RunTimeoutError extends SourceError {
+  constructor(public readonly progress: CollectionProgress & { elapsedMs: number }) { super('RUN_TIMEOUT'); }
+}
 function searchUrl(order: SearchOrder, page = 1) {
   const target = new URL(SEARCH_URL);
   target.searchParams.set('order', order);
@@ -130,56 +136,72 @@ export function parseDetail(html: string, item: ListingInput) {
   if (room.test(description) || shared.test(description) || sharedAfter.test(description) || nonIndependent.test(description)) return false;
   return offer.availability === 'https://schema.org/InStock' && item.availabilityStatus === 'available';
 }
-export async function collect({settings = registry.defaults(SOURCE_ID), transport = fetch, signal = AbortSignal.timeout(140000),
+export async function collect({settings = registry.defaults(SOURCE_ID), transport = fetch, signal = AbortSignal.timeout(RUN_TIMEOUT_MS),
   pause = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))}:
   {settings?:Record<string,number|null>;transport?:typeof fetch;signal?:AbortSignal;pause?:(ms:number)=>Promise<void>} = {}) {
   registry.validate(SOURCE_ID, settings);
-  async function search(order: SearchOrder) {
-    const first = parseSearch(await fetchHtml(searchUrl(order), transport, signal, pause), 1, order);
-    const listings = [...first.listings]; const ids = new Set(first.ids); const urls = new Set(first.urls);
-    for (let page = 2; page <= first.totalPages; page++) {
-      await pause(300);
-      const next = parseSearch(await fetchHtml(searchUrl(order, page), transport, signal, pause), page, order);
-      if (next.totalCount !== first.totalCount || next.totalPages !== first.totalPages) throw new SearchChangedError(page,
-        { totalCount: first.totalCount, totalPages: first.totalPages },
-        { totalCount: next.totalCount, totalPages: next.totalPages }, order);
-      for (const id of next.ids) { if (ids.has(id)) throw new SourceError('DUPLICATE_CARD'); ids.add(id); }
-      for (const url of next.urls) { if (urls.has(url)) throw new SourceError('DUPLICATE_CARD'); urls.add(url); }
-      listings.push(...next.listings);
+  const startedAt = Date.now();
+  const progress: CollectionProgress = { phase: 'search', order: 'desc', pages: 0, detailCandidates: 0, detailsCompleted: 0 };
+  try {
+    async function search(order: SearchOrder) {
+      progress.order = order; progress.pages = 0;
+      const first = parseSearch(await fetchHtml(searchUrl(order), transport, signal, pause), 1, order);
+      progress.pages++;
+      const listings = [...first.listings]; const ids = new Set(first.ids); const urls = new Set(first.urls);
+      for (let page = 2; page <= first.totalPages; page++) {
+        await pause(300);
+        const next = parseSearch(await fetchHtml(searchUrl(order, page), transport, signal, pause), page, order);
+        progress.pages++;
+        if (next.totalCount !== first.totalCount || next.totalPages !== first.totalPages) throw new SearchChangedError(page,
+          { totalCount: first.totalCount, totalPages: first.totalPages },
+          { totalCount: next.totalCount, totalPages: next.totalPages }, order);
+        for (const id of next.ids) { if (ids.has(id)) throw new SourceError('DUPLICATE_CARD'); ids.add(id); }
+        for (const url of next.urls) { if (urls.has(url)) throw new SourceError('DUPLICATE_CARD'); urls.add(url); }
+        listings.push(...next.listings);
+      }
+      if (ids.size !== first.totalCount) throw new SourceError('INCOMPLETE_SEARCH');
+      return { first, listings, order };
     }
-    if (ids.size !== first.totalCount) throw new SourceError('INCOMPLETE_SEARCH');
-    return { first, listings, order };
+    let result: Awaited<ReturnType<typeof search>>;
+    let recoveredFrom: { page: number; expected: SearchChangedError['expected']; actual: SearchChangedError['actual'] } | undefined;
+    try { result = await search('desc'); }
+    catch (error) {
+      if (!(error instanceof SearchChangedError)) throw error;
+      recoveredFrom = { page: error.page, expected: error.expected, actual: error.actual };
+      // Rentola can serve an inconsistent newest-first catalog across repeated GETs.
+      // Discard it completely and retry the same unfiltered catalog with the site's
+      // supported price order. Both scans share the original deadline and lease.
+      await pause(1000);
+      result = await search('rent_asc');
+    }
+    const { first, listings } = result;
+    // parseDetail only admits available search cards; avoid requests that cannot match.
+    const candidates = listings.filter(x => x.availabilityStatus === 'available' && registry.matches(settings, x, SOURCE_ID));
+    progress.phase = 'details'; progress.detailCandidates = candidates.length;
+    const matched: ListingInput[] = [];
+    for (let index = 0; index < candidates.length; index += 2) {
+      const batch = candidates.slice(index, index + 2);
+      await pause(300);
+      // At most two requests in flight. Stagger starts and await both even on failure,
+      // so a failed run never leaves detached requests running after lease release.
+      const results = await Promise.allSettled(batch.map(async (item, offset) => {
+        if (offset) await pause(300);
+        return parseDetail(await fetchHtml(item.canonicalUrl, transport, signal, pause), item);
+      }));
+      progress.detailsCompleted += results.filter(result => result.status === 'fulfilled').length;
+      for (const result of results) if (result.status === 'rejected') throw result.reason;
+      results.forEach((result, offset) => { if (result.status === 'fulfilled' && result.value) matched.push(batch[offset]!); });
+    }
+    return {listings:matched,total:first.totalCount,inspected:first.totalCount,pages:first.totalPages,
+      searchOrder:result.order, ...(recoveredFrom ? {recoveredFrom} : {}),
+      diagnostics:{...progress, elapsedMs:Math.max(0, Date.now() - startedAt)},
+      available:matched.filter(x => x.availabilityStatus === 'available').length};
+  } catch (error) {
+    if (error instanceof SourceError && error.category === 'RUN_TIMEOUT') {
+      throw new RunTimeoutError({...progress, elapsedMs:Math.max(0, Date.now() - startedAt)});
+    }
+    throw error;
   }
-  let result: Awaited<ReturnType<typeof search>>;
-  let recoveredFrom: { page: number; expected: SearchChangedError['expected']; actual: SearchChangedError['actual'] } | undefined;
-  try { result = await search('desc'); }
-  catch (error) {
-    if (!(error instanceof SearchChangedError)) throw error;
-    recoveredFrom = { page: error.page, expected: error.expected, actual: error.actual };
-    // Rentola can serve an inconsistent newest-first catalog across repeated GETs.
-    // Discard it completely and retry the same unfiltered catalog with the site's
-    // supported price order. Both scans share the original deadline and lease.
-    await pause(1000);
-    result = await search('rent_asc');
-  }
-  const { first, listings } = result;
-  const candidates = listings.filter(x => registry.matches(settings, x, SOURCE_ID));
-  const matched: ListingInput[] = [];
-  for (let index = 0; index < candidates.length; index += 2) {
-    const batch = candidates.slice(index, index + 2);
-    await pause(300);
-    // At most two requests in flight. Stagger starts and await both even on failure,
-    // so a failed run never leaves detached requests running after lease release.
-    const results = await Promise.allSettled(batch.map(async (item, offset) => {
-      if (offset) await pause(300);
-      return parseDetail(await fetchHtml(item.canonicalUrl, transport, signal, pause), item);
-    }));
-    for (const result of results) if (result.status === 'rejected') throw result.reason;
-    results.forEach((result, offset) => { if (result.status === 'fulfilled' && result.value) matched.push(batch[offset]!); });
-  }
-  return {listings:matched,total:first.totalCount,inspected:first.totalCount,pages:first.totalPages,
-    searchOrder:result.order, ...(recoveredFrom ? {recoveredFrom} : {}),
-    available:matched.filter(x => x.availabilityStatus === 'available').length};
 }
 
 async function fetchHtml(target: string, transport: typeof fetch, signal: AbortSignal, pause: (ms: number) => Promise<void>) {

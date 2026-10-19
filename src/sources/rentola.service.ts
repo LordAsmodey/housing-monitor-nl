@@ -3,7 +3,7 @@ import { PrismaService } from '../database/prisma.service';
 import { ListingsService } from '../listings/listings.service';
 import { parseEnvironment } from '../config/environment';
 import { runRentola } from './rentola-runner';
-import { collect, SourceError, SearchChangedError } from './rentola-core';
+import { collect, SourceError, SearchChangedError, RunTimeoutError } from './rentola-core';
 
 @Injectable()
 export class RentolaService implements OnModuleInit, OnModuleDestroy {
@@ -28,7 +28,8 @@ export class RentolaService implements OnModuleInit, OnModuleDestroy {
       const category = error instanceof SourceError ? error.category : 'RUN_FAILED';
       require('../../scripts/telemetry.cjs').init().report(error, 'rentola', category);
       const details = error instanceof SearchChangedError
-        ? ` order=${error.order} page=${error.page} expected=${JSON.stringify(error.expected)} actual=${JSON.stringify(error.actual)}` : '';
+        ? ` order=${error.order} page=${error.page} expected=${JSON.stringify(error.expected)} actual=${JSON.stringify(error.actual)}`
+        : error instanceof RunTimeoutError ? ` progress=${JSON.stringify(error.progress)}` : '';
       this.logger.warn(`Rentola check failed: category=${category}${details}`);
     }).finally(() => { this.active = undefined; });
   }
@@ -38,7 +39,7 @@ export class RentolaService implements OnModuleInit, OnModuleDestroy {
       intervalSeconds: this.config.MONITOR_INTERVAL_SECONDS, collector: async options => {
         const result = await collect(options);
         if (result.recoveredFrom) this.logger.log(`Rentola search recovered: ${JSON.stringify({
-          order: result.searchOrder, ...result.recoveredFrom,
+          order: result.searchOrder, ...result.recoveredFrom, diagnostics: result.diagnostics,
         })}`);
         return result;
       } });
