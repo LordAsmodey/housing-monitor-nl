@@ -72,3 +72,22 @@ test('network errors, rate limits, redirects, timeouts and URL boundaries fail c
  await assert.rejects(collect({signal:AbortSignal.abort(),pause:async()=>{}}),/RUN_TIMEOUT/);
  for(const url of ['https://evil.test/en/listings/home-p123abc','http://rentbilly.nl/en/listings/home-p123abc','https://user@rentbilly.nl/en/listings/home-p123abc','/en/listings/home-p123abc?q=1','/en/listings/home-p123abc#x','/en/listings/home']) assert.throws(()=>allowedDetailUrl(url));
 });
+test('full collector visits every page, enforces global identity and keeps only known area',async()=>{
+ const pages=[1,2,3,4].map(n=>fixture(`page${n}`));
+ const cards=pages.flatMap((p,i)=>parseSearch(render(p),i+1).listings).filter(x=>registry.matches(defaults,x,SOURCE_ID));
+ const byUrl=new Map(cards.map(x=>[x.canonicalUrl,x]));let details=0;
+ const transport:typeof fetch=async(u)=>{
+  const url=new URL(String(u));
+  if(url.pathname==='/en/for-rent')return response(render(pages[Number(url.searchParams.get('page')||'1')-1]));
+  const c=byUrl.get(url.href)!;assert.ok(c);details++;
+  const d=fixture('detail');Object.assign(d.propertyAttributes,{title:c.title,address:c.address,slug:url.pathname.split('/').at(-1),area:String(c.areaM2),monthlyRent:c.rentPrice});
+  Object.assign(d.ld,{url:c.canonicalUrl,name:c.title});Object.assign(d.ld.offers,{url:c.canonicalUrl,price:c.rentPrice});
+  d.ld.offers.itemOffered.address.streetAddress=c.address;d.ld.offers.itemOffered.floorSize.value=c.areaM2;
+  return response(render(d));
+ };
+ const r=await collect({transport,pause:async()=>{}});assert.equal(r.pages,4);assert.equal(r.inspected,84);
+ assert.equal(r.listings.length,cards.length);assert.equal(details,cards.length);
+ const duplicate=structuredClone(pages[1]);duplicate.searchPropertiesData.data[0]=pages[0].searchPropertiesData.data[0];
+ duplicate.ld.mainEntity.itemListElement[0]=pages[0].ld.mainEntity.itemListElement[0];
+ await assert.rejects(collect({pause:async()=>{},transport:async(u)=>response(render(String(u).endsWith('page=2')?duplicate:pages[0]))}),/DUPLICATE_CARD/);
+});
