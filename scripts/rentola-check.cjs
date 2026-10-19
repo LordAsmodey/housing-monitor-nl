@@ -22,6 +22,25 @@ async function probe(label, target, page, revalidate = false) {
   const html = Buffer.concat(chunks).toString('utf8');
   mkdirSync('.diagnostics/rentola', { recursive: true });
   writeFileSync(`.diagnostics/rentola/${label}.html`, html);
+  // Decode data only. Log structure and identifiers, never titles/descriptions/addresses.
+  const stream = [...html.matchAll(/<script\b[^>]*>self\.__next_f\.push\((\[.*?\])\)<\/script>/g)]
+    .map(m => JSON.parse(m[1])).filter(x => x[0] === 1 && typeof x[1] === 'string').map(x => x[1]).join('');
+  function field(name) {
+    const token = JSON.stringify(name) + ':{'; const start = stream.indexOf(token) + token.length - 1;
+    if (start < token.length - 1) return;
+    let depth = 0, quoted = false, escaped = false;
+    for (let i = start; i < stream.length; i++) {
+      const c = stream[i];
+      if (quoted) { if (escaped) escaped = false; else if (c === '\\') escaped = true; else if (c === '"') quoted = false; }
+      else if (c === '"') quoted = true;
+      else if (c === '{') depth++;
+      else if (c === '}' && --depth === 0) return JSON.parse(stream.slice(start, i + 1));
+    }
+  }
+  const search = field('searchPropertiesData');
+  Object.assign(summary, { params: field('listingsParams'), meta: search?.meta,
+    dataKeys: Object.keys(search || {}), ids: search?.data?.map(x => x.id),
+    stateKeys: [...new Set([...stream.matchAll(/"(\w+)":/g)].map(m => m[1]))].slice(0,150) });
   try {
     const parsed = parseSearch(html, page);
     Object.assign(summary, { total: parsed.totalCount, pages: parsed.totalPages, cards: parsed.ids.length,
