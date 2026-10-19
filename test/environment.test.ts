@@ -57,3 +57,10 @@ test('Pararius is opt-in and requires its own origin and token pair', () => {
   assert.throws(() => parseEnvironment({ ...valid, PARARIUS_BROWSER_TOKEN: 'x'.repeat(43) }), /PARARIUS_BROWSER_ORIGIN/);
   assert.equal(parseEnvironment({ ...valid, PARARIUS_BROWSER_ORIGIN: 'https://pararius.up.railway.app', PARARIUS_BROWSER_TOKEN: 'x'.repeat(43) }).PARARIUS_BROWSER_TOKEN?.length, 43);
 });
+
+
+test('Rotsvast monitoring defaults to enabled and can be paused explicitly', () => {
+  assert.equal(parseEnvironment(valid).ROTSVAST_MONITORING_ENABLED, true);
+  assert.equal(parseEnvironment({...valid, ROTSVAST_MONITORING_ENABLED:'false'}).ROTSVAST_MONITORING_ENABLED, false);
+  assert.throws(() => parseEnvironment({...valid, ROTSVAST_MONITORING_ENABLED:'yes'}));
+});

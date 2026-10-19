@@ -877,3 +877,46 @@ test('Wonen123 has an independent baseline, strict availability, admin filters a
   assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
   assert.equal(await db.notificationOutbox.count({where:jobs}),1);
 });
+
+test('Rotsvast has an independent baseline, strict availability, admin filters and transactional failure handling', async () => {
+  const { runRotsvast } = await import('../../src/sources/rotsvast-runner');
+  const { RotsvastService } = await import('../../src/sources/rotsvast.service');
+  const { parseSearch, SOURCE_ID: id, SEARCH_URL } = await import('../../src/sources/rotsvast-core');
+  const { readFileSync } = await import('node:fs');
+  const registry = requireFromRoot('./scripts/search-settings.cjs');
+  const old = process.env.ROTSVAST_MONITORING_ENABLED;
+  try {
+    process.env.ROTSVAST_MONITORING_ENABLED = 'false';
+    assert.equal((await new RotsvastService(db,service).tick()).skipped, true);
+    assert.equal(await db.source.count({where:{id}}), 0);
+    const { AdminService } = await import('../../src/admin/admin.service');
+    const overview = await new AdminService(db).overview();
+    assert.equal(overview.sources.find(x => x.module.id === id)?.runtimeEnabled, false);
+  } finally { if (old === undefined) delete process.env.ROTSVAST_MONITORING_ENABLED; else process.env.ROTSVAST_MONITORING_ENABLED = old; }
+  ids.push(id);
+  const data = parseSearch(readFileSync('test/fixtures/rotsvast-search.html','utf8'));
+  const parsed = {...data, total: data.listings.length, inspected: data.listings.length, listings: data.listings.filter(x => registry.matches(registry.defaults(id),x,id)).map(item => item)};
+  const run = (input:ListingInput[]) => runRotsvast(db,service,{destination:'-123',collector:async()=>({...parsed,listings:input})});
+  const due = () => db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
+  const jobs = {listing:{sourceId:id}};
+  assert.equal((await run(parsed.listings) as any).baseline, true);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  const profile = await db.siteProfile.findUniqueOrThrow({where:{sourceId:id}});
+  assert.deepEqual(profile.searchUrls,[SEARCH_URL]); assert.equal(profile.authStrategy,'none');
+  await due(); assert.equal((await run(parsed.listings) as any).created,0);
+  const home:ListingInput = {...parsed.listings[0]!,externalId:'NEW1',canonicalUrl:'https://www.rotsvast.nl/huren/test-groningen-h900001/',availabilityStatus:'unknown'};
+  await due(); await run([...parsed.listings,home]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await db.searchConfiguration.update({where:{sourceId:id},data:{filters:{...registry.defaults(id),minArea:100}}});
+  await due(); await run([{...home,externalId:'NEW2',canonicalUrl:'https://www.rotsvast.nl/huren/test-groningen-h900002/',availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const before = await db.source.findUniqueOrThrow({where:{id}});
+  await due(); await assert.rejects(runRotsvast(db,service,{destination:'-123',collector:async()=>{throw new FundaError('INCOMPLETE_SEARCH')}}),/INCOMPLETE_SEARCH/);
+  const after = await db.source.findUniqueOrThrow({where:{id}});
+  assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+});
