@@ -1,0 +1,24 @@
+name: GoHome live smoke
+on:
+  pull_request:
+    paths: ['scripts/gohome-*.cjs', 'scripts/search-modules/gohome.cjs', 'src/sources/gohome*.ts', 'test/gohome.test.ts', '.github/workflows/gohome-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: gohome-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node --import tsx --test test/gohome.test.ts
+      - name: Read and validate all public search pages without database or delivery
+        run: node --import tsx scripts/gohome-check.cjs

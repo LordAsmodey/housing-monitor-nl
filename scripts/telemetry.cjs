@@ -1,9 +1,9 @@
 'use strict';
 // Shared by NestJS, source runners and standalone browser services.
 const path = require('node:path');
-const SOURCES = new Set(['funda', 'huurwoningen', 'woldring', 'vesteda', 'gruno', 'lamberink', 'vandermeulen', 'maxx', 'rentola', 'pararius', 'solide', 'rentbilly', 'telegram', 'application']);
+const SOURCES = new Set(['funda', 'huurwoningen', 'woldring', 'vesteda', 'gruno', 'lamberink', 'vandermeulen', 'maxx', 'rentola', 'pararius', 'solide', 'gohome', 'rentbilly', 'telegram', 'application']);
 const ROLES = new Set(['application', 'funda-browser', 'huurwoningen-browser', 'pararius-browser']);
-const MONITORS = new Set(['funda', 'huurwoningen', 'woldring', 'vesteda', 'gruno', 'lamberink', 'vandermeulen', 'maxx', 'rentola', 'pararius', 'solide', 'rentbilly']);
+const MONITORS = new Set(['funda', 'huurwoningen', 'woldring', 'vesteda', 'gruno', 'lamberink', 'vandermeulen', 'maxx', 'rentola', 'pararius', 'solide', 'gohome', 'rentbilly']);
 
 // Prisma can load .env while constructing a client. Test isolation must not
 // depend on the DSN being absent or on which module loaded configuration first.

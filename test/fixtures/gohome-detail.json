@@ -1,0 +1,71 @@
+{
+  "id": 9128,
+  "type": {
+    "id": 1,
+    "name": "Property"
+  },
+  "title": "Planetenlaan 495 A, Groningen",
+  "urlSlug": "planetenlaan-495-a-groningen",
+  "propertyDetails": {
+    "id": 9139,
+    "minimumRent": 1083.0,
+    "capPrice": null,
+    "tenants": null,
+    "contractDuration": "UNDETERMINED",
+    "type": "APARTMENT",
+    "streetAddress": "Planetenlaan",
+    "zipcode": "9742 HS",
+    "streetNumber": 495,
+    "additionalStreetNumber": "A",
+    "city": "Groningen",
+    "country": "Netherlands",
+    "availableFromDate": "2026-11-16",
+    "state": "Groningen",
+    "description": "<p>Per 16-11-26 beschikbaar - Planetenlaan 495 A</p><p><strong>Let op:</strong> alleen geschikt voor studenten die niet uit de gemeente Groningen komen</p><p>Aan de Planetenlaan 495 A komt per 16-11-2026 een ruime tijdelijke woning beschikbaar. De woning beschikt over 4 kamers, waarvan 3 slaapkamers, en biedt veel leefruimte. Ideaal om te delen met een medestudent, met voldoende ruimte om zowel samen te wonen als je eigen plek te hebben. Wij hanteren ook garantstellers.</p><p>De woning aan de Planetenlaan 495 A ligt in de wijk Paddepoel, een populaire en levendige buurt in Groningen die geliefd is bij studenten. Op loop- en fietsafstand vind je winkelcentrum Paddepoel met diverse supermarkten, winkels en eetgelegenheden. Ook sportfaciliteiten en groenvoorzieningen bevinden zich in de directe omgeving.</p><p>Het centrum van Groningen en de Zernike Campus zijn binnen enkele minuten bereikbaar per fiets. Daarnaast zijn er goede busverbindingen in de buurt en is de ringweg snel te bereiken, waardoor je eenvoudig de stad in en uit kunt. De combinatie van voorzieningen, bereikbaarheid en een prettige woonomgeving maakt dit een ideale locatie voor studenten.</p><p>Je bent student</p><p>Je woont buiten de gemeente Groningen</p><p>Het betreft tijdelijke verhuur voor maximaal 18 maanden</p><p>175 euro stookkosten en 40 euro servicekosten </p><p>Er kunnen geen rechten ontleend worden aan de getoonde foto's; deze zijn uitsluitend ter illustratie.</p>",
+    "published": true,
+    "latitude": 53.234178,
+    "longitude": 6.5341995,
+    "hasWwsScoring": true,
+    "wwsScoring": 165,
+    "contractStartDate": "2026-11-16"
+  },
+  "propertyFeatures": {
+    "id": 6693,
+    "livingArea": "100",
+    "plotArea": "100",
+    "noOfRooms": 4,
+    "noOfFloors": "1",
+    "noOfBedrooms": "3",
+    "noOfBathrooms": "1",
+    "constructionType": "EXISTING_BUILDING",
+    "constructionYear": "Y1971_1980",
+    "finalRentalAmount": "1298.88",
+    "depositAmount": "MONTHLY_RENT_X1",
+    "minimumIncomePerYear": null,
+    "serviceCharge": "40",
+    "televisionAndInternet": "EXCLUDED",
+    "utilities": "EXCLUDED",
+    "bathroomAmenities": null,
+    "separateToilet": "YES",
+    "outdoorSpace": [
+      "NOT_APPLICABLE"
+    ],
+    "houseShare": "ALLOWED",
+    "furnishedDecorated": "NO",
+    "includingFurniture": "NO",
+    "garage": "NO",
+    "outdoorStorage": "YES",
+    "energyLabel": "NOT_APPLICABLE",
+    "parkingTypes": null,
+    "smoking": "NOT_ALLOWED",
+    "pets": "NOT_ALLOWED",
+    "locationDetails": [
+      "IN_RESIDENTIAL_AREA"
+    ]
+  },
+  "propertyCollectionDetails": null,
+  "listedDate": "2026-10-13T00:00:00Z",
+  "isRented": false,
+  "agentGroupId": 1,
+  "offerType": "RENTAL"
+}

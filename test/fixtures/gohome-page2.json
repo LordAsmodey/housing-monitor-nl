@@ -1,0 +1,247 @@
+{
+  "totalPropertiesCount": 26,
+  "properties": [
+    {
+      "propertyId": 2633,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": null,
+      "nrOfRooms": 2,
+      "title": "Oosterhamrikkade 25 g, Groningen",
+      "urlSlug": "oosterhamrikkade-oosterhamrikkade-25-groningen-g",
+      "minimumRent": 919.14,
+      "createdTimestamp": "2025-06-13T09:36:25.068420Z",
+      "updatedTimestamp": "2026-09-23T16:22:48.245325Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2026-05-15",
+      "energyLabel": "No energy label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    },
+    {
+      "propertyId": 7982,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": "40",
+      "nrOfRooms": 2,
+      "title": "Oosterhamrikkade 15 a, Groningen",
+      "urlSlug": "oosterhamrikkade-15-a-groningen",
+      "minimumRent": 987.78,
+      "createdTimestamp": "2026-05-04T09:37:17.615218Z",
+      "updatedTimestamp": "2026-07-02T07:45:21.391083Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2026-07-01",
+      "energyLabel": "B-label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    },
+    {
+      "propertyId": 7703,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": "97",
+      "nrOfRooms": 4,
+      "title": "Planetenlaan 519, Groningen",
+      "urlSlug": "planetenlaan-519-groningen",
+      "minimumRent": 898.56,
+      "createdTimestamp": "2026-02-12T13:20:46.754433Z",
+      "updatedTimestamp": "2026-03-09T15:20:16.770252Z",
+      "latitude": 53.2340469,
+      "longitude": 6.5338661,
+      "isRented": true,
+      "availableFromDate": "2026-03-01",
+      "energyLabel": "G-label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 1
+    },
+    {
+      "propertyId": 2579,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": null,
+      "nrOfRooms": 1,
+      "title": "Oosterhamrikkade 13 d, Groningen",
+      "urlSlug": "oosterhamrikkade-oosterhamrikkade-13-groningen-d",
+      "minimumRent": 939.73,
+      "createdTimestamp": "2025-06-13T09:35:16.155135Z",
+      "updatedTimestamp": "2026-09-23T16:08:48.355906Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2026-03-01",
+      "energyLabel": "No energy label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    },
+    {
+      "propertyId": 2618,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": "45",
+      "nrOfRooms": 2,
+      "title": "Oosterhamrikkade 23 c, Groningen",
+      "urlSlug": "oosterhamrikkade-oosterhamrikkade-23-groningen-c",
+      "minimumRent": 953.45,
+      "createdTimestamp": "2025-06-13T09:35:58.086611Z",
+      "updatedTimestamp": "2026-09-23T16:17:48.187487Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2026-03-01",
+      "energyLabel": "No energy label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    },
+    {
+      "propertyId": 2648,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": null,
+      "nrOfRooms": 1,
+      "title": "Oosterhamrikkade 19 h, Groningen",
+      "urlSlug": "oosterhamrikkade-oosterhamrikkade-19-groningen-h",
+      "minimumRent": 925.98,
+      "createdTimestamp": "2025-06-13T09:36:51.608627Z",
+      "updatedTimestamp": "2026-09-23T16:30:48.348027Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2026-03-01",
+      "energyLabel": "No energy label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    },
+    {
+      "propertyId": 7307,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": "95",
+      "nrOfRooms": 5,
+      "title": "Kajuit 137 , Groningen",
+      "urlSlug": "kajuit-137-groningen",
+      "minimumRent": 1300.0,
+      "createdTimestamp": "2025-11-21T13:23:42.664632Z",
+      "updatedTimestamp": "2026-01-08T09:09:46.196479Z",
+      "latitude": 53.2386932,
+      "longitude": 6.6240607,
+      "isRented": true,
+      "availableFromDate": "2026-01-01",
+      "energyLabel": "No energy label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 1
+    },
+    {
+      "propertyId": 2641,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": "40",
+      "nrOfRooms": 2,
+      "title": "Oosterhamrikkade 19 a, Groningen",
+      "urlSlug": "oosterhamrikkade-oosterhamrikkade-19-groningen-a",
+      "minimumRent": 906.63,
+      "createdTimestamp": "2025-06-13T09:36:38.924207Z",
+      "updatedTimestamp": "2026-09-23T16:26:48.383072Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2025-11-16",
+      "energyLabel": "No energy label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    },
+    {
+      "propertyId": 2619,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": "40",
+      "nrOfRooms": 2,
+      "title": "Oosterhamrikkade 23 d, Groningen",
+      "urlSlug": "oosterhamrikkade-oosterhamrikkade-23-groningen-d",
+      "minimumRent": 952.99,
+      "createdTimestamp": "2025-06-13T09:35:59.706702Z",
+      "updatedTimestamp": "2026-09-23T16:18:48.207965Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2025-11-01",
+      "energyLabel": "No energy label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    },
+    {
+      "propertyId": 2612,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": "40",
+      "nrOfRooms": 2,
+      "title": "Oosterhamrikkade 21 f, Groningen",
+      "urlSlug": "oosterhamrikkade-oosterhamrikkade-21-groningen-f",
+      "minimumRent": 953.0,
+      "createdTimestamp": "2025-06-13T09:35:50.283816Z",
+      "updatedTimestamp": "2026-09-23T16:16:48.146815Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2025-09-01",
+      "energyLabel": "No energy label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    },
+    {
+      "propertyId": 2625,
+      "type": {
+        "id": 1,
+        "name": "Property"
+      },
+      "location": "Groningen",
+      "livingArea": "40",
+      "nrOfRooms": 2,
+      "title": "Oosterhamrikkade 23 m, Groningen",
+      "urlSlug": "oosterhamrikkade-oosterhamrikkade-23-groningen-m",
+      "minimumRent": 893.37,
+      "createdTimestamp": "2025-06-13T09:36:11.182450Z",
+      "updatedTimestamp": "2026-09-23T16:19:48.291576Z",
+      "latitude": 53.2295031,
+      "longitude": 6.5752534,
+      "isRented": true,
+      "availableFromDate": "2025-09-01",
+      "energyLabel": "A-label",
+      "propertyCollectionDetails": null,
+      "agentGroupId": 7
+    }
+  ]
+}
