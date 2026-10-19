@@ -47,6 +47,18 @@ async function probe(label, target, page, revalidate = false) {
       idsHash: createHash('sha256').update(parsed.ids.join(',')).digest('hex') });
   } catch (error) { summary.error = error.category || 'PARSE_FAILED'; }
   console.log(JSON.stringify(summary));
+  if (label === 'default-first') {
+    const sources = [...html.matchAll(/<script\b[^>]*src="([^"]+)"/g)].map(m => m[1])
+      .filter(x => x.startsWith('/_next/static/chunks/')).slice(0, 35);
+    for (const path of sources) {
+      const script = await fetch(new URL(path, SEARCH_URL), { signal: AbortSignal.timeout(10000) });
+      if (!script.ok) { await script.body?.cancel(); continue; }
+      const source = await script.text();
+      if (source.length > 2 * 1024 * 1024) continue;
+      const snippets = [...source.matchAll(/.{0,120}(?:searchPropertiesData|listingsParams|totalCount|getProperties|searchProperties|apiBaseUrl|api\/v\d).{0,160}/g)].map(m => m[0]).slice(0, 12);
+      if (snippets.length) console.log(JSON.stringify({ script: path, snippets }));
+    }
+  }
 }
 
 async function main() {
@@ -56,6 +68,7 @@ async function main() {
     ['revalidate-first', SEARCH_URL, 1, true], ['revalidate-second', second, 2, true],
     ['explicit-first', SEARCH_URL + '&page=1', 1, true],
     ['reordered-second', 'https://rentola.nl/en/rent?page=2&location=240117&order=desc', 2, true],
+    ['reordered-first', 'https://rentola.nl/en/rent?order=desc&location=240117', 1, true],
     ['default-third', SEARCH_URL + '&page=3', 3],
     ['last-thirteenth', SEARCH_URL + '&page=13', 13],
     ['last-fourteenth', SEARCH_URL + '&page=14', 14],
