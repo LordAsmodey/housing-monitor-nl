@@ -964,3 +964,54 @@ test('Rentbilly has an independent baseline, strict availability, admin filters 
   assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
   assert.equal(await db.notificationOutbox.count({where:jobs}),1);
 });
+
+test('Gohome has an independent baseline, strict availability, admin filters and transactional failure handling', async () => {
+  const { runGohome } = await import('../../src/sources/gohome-runner');
+  const { GohomeService } = await import('../../src/sources/gohome.service');
+  const { parseDetail, SOURCE_ID: id, SEARCH_URL } = await import('../../src/sources/gohome-core');
+  const { readFileSync } = await import('node:fs');
+  const registry = requireFromRoot('./scripts/search-settings.cjs');
+  const old = process.env.GOHOME_MONITORING_ENABLED;
+  try {
+    process.env.GOHOME_MONITORING_ENABLED = 'false';
+    assert.equal((await new GohomeService(db,service).tick()).skipped, true);
+    assert.equal(await db.source.count({where:{id}}), 0);
+    const { AdminService } = await import('../../src/admin/admin.service');
+    const overview = await new AdminService(db).overview();
+    assert.equal(overview.sources.find(x => x.module.id === id)?.runtimeEnabled, false);
+  } finally { if (old === undefined) delete process.env.GOHOME_MONITORING_ENABLED; else process.env.GOHOME_MONITORING_ENABLED = old; }
+  ids.push(id);
+  const card = JSON.parse(readFileSync('test/fixtures/gohome-page1.json','utf8')).properties[0];
+  const homeDetail = JSON.parse(readFileSync('test/fixtures/gohome-detail.json','utf8'));
+  const parsed = {pages:1, available:0, total:1, inspected:1, listings:[{...parseDetail(homeDetail,card)!,availabilityStatus:'unavailable' as const}]};
+  const run = (input:ListingInput[]) => runGohome(db,service,{destination:'-123',collector:async()=>({...parsed,listings:input})});
+  const due = () => db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
+  const jobs = {listing:{sourceId:id}};
+  assert.equal((await run(parsed.listings) as any).baseline, true);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  const profile = await db.siteProfile.findUniqueOrThrow({where:{sourceId:id}});
+  assert.deepEqual(profile.searchUrls,[SEARCH_URL]); assert.equal(profile.authStrategy,'none');
+  await due(); assert.equal((await run(parsed.listings) as any).created,0);
+  const home:ListingInput = {...parsed.listings[0]!,externalId:'NEW1',canonicalUrl:'https://resident.gohome.io/te-huur/test-900001',availabilityStatus:'unknown'};
+  await due(); await run([...parsed.listings,home]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await due(); await run([...parsed.listings,{...home,availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await db.searchConfiguration.update({where:{sourceId:id},data:{filters:{...registry.defaults(id),minArea:101}}});
+  await due(); await run([{...home,externalId:'NEW2',canonicalUrl:'https://resident.gohome.io/te-huur/test-900002',availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  // Price filtering is enforced before notifications, even with a custom collector.
+  await db.searchConfiguration.update({where:{sourceId:id},data:{filters:{...registry.defaults(id),maxRent:1000}}});
+  await due(); await run([{...home,externalId:'EXPENSIVE',canonicalUrl:'https://resident.gohome.io/te-huur/expensive',availabilityStatus:'available'}]);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  await db.searchConfiguration.update({where:{sourceId:id},data:{enabled:false}});
+  await due(); assert.equal((await runGohome(db,service,{destination:'-123',collector:async()=>{throw Error('must not collect')}})).skipped,true);
+  await db.searchConfiguration.update({where:{sourceId:id},data:{enabled:true}});
+  const before = await db.source.findUniqueOrThrow({where:{id}});
+  await due(); await assert.rejects(runGohome(db,service,{destination:'-123',collector:async()=>{throw new FundaError('INCOMPLETE_SEARCH')}}),/INCOMPLETE_SEARCH/);
+  const after = await db.source.findUniqueOrThrow({where:{id}});
+  assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+});
