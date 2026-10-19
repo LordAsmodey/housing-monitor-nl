@@ -5,6 +5,21 @@ export const SourceError: new (category: string, blocked?: boolean, retryAfterSe
 export const SOURCE_ID = 'rentola:groningen-homes';
 export const SEARCH_URL = 'https://rentola.nl/en/rent?location=240117&order=desc';
 export const FILTERS = { city: 'Groningen', minRent: 0, maxRent: 1500, independentHousing: true };
+type SearchOrder = 'desc' | 'rent_asc';
+function searchUrl(order: SearchOrder, page = 1) {
+  const target = new URL(SEARCH_URL);
+  target.searchParams.set('order', order);
+  if (page > 1) target.searchParams.set('page', String(page));
+  return target.href;
+}
+export class SearchChangedError extends SourceError {
+  constructor(public readonly page: number,
+    public readonly expected: { totalCount: number; totalPages: number },
+    public readonly actual: { totalCount: number; totalPages: number },
+    public readonly order: SearchOrder = 'desc') {
+    super('SEARCH_CHANGED_DURING_RUN');
+  }
+}
 const registry = require('../../scripts/search-settings.cjs');
 const positive = z.number().positive().finite();
 const property = z.object({ id: z.string().regex(/^\d{1,15}$/), type: z.literal('properties'),
@@ -53,10 +68,10 @@ export function independentHousing(type: string, title: string) {
   if (type === 'apartment' || type === 'studio') return true;
   return type === 'house' && /\b(house|woning|eengezinswoning|woonhuis|appartement|apartment|studio)\b/i.test(title);
 }
-export function parseSearch(html: string, page = 1) {
+export function parseSearch(html: string, page = 1, order: SearchOrder = 'desc') {
   if (/just a moment|verify you are human|access denied|captcha challenge/i.test(html)) throw new SourceError('ACCESS_BLOCKED', true);
   const stream = flight(html); const params = objectField(stream, 'listingsParams');
-  if (params.location !== '240117' || params.order !== 'desc' || params.page !== String(page) ||
+  if (!['desc', 'rent_asc'].includes(order) || params.location !== '240117' || params.order !== order || params.page !== String(page) ||
       ['priceMin','priceMax','sizeMin','sizeMax','roomMin','roomMax','rentPer'].some(k => params[k] !== '') ||
       !Array.isArray(params.propertyType) || params.propertyType.some((x: unknown) => x !== '') ||
       !Array.isArray(params.facility) || params.facility.length) throw new SourceError('SEARCH_FILTER_CHANGED');
@@ -70,8 +85,7 @@ export function parseSearch(html: string, page = 1) {
   if (data.data.length !== Math.min(pager.perPage, Math.max(0, pager.totalCount - (page - 1) * pager.perPage))) throw new SourceError('INCOMPLETE_SEARCH');
   const ld = [...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
     .map(m => json(m[1]!)).filter(x => x['@type'] === 'SearchResultsPage');
-  const target = new URL(SEARCH_URL); if (page > 1) target.searchParams.set('page', String(page));
-  if (ld.length !== 1 || ld[0].url !== target.href || ld[0].mainEntity?.['@type'] !== 'ItemList' ||
+  if (ld.length !== 1 || ld[0].url !== searchUrl(order, page) || ld[0].mainEntity?.['@type'] !== 'ItemList' ||
       !Array.isArray(ld[0].mainEntity.itemListElement) || ld[0].mainEntity.itemListElement.length !== data.data.length) throw new SourceError('SEARCH_STRUCTURE_CHANGED');
   // Zero is deliberately not accepted until an actual empty page contract is verified.
   if (!pager.totalCount) throw new SourceError('EMPTY_SEARCH_UNCONFIRMED');
@@ -120,18 +134,35 @@ export async function collect({settings = registry.defaults(SOURCE_ID), transpor
   pause = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))}:
   {settings?:Record<string,number|null>;transport?:typeof fetch;signal?:AbortSignal;pause?:(ms:number)=>Promise<void>} = {}) {
   registry.validate(SOURCE_ID, settings);
-  const first = parseSearch(await fetchHtml(SEARCH_URL, transport, signal, pause));
-  const listings = [...first.listings]; const ids = new Set(first.ids); const urls = new Set(first.urls);
-  for (let page = 2; page <= first.totalPages; page++) {
-    await pause(300);
-    const target = new URL(SEARCH_URL); target.searchParams.set('page', String(page));
-    const next = parseSearch(await fetchHtml(target.href, transport, signal, pause), page);
-    if (next.totalCount !== first.totalCount || next.totalPages !== first.totalPages) throw new SourceError('SEARCH_CHANGED_DURING_RUN');
-    for (const id of next.ids) { if (ids.has(id)) throw new SourceError('DUPLICATE_CARD'); ids.add(id); }
-    for (const url of next.urls) { if (urls.has(url)) throw new SourceError('DUPLICATE_CARD'); urls.add(url); }
-    listings.push(...next.listings);
+  async function search(order: SearchOrder) {
+    const first = parseSearch(await fetchHtml(searchUrl(order), transport, signal, pause), 1, order);
+    const listings = [...first.listings]; const ids = new Set(first.ids); const urls = new Set(first.urls);
+    for (let page = 2; page <= first.totalPages; page++) {
+      await pause(300);
+      const next = parseSearch(await fetchHtml(searchUrl(order, page), transport, signal, pause), page, order);
+      if (next.totalCount !== first.totalCount || next.totalPages !== first.totalPages) throw new SearchChangedError(page,
+        { totalCount: first.totalCount, totalPages: first.totalPages },
+        { totalCount: next.totalCount, totalPages: next.totalPages }, order);
+      for (const id of next.ids) { if (ids.has(id)) throw new SourceError('DUPLICATE_CARD'); ids.add(id); }
+      for (const url of next.urls) { if (urls.has(url)) throw new SourceError('DUPLICATE_CARD'); urls.add(url); }
+      listings.push(...next.listings);
+    }
+    if (ids.size !== first.totalCount) throw new SourceError('INCOMPLETE_SEARCH');
+    return { first, listings, order };
   }
-  if (ids.size !== first.totalCount) throw new SourceError('INCOMPLETE_SEARCH');
+  let result: Awaited<ReturnType<typeof search>>;
+  let recoveredFrom: { page: number; expected: SearchChangedError['expected']; actual: SearchChangedError['actual'] } | undefined;
+  try { result = await search('desc'); }
+  catch (error) {
+    if (!(error instanceof SearchChangedError)) throw error;
+    recoveredFrom = { page: error.page, expected: error.expected, actual: error.actual };
+    // Rentola can serve an inconsistent newest-first catalog across repeated GETs.
+    // Discard it completely and retry the same unfiltered catalog with the site's
+    // supported price order. Both scans share the original deadline and lease.
+    await pause(1000);
+    result = await search('rent_asc');
+  }
+  const { first, listings } = result;
   const candidates = listings.filter(x => registry.matches(settings, x, SOURCE_ID));
   const matched: ListingInput[] = [];
   for (let index = 0; index < candidates.length; index += 2) {
@@ -147,6 +178,7 @@ export async function collect({settings = registry.defaults(SOURCE_ID), transpor
     results.forEach((result, offset) => { if (result.status === 'fulfilled' && result.value) matched.push(batch[offset]!); });
   }
   return {listings:matched,total:first.totalCount,inspected:first.totalCount,pages:first.totalPages,
+    searchOrder:result.order, ...(recoveredFrom ? {recoveredFrom} : {}),
     available:matched.filter(x => x.availabilityStatus === 'available').length};
 }
 

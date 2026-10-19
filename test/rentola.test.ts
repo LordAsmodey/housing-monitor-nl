@@ -1,13 +1,18 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseSearch,parseDetail,collect,independentHousing,allowedDetailUrl,SOURCE_ID,SEARCH_URL} from '../src/sources/rentola-core';
+import {parseSearch,parseDetail,collect,independentHousing,allowedDetailUrl,SOURCE_ID,SEARCH_URL,SearchChangedError} from '../src/sources/rentola-core';
 const registry = require('../scripts/search-settings.cjs');
 const fixture = (name = 'search') => readFileSync(`test/fixtures/rentola-${name}.html`,'utf8');
 const defaults = registry.defaults(SOURCE_ID);
 function state(html = fixture()) {return JSON.parse(JSON.parse(html.match(/push\((\[.*\])\)/)![1]!)[1]);}
 function ld(html = fixture()) {return JSON.parse(html.match(/type="application\/ld\+json">(.*?)<\/script>/)![1]!);}
 function render(data:any, schema = ld()) {return `<script type="application/ld+json">${JSON.stringify(schema)}</script><script>self.__next_f.push(${JSON.stringify([1,JSON.stringify(data)])})</script>`;}
+function withOrder(html:string, order:string) {
+ const d=state(html), l=ld(html);d.listingsParams.order=order;
+ const url=new URL(l.url);url.searchParams.set('order',order);l.url=url.href;
+ return render(d,l);
+}
 function single() {
   const d=state(); d.searchPropertiesData.data=d.searchPropertiesData.data.slice(0,1);
   d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:1,totalCount:1,perPage:21};
@@ -85,7 +90,79 @@ test('collector validates all pages and refuses overlapping or changing results'
  const lastLd=structuredClone(l);lastLd.url=SEARCH_URL+'&page=2';lastLd.mainEntity.itemListElement=[l.mainEntity.itemListElement[0]];
  await assert.rejects(collect({pause:async()=>{},transport:async(url)=>response(String(url)===SEARCH_URL?first:render(last,lastLd))}),/DUPLICATE_CARD/);
  last.searchPropertiesData.meta.pagination.totalCount=23;last.searchPropertiesData.data.push({...last.searchPropertiesData.data[0],id:'999',attributes:{...last.searchPropertiesData.data[0].attributes,slug:'home-p999'}});lastLd.mainEntity.itemListElement.push({...lastLd.mainEntity.itemListElement[0],url:'https://rentola.nl/en/listings/home-p999',item:{...lastLd.mainEntity.itemListElement[0].item,url:'https://rentola.nl/en/listings/home-p999',offers:{...lastLd.mainEntity.itemListElement[0].item.offers,url:'https://rentola.nl/en/listings/home-p999'}}});
- await assert.rejects(collect({pause:async()=>{},transport:async(url)=>response(String(url)===SEARCH_URL?first:render(last,lastLd))}),/SEARCH_CHANGED_DURING_RUN/);
+ const requests:string[]=[];
+ await assert.rejects(collect({pause:async()=>{},transport:async(url)=>{
+  requests.push(String(url));const u=new URL(String(url));
+  return response(withOrder(u.searchParams.has('page')?render(last,lastLd):first,u.searchParams.get('order')!));
+ }}), error => {
+  assert.ok(error instanceof SearchChangedError);
+  assert.equal(error.category,'SEARCH_CHANGED_DURING_RUN');
+  assert.equal(error.page,2);
+  assert.deepEqual(error.expected,{totalCount:22,totalPages:2});
+  assert.deepEqual(error.actual,{totalCount:23,totalPages:2});
+  assert.equal(error.order,'rent_asc');
+  return true;
+ });
+ assert.equal(requests.length,4); // One full restart, never an unbounded retry.
+});
+test('price-order parsing requires the exact sort echo and JSON-LD URL',()=>{
+ const sorted=withOrder(fixture(),'rent_asc');
+ assert.equal(parseSearch(sorted,1,'rent_asc').totalCount,285);
+ assert.throws(()=>parseSearch(sorted),/SEARCH_FILTER_CHANGED/);
+ assert.throws(()=>parseSearch(fixture(),1,'rent_asc'),/SEARCH_FILTER_CHANGED/);
+ const d=state(sorted),l=ld(sorted);l.url=SEARCH_URL;
+ assert.throws(()=>parseSearch(render(d,l),1,'rent_asc'),/SEARCH_STRUCTURE_CHANGED/);
+ assert.throws(()=>parseSearch(withOrder(fixture(),'rent_desc'),1,'rent_desc' as any),/SEARCH_FILTER_CHANGED/);
+});
+function recoverableSearch() {
+ const d=state(),l=ld();d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:2,totalCount:22,perPage:21};
+ const next=state(fixture('last')),nextLd=ld(fixture('last'));
+ next.listingsParams.page='2';next.searchPropertiesData.data=next.searchPropertiesData.data.slice(0,1);
+ next.searchPropertiesData.meta.pagination={currentPage:2,totalPages:2,totalCount:22,perPage:21};
+ nextLd.url=SEARCH_URL+'&page=2';nextLd.mainEntity.itemListElement=nextLd.mainEntity.itemListElement.slice(0,1);
+ const first=render(d,l),last=render(next,nextLd);
+ // A mismatch crossing the page-count boundary, as in the production incident.
+ d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:3,totalCount:43,perPage:21};
+ return {first,last,stale:render(d,l)};
+}
+test('inconsistent newest search is discarded; complete price-order scan validates before details',async()=>{
+ const {first,last,stale}=recoverableSearch();const requests:string[]=[];const pauses:number[]=[];
+ const signal=new AbortController().signal;
+ const valid=parseSearch(first).listings;
+ const result=await collect({signal,pause:async ms=>{pauses.push(ms);},transport:async(url,options)=>{
+  assert.equal(options!.signal,signal);const u=new URL(String(url));requests.push(u.href);
+  if(u.pathname.startsWith('/en/listings/')){
+   assert.equal(requests.filter(x=>x.includes('/en/rent?')).length,4);
+   const item=valid.find(x=>x.canonicalUrl===u.href);assert.ok(item);return response(detail(item));
+  }
+  const order=u.searchParams.get('order')!;
+  const body=u.searchParams.has('page')?last:order==='desc'?stale:first;
+  return response(withOrder(body,order));
+ }});
+ assert.deepEqual(requests.slice(0,4),[SEARCH_URL,SEARCH_URL+'&page=2',SEARCH_URL.replace('order=desc','order=rent_asc'),SEARCH_URL.replace('order=desc','order=rent_asc')+'&page=2']);
+ assert.equal(pauses.filter(ms=>ms===1000).length,1);
+ assert.equal(result.inspected,22);assert.equal(result.total,22);assert.equal(result.pages,2);
+ assert.equal(result.searchOrder,'rent_asc');
+ assert.deepEqual(result.recoveredFrom,{page:2,expected:{totalCount:43,totalPages:3},actual:{totalCount:22,totalPages:2}});
+ // Only the first page has budget-matching candidates in these fixtures.
+ const expected=valid.filter(x=>registry.matches(defaults,x,SOURCE_ID)&&x.availabilityStatus==='available');
+ assert.deepEqual(result.listings.map(x=>x.externalId),expected.map(x=>x.externalId));
+});
+test('restart uses the original deadline and cannot make requests after cancellation',async()=>{
+ const {stale,last}=recoverableSearch();const controller=new AbortController();let calls=0;
+ await assert.rejects(collect({signal:controller.signal,pause:async ms=>{if(ms===1000)controller.abort();},transport:async(url)=>{
+  calls++;return response(String(url)===SEARCH_URL?stale:last);
+ }}),/RUN_TIMEOUT/);
+ assert.equal(calls,2);
+});
+test('invalid fallback pages still fail closed without another restart or detail requests',async()=>{
+ const {stale,last}=recoverableSearch();const requests:string[]=[];
+ await assert.rejects(collect({pause:async()=>{},transport:async(url)=>{
+  const u=new URL(String(url));requests.push(u.href);
+  if(u.searchParams.get('order')==='rent_asc')return response('Access denied');
+  return response(u.searchParams.has('page')?last:stale);
+ }}),/ACCESS_BLOCKED/);
+ assert.equal(requests.length,3);
 });
 test('complete pagination succeeds without relying on matched count',async()=>{
  const d=state();const l=ld();d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:2,totalCount:22,perPage:21};
