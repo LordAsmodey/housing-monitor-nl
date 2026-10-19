@@ -10,6 +10,7 @@ import { HuurwoningenService } from './sources/huurwoningen.service';
 import { WoldringService } from './sources/woldring.service';
 import { GrunoService } from './sources/gruno.service';
 import { SolideService } from './sources/solide.service';
+import { RentbillyService } from './sources/rentbilly.service';
 import { RotsvastService } from './sources/rotsvast.service';
 import { Wonen123Service } from './sources/wonen123.service';
 import { RentolaService } from './sources/rentola.service';
@@ -21,6 +22,6 @@ import { VestedaService } from './sources/vesteda.service';
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 
-@Module({ controllers: [HealthController, AdminController], providers: [PrismaService, ListingsService, OutboxService, ParariusService, FundaService, HuurwoningenService, WoldringService, VestedaService, GrunoService, LamberinkService, VandermeulenService, MaxxService, RentsolutionsService, Wonen123Service, RotsvastService, RentolaService, SolideService, AdminService] })
+@Module({ controllers: [HealthController, AdminController], providers: [PrismaService, ListingsService, OutboxService, ParariusService, FundaService, HuurwoningenService, WoldringService, VestedaService, GrunoService, LamberinkService, VandermeulenService, MaxxService, RentsolutionsService, Wonen123Service, RotsvastService, RentbillyService, RentolaService, SolideService, AdminService] })
 export class AppModule {}
 

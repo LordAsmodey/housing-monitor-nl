@@ -1,0 +1,60 @@
+{
+  "propertyAttributes": {
+    "title": "Te huur: Appartement Grote Appelstraat in Groningen",
+    "slug": "te-huur-appartement-grote-appelstraat-in-groningen-pc5ffdf",
+    "countryCode": "nl",
+    "area": "57.0",
+    "desc": "Beschrijving \n \n Per 1 november komt deze ruime woning beschikbaar. De woning beschikt over een prettige indeling en is ideaal voor wie op zoek is naar een comfortabele woning met voldoende leefruimte en een eigen tuin. \n De woning beschikt over: \n \n Twee slaapkamers \n Een ruime woonkamer met open keuken \n Een badkamer \n Een apart toilet \n Een ruime tuin met overkapping \n \n De woonkamer en open keuken vormen een fijne centrale leefruimte. Vanuit de woning is er toegang tot de ruime tuin. \n Huurprijs: € 1.025,- per maand, exclusief gas, water en elektra.",
+    "propertyType": "apartment",
+    "status": "active",
+    "address": "Grote Appelstraat 6, 9712 VC Groningen, Netherlands",
+    "monthlyRent": 1025,
+    "rentCurrency": "EUR",
+    "estimatedArea": false,
+    "rentFrequency": "monthly"
+  },
+  "ld": {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    "name": "Te huur: Appartement Grote Appelstraat in Groningen",
+    "description": "Beschrijving \n \n Per 1 november komt deze ruime woning beschikbaar. De woning beschikt over een prettige indeling en is ideaal voor wie op zoek is naar een comfortabele woning met voldoende leefruimte en een eigen tuin. \n De woning beschikt over: \n \n Twee slaapkamers \n Een ruime woonkamer met open keuken \n Een badkamer \n Een apart toilet \n Een ruime tuin met overkapping \n \n De woonkamer en open keuken vormen een fijne centrale leefruimte. Vanuit de woning is er toegang tot de ruime tuin. \n Huurprijs: € 1.025,- per maand, exclusief gas, water en elektra.",
+    "datePosted": "2026-10-02T11:13:30Z",
+    "url": "https://rentbilly.nl/en/listings/te-huur-appartement-grote-appelstraat-in-groningen-pc5ffdf",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "price": 1025,
+      "priceCurrency": "EUR",
+      "url": "https://rentbilly.nl/en/listings/te-huur-appartement-grote-appelstraat-in-groningen-pc5ffdf",
+      "validFrom": "2026-10-02T11:13:30Z",
+      "itemOffered": {
+        "@type": "Apartment",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Grote Appelstraat 6, 9712 VC Groningen, Netherlands",
+          "addressCountry": "NL",
+          "addressLocality": "Groningen",
+          "addressRegion": "Groningen"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 53.2240567,
+          "longitude": 6.55759
+        },
+        "floorSize": {
+          "@type": "QuantitativeValue",
+          "value": 57,
+          "unitCode": "MTK"
+        },
+        "numberOfRooms": {
+          "@type": "QuantitativeValue",
+          "value": 3
+        },
+        "numberOfBedrooms": {
+          "@type": "QuantitativeValue",
+          "value": 2
+        }
+      }
+    }
+  }
+}

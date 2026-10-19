@@ -1,0 +1,1507 @@
+{
+  "listingsParams": {
+    "hasCheapSlug": "$undefined",
+    "location": "groningen",
+    "order": "",
+    "propertyType": [
+      "",
+      "",
+      "apartment",
+      "studio",
+      ""
+    ],
+    "rentPer": "",
+    "priceMin": "0",
+    "priceMax": "1500",
+    "sizeMin": "20",
+    "sizeMax": "",
+    "roomMin": "",
+    "roomMax": "",
+    "facility": [],
+    "page": "3",
+    "countryCode": "$undefined",
+    "source": "$undefined"
+  },
+  "searchPropertiesData": {
+    "data": [
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39870856",
+        "attributes": {
+          "title": "Te huur: Appartement Oudeweg in Groningen",
+          "address": "Oudeweg 9e, 9711 TJ Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1153,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "35.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-oudeweg-in-groningen-pe12136"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39746659",
+        "attributes": {
+          "title": "Te huur: Appartement Noorderstationsstraat in Groningen",
+          "address": "Noorderstationsstraat 18-1, 9717 KN Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1039,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "24.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-noorderstationsstraat-in-groningen-p99bb32"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39711482",
+        "attributes": {
+          "title": "Woning te huur: Ubbo Emmiusstraat 13A 9711CA Groningen",
+          "address": "Ubbo Emmiusstraat 13, 9711 CA Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1113,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "36.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-ubbo-emmiusstraat-13a-9711ca-groningen-pb2cdcb"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39601036",
+        "attributes": {
+          "title": "Te huur: Appartement Hardewikerstraat in Groningen",
+          "address": "Hardewikerstraat 13, 9712 GR Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1244,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "30.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-hardewikerstraat-in-groningen-p9f4294"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40023582",
+        "attributes": {
+          "title": "Te huur: Appartement Jozef Israëlsstraat in Groningen",
+          "address": "Jozef Israëlsstraat 45-2, 9718 GC Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1232,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "28.0",
+          "rooms": 3,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-jozef-israelsstraat-in-groningen-pdfb968"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39650189",
+        "attributes": {
+          "title": "Te huur: Appartement Noorderstationsstraat in Groningen",
+          "address": "Noorderstationsstraat 18a, 9717 KN Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1012,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "26.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-noorderstationsstraat-in-groningen-p7c9798"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39796566",
+        "attributes": {
+          "title": "Woning te huur: Noorderstationsstraat 14 4 9717KN Groningen",
+          "address": "Noorderstationsstraat 14a, 9717 KN Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1039,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "24.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-noorderstationsstraat-14-4-9717kn-groningen-p14bf2f"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39641913",
+        "attributes": {
+          "title": "Woning te huur: Hardewikerstraat 13 9712GR Groningen",
+          "address": "Hardewikerstraat 13, 9712 GR Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1244,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "30.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-hardewikerstraat-13-9712gr-groningen-p0116cf"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "38805613",
+        "attributes": {
+          "title": "Huis in Oosterpoort",
+          "address": "Meeuwerderweg 75-18, 9724 EP Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1300,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "87.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "huis-in-oosterpoort-p410498"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40326340",
+        "attributes": {
+          "title": "studio at Groningen",
+          "address": "Subway, Brugstraat, 9711 HX Groningen, Netherlands",
+          "propertyType": "studio",
+          "monthlyRent": 1018,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "26.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "studio-at-groningen-p69324c"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39711464",
+        "attributes": {
+          "title": "Woning te huur: Noorderstationsstraat 18A 9717KN Groningen",
+          "address": "Noorderstationsstraat 18, 9717 KN Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1012,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "26.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-noorderstationsstraat-18a-9717kn-groningen-pb8dc64"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40161184",
+        "attributes": {
+          "title": "Te huur: Appartement Grote Leliestraat in Groningen",
+          "address": "Grote Leliestraat 1, 9712 SM Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1122,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "28.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-grote-leliestraat-in-groningen-p4dd81d"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40425523",
+        "attributes": {
+          "title": "Te huur: Appartement Eemskanaal in Groningen",
+          "address": "Eemskanaal 8, 9713 AA Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 980,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "54.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-eemskanaal-in-groningen-p46dadb"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": true
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39104481",
+        "attributes": {
+          "title": "Toxopeusstraat 160 Groningen",
+          "address": "Toxopeusstraat 160, 9726 GA Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1181,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "49.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "toxopeusstraat-160-groningen-p14faf3"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "21907571",
+        "attributes": {
+          "title": "Woning te huur: Berkelstraat 16B 9725GZ Groningen",
+          "address": "Berkelstraat 16, 9725 GZ Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 665,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "20.0",
+          "rooms": 4,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-berkelstraat-16b-9725gz-groningen-pba9c2f"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "33525773",
+        "attributes": {
+          "title": "molukkenstraat 183",
+          "address": "Molukkenstraat 183, 9715 NT Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1007,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "61.0",
+          "rooms": 3,
+          "estimatedArea": false,
+          "slug": "molukkenstraat-183-p8460fd"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "21721258",
+        "attributes": {
+          "title": "Woning te huur: Molukkenstraat 4 9715NV Groningen",
+          "address": "Molukkenstraat 8, 9715 NV Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1035,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "25.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-molukkenstraat-4-9715nv-groningen-p73b6ce"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "22928501",
+        "attributes": {
+          "title": "Prachtig woonschip met nieuw appartement",
+          "address": "Turfsingel 1009, Groningen, Nederland",
+          "propertyType": "apartment",
+          "monthlyRent": 1175,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "65.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "prachtig-woonschip-met-nieuw-appartement-bd0230"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40134148",
+        "attributes": {
+          "title": "Te huur: Appartement Winschoterweg in Groningen",
+          "address": "Winschoterweg 9, 9723 CG Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 820,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "56.0",
+          "rooms": 3,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-winschoterweg-in-groningen-pe03485"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39058215",
+        "attributes": {
+          "title": "MVGM - Te huur: Friesestraatweg 229 23, groningen",
+          "address": "Friesestraatweg 229-23, 9743 AE Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1300,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "78.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "mvgm-te-huur-friesestraatweg-229-23-groningen-p7c2b5e"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "38323645",
+        "attributes": {
+          "title": "Poelestraat 31 (b)",
+          "address": "9711 PH Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1059,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "55.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "poelestraat-31-b-p5b5c00"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      }
+    ],
+    "included": [
+      {
+        "id": "240117",
+        "attributes": {
+          "name": "Groningen",
+          "level": "city",
+          "countryCode": "nl"
+        },
+        "type": "geocomponents"
+      }
+    ],
+    "meta": {
+      "pagination": {
+        "currentPage": 3,
+        "totalPages": 4,
+        "totalCount": 84,
+        "perPage": 21
+      }
+    }
+  },
+  "ld": {
+    "@context": "https://schema.org",
+    "@type": "SearchResultsPage",
+    "url": "https://rentbilly.nl/en/for-rent?location=groningen&property_types=apartment&property_types=studio&rent=0-1500&size=20&page=3",
+    "mainEntity": {
+      "@type": "ItemList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-oudeweg-in-groningen-pe12136",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Oudeweg in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-oudeweg-in-groningen-pe12136",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1153,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-oudeweg-in-groningen-pe12136",
+              "validFrom": "2026-10-09T11:15:10Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Oudeweg 9e, 9711 TJ Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2185016,
+                  "longitude": 6.5744745
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 35,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-noorderstationsstraat-in-groningen-p99bb32",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Noorderstationsstraat in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-noorderstationsstraat-in-groningen-p99bb32",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1039,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-noorderstationsstraat-in-groningen-p99bb32",
+              "validFrom": "2026-10-07T16:14:33Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Noorderstationsstraat 18-1, 9717 KN Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2280694,
+                  "longitude": 6.5594527
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 24,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-ubbo-emmiusstraat-13a-9711ca-groningen-pb2cdcb",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Ubbo Emmiusstraat 13A 9711CA Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-ubbo-emmiusstraat-13a-9711ca-groningen-pb2cdcb",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1113,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-ubbo-emmiusstraat-13a-9711ca-groningen-pb2cdcb",
+              "validFrom": "2026-10-07T08:24:32Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Ubbo Emmiusstraat 13, 9711 CA Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2132765,
+                  "longitude": 6.5655422
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 36,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-hardewikerstraat-in-groningen-p9f4294",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Hardewikerstraat in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-hardewikerstraat-in-groningen-p9f4294",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1244,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-hardewikerstraat-in-groningen-p9f4294",
+              "validFrom": "2026-10-05T16:13:53Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Hardewikerstraat 13, 9712 GR Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2213851,
+                  "longitude": 6.5649198
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 30,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-jozef-israelsstraat-in-groningen-pdfb968",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Jozef Israëlsstraat in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-jozef-israelsstraat-in-groningen-pdfb968",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1232,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-jozef-israelsstraat-in-groningen-pdfb968",
+              "validFrom": "2026-10-12T12:15:15Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Jozef Israëlsstraat 45-2, 9718 GC Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2163339,
+                  "longitude": 6.5532341
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 28,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 3
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-noorderstationsstraat-in-groningen-p7c9798",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Noorderstationsstraat in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-noorderstationsstraat-in-groningen-p7c9798",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1012,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-noorderstationsstraat-in-groningen-p7c9798",
+              "validFrom": "2026-10-06T09:15:11Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Noorderstationsstraat 18a, 9717 KN Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2281591,
+                  "longitude": 6.5597567
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 26,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 7,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-noorderstationsstraat-14-4-9717kn-groningen-p14bf2f",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Noorderstationsstraat 14 4 9717KN Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-noorderstationsstraat-14-4-9717kn-groningen-p14bf2f",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1039,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-noorderstationsstraat-14-4-9717kn-groningen-p14bf2f",
+              "validFrom": "2026-10-08T10:58:36Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Noorderstationsstraat 14a, 9717 KN Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2280518,
+                  "longitude": 6.5598319
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 24,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 8,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-hardewikerstraat-13-9712gr-groningen-p0116cf",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Hardewikerstraat 13 9712GR Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-hardewikerstraat-13-9712gr-groningen-p0116cf",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1244,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-hardewikerstraat-13-9712gr-groningen-p0116cf",
+              "validFrom": "2026-10-06T06:37:27Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Hardewikerstraat 13, 9712 GR Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2213851,
+                  "longitude": 6.5649198
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 30,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 9,
+          "url": "https://rentbilly.nl/en/listings/huis-in-oosterpoort-p410498",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Huis in Oosterpoort",
+            "url": "https://rentbilly.nl/en/listings/huis-in-oosterpoort-p410498",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1300,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/huis-in-oosterpoort-p410498",
+              "validFrom": "2026-09-23T17:03:17Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Meeuwerderweg 75-18, 9724 EP Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2117873,
+                  "longitude": 6.5784168
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 87,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 10,
+          "url": "https://rentbilly.nl/en/listings/studio-at-groningen-p69324c",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "studio at Groningen",
+            "url": "https://rentbilly.nl/en/listings/studio-at-groningen-p69324c",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1018,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/studio-at-groningen-p69324c",
+              "validFrom": "2026-10-17T05:32:34Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Subway, Brugstraat, 9711 HX Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2165008,
+                  "longitude": 6.5604081
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 26,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 11,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-noorderstationsstraat-18a-9717kn-groningen-pb8dc64",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Noorderstationsstraat 18A 9717KN Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-noorderstationsstraat-18a-9717kn-groningen-pb8dc64",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1012,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-noorderstationsstraat-18a-9717kn-groningen-pb8dc64",
+              "validFrom": "2026-10-07T08:24:31Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Noorderstationsstraat 18, 9717 KN Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2281964,
+                  "longitude": 6.5597405
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 26,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 12,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-grote-leliestraat-in-groningen-p4dd81d",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Grote Leliestraat in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-grote-leliestraat-in-groningen-p4dd81d",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1122,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-grote-leliestraat-in-groningen-p4dd81d",
+              "validFrom": "2026-10-14T14:16:38Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Grote Leliestraat 1, 9712 SM Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2219482,
+                  "longitude": 6.5594921
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 28,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 13,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-eemskanaal-in-groningen-p46dadb",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Eemskanaal in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-eemskanaal-in-groningen-p46dadb",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 980,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-eemskanaal-in-groningen-p46dadb",
+              "validFrom": "2026-10-19T10:16:47Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Eemskanaal 8, 9713 AA Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2175949,
+                  "longitude": 6.5806158
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 54,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 14,
+          "url": "https://rentbilly.nl/en/listings/toxopeusstraat-160-groningen-p14faf3",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Toxopeusstraat 160 Groningen",
+            "url": "https://rentbilly.nl/en/listings/toxopeusstraat-160-groningen-p14faf3",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1181,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/toxopeusstraat-160-groningen-p14faf3",
+              "validFrom": "2026-09-29T09:02:26Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Toxopeusstraat 160, 9726 GA Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2125443,
+                  "longitude": 6.5437406
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 49,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 15,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-berkelstraat-16b-9725gz-groningen-pba9c2f",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Berkelstraat 16B 9725GZ Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-berkelstraat-16b-9725gz-groningen-pba9c2f",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 665,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-berkelstraat-16b-9725gz-groningen-pba9c2f",
+              "validFrom": "2026-01-13T07:42:51Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Berkelstraat 16, 9725 GZ Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2069863,
+                  "longitude": 6.565992
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 20,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 4
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 16,
+          "url": "https://rentbilly.nl/en/listings/molukkenstraat-183-p8460fd",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "molukkenstraat 183",
+            "url": "https://rentbilly.nl/en/listings/molukkenstraat-183-p8460fd",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1007,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/molukkenstraat-183-p8460fd",
+              "validFrom": "2026-07-17T07:30:51Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Molukkenstraat 183, 9715 NT Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2354366,
+                  "longitude": 6.5683501
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 61,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 3
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 17,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-molukkenstraat-4-9715nv-groningen-p73b6ce",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Molukkenstraat 4 9715NV Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-molukkenstraat-4-9715nv-groningen-p73b6ce",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1035,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-molukkenstraat-4-9715nv-groningen-p73b6ce",
+              "validFrom": "2026-01-09T06:08:04Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Molukkenstraat 8, 9715 NV Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2330582,
+                  "longitude": 6.5741813
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 25,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 18,
+          "url": "https://rentbilly.nl/en/listings/prachtig-woonschip-met-nieuw-appartement-bd0230",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Prachtig woonschip met nieuw appartement",
+            "url": "https://rentbilly.nl/en/listings/prachtig-woonschip-met-nieuw-appartement-bd0230",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1175,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/prachtig-woonschip-met-nieuw-appartement-bd0230",
+              "validFrom": "2026-02-01T13:40:05Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Turfsingel 1009, Groningen, Nederland",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.222201999999996,
+                  "longitude": 6.5672098
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 65,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 19,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-winschoterweg-in-groningen-pe03485",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Winschoterweg in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-winschoterweg-in-groningen-pe03485",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 820,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-winschoterweg-in-groningen-pe03485",
+              "validFrom": "2025-08-30T11:45:18Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Winschoterweg 9, 9723 CG Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.1917606,
+                  "longitude": 6.6370026
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 56,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 3
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 20,
+          "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-friesestraatweg-229-23-groningen-p7c2b5e",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "MVGM - Te huur: Friesestraatweg 229 23, groningen",
+            "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-friesestraatweg-229-23-groningen-p7c2b5e",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1300,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-friesestraatweg-229-23-groningen-p7c2b5e",
+              "validFrom": "2026-02-03T06:27:15Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Friesestraatweg 229-23, 9743 AE Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.232128,
+                  "longitude": 6.5303246
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 78,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 21,
+          "url": "https://rentbilly.nl/en/listings/poelestraat-31-b-p5b5c00",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Poelestraat 31 (b)",
+            "url": "https://rentbilly.nl/en/listings/poelestraat-31-b-p5b5c00",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1059,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/poelestraat-31-b-p5b5c00",
+              "validFrom": "2026-09-15T05:06:27Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "9711 PH Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2181498,
+                  "longitude": 6.5708754
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 55,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -17,6 +17,7 @@ const environmentSchema = z.object({
   HUURWONINGEN_BROWSER_TOKEN: z.string().min(32).optional(),
   MONITOR_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(900),
   SOLIDE_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
+  RENTBILLY_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   ROTSVAST_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   WONEN123_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   RENTOLA_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),

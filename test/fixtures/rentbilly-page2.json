@@ -1,0 +1,1507 @@
+{
+  "listingsParams": {
+    "hasCheapSlug": "$undefined",
+    "location": "groningen",
+    "order": "",
+    "propertyType": [
+      "",
+      "",
+      "apartment",
+      "studio",
+      ""
+    ],
+    "rentPer": "",
+    "priceMin": "0",
+    "priceMax": "1500",
+    "sizeMin": "20",
+    "sizeMax": "",
+    "roomMin": "",
+    "roomMax": "",
+    "facility": [],
+    "page": "2",
+    "countryCode": "$undefined",
+    "source": "$undefined"
+  },
+  "searchPropertiesData": {
+    "data": [
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40334184",
+        "attributes": {
+          "title": "Woning te huur: Nieuwe Kijk in Het Jatstraat 61C 9712SE Groningen",
+          "address": "Nieuwe Kijk in 't Jatstraat 61c, 9712 SE Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 962,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "27.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-nieuwe-kijk-in-het-jatstraat-61c-9712se-groningen-p2c85bd"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40326332",
+        "attributes": {
+          "title": "apartment at Groningen",
+          "address": "Muurstraat 5b, 9712 EM Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1349,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "48.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "apartment-at-groningen-pf8a9c4"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40196763",
+        "attributes": {
+          "title": "Woning te huur: Nieuwe Ebbingestraat 59B 9712NE Groningen",
+          "address": "Etos, Nieuwe Ebbingestraat 59, 9712 NE Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1202,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "45.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-nieuwe-ebbingestraat-59b-9712ne-groningen-pa85991"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39050567",
+        "attributes": {
+          "title": "Prachtige ruime zonnige studio met 2 eigen balkons",
+          "address": "Korreweg 232, 9715 AN Groningen, Netherlands",
+          "propertyType": "studio",
+          "monthlyRent": 995,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "50.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "prachtige-ruime-zonnige-studio-met-2-eigen-balkons-p6e05a2"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39500622",
+        "attributes": {
+          "title": "MVGM - Te huur: Boumaboulevard 768, groningen",
+          "address": "Boumaboulevard 768, 9723 ZT Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1389,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "86.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "mvgm-te-huur-boumaboulevard-768-groningen-p5d693e"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39870863",
+        "attributes": {
+          "title": "Te huur: Appartement Papengang 2 b in Groningen",
+          "address": "Catwalk, Oosterstraat 32, 9711 NV Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 980,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "24.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-papengang-2-b-in-groningen-p647ff7"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39796539",
+        "attributes": {
+          "title": "Woning te huur: Nieuwe Ebbingestraat 84B 9712NN Groningen",
+          "address": "Polski Smak, Nieuwe Ebbingestraat 84, 9712 NN Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1129,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "39.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-nieuwe-ebbingestraat-84b-9712nn-groningen-pa09622"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39590826",
+        "attributes": {
+          "title": "Te huur: Appartement Bergstraat in Groningen",
+          "address": "Bergstraat 29, 9717 LR Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 933,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "34.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-bergstraat-in-groningen-p0d0b24"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39875019",
+        "attributes": {
+          "title": "Te huur: Appartement Verlengde Nieuwstraat in Groningen",
+          "address": "Verlengde Nieuwstraat 2b, 9724 HC Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1281,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "58.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-verlengde-nieuwstraat-in-groningen-p1f15f6"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40261880",
+        "attributes": {
+          "title": "Studio Apartment Surface Area: 20m2 Unfurnished Available from: 2026-11-01",
+          "address": "Radijsstraat, 9741 BP Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 665,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "20.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "studio-apartment-surface-area-20m2-unfurnished-available-from-2026-11-01-pb47700"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40020927",
+        "attributes": {
+          "title": "Te huur: Appartement Hoendiep in Groningen",
+          "address": "Hoendiep 29-1, 9718 TB Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1110,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "32.0",
+          "rooms": 3,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-hoendiep-in-groningen-p760552"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39304254",
+        "attributes": {
+          "title": "Studio centrum",
+          "address": "Marktstraat 8e, 9712 PC Groningen, Netherlands",
+          "propertyType": "studio",
+          "monthlyRent": 975,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "33.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "studio-centrum-p0a5bee"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39809056",
+        "attributes": {
+          "title": "MVGM - Te huur: Oosterhamrikkade 117 28, groningen",
+          "address": "Oosterhamrikkade 117-53, 9713 KC Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1064,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "53.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "mvgm-te-huur-oosterhamrikkade-117-28-groningen-pfb47a2"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39926537",
+        "attributes": {
+          "title": "Woning te huur: Oudeweg 9E 9711TJ Groningen",
+          "address": "Oudeweg 9, 9711 TJ Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1153,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "35.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-oudeweg-9e-9711tj-groningen-p080359"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40196784",
+        "attributes": {
+          "title": "Woning te huur: Grote Leliestraat 1 9712SM Groningen",
+          "address": "Grote Leliestraat 1, 9712 SM Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1122,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "28.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-grote-leliestraat-1-9712sm-groningen-pefc79e"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39796564",
+        "attributes": {
+          "title": "Woning te huur: Papengang 1B 9711PA Groningen",
+          "address": "Papengang 2, 9711 PA Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1386,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "43.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "woning-te-huur-papengang-1b-9711pa-groningen-p84afc6"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40389619",
+        "attributes": {
+          "title": "Appartement op  woonark in het centrum",
+          "address": "Eendrachtskade 1012, 9726 CZ Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1250,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "60.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "appartement-op-woonark-in-het-centrum-p88a85c"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40151338",
+        "attributes": {
+          "title": "Te huur: Appartement Nieuwe Ebbingestraat in Groningen",
+          "address": "Etos, Nieuwe Ebbingestraat 59, 9712 NE Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1202,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "45.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-nieuwe-ebbingestraat-in-groningen-p2edb82"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39746656",
+        "attributes": {
+          "title": "Te huur: Appartement Papengang in Groningen",
+          "address": "Papengang 1-2, 9711 PA Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1386,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "43.0",
+          "rooms": 2,
+          "estimatedArea": false,
+          "slug": "te-huur-appartement-papengang-in-groningen-p058c36"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "40022674",
+        "attributes": {
+          "title": "MVGM - Te huur: Boumaboulevard 826, groningen",
+          "address": "Boumaboulevard 826, 9723 ZT Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1409,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "47.66",
+          "rooms": 1,
+          "estimatedArea": true,
+          "slug": "mvgm-te-huur-boumaboulevard-826-groningen-p406b33"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      },
+      {
+        "relationships": {
+          "city": {
+            "data": {
+              "id": "240117",
+              "type": "geocomponents"
+            }
+          }
+        },
+        "id": "39449693",
+        "attributes": {
+          "title": "Bovenwoning korrewegwijk",
+          "address": "Wiebengacomplex, Petrus Driessenstraat, 9714 CB Groningen, Netherlands",
+          "propertyType": "apartment",
+          "monthlyRent": 1100,
+          "rentCurrency": "EUR",
+          "rentFrequency": "monthly",
+          "countryCode": "nl",
+          "area": "60.0",
+          "rooms": 1,
+          "estimatedArea": false,
+          "slug": "bovenwoning-korrewegwijk-p7317ff"
+        },
+        "type": "properties",
+        "meta": {
+          "isNew": false
+        }
+      }
+    ],
+    "included": [
+      {
+        "id": "240117",
+        "attributes": {
+          "name": "Groningen",
+          "level": "city",
+          "countryCode": "nl"
+        },
+        "type": "geocomponents"
+      }
+    ],
+    "meta": {
+      "pagination": {
+        "currentPage": 2,
+        "totalPages": 4,
+        "totalCount": 84,
+        "perPage": 21
+      }
+    }
+  },
+  "ld": {
+    "@context": "https://schema.org",
+    "@type": "SearchResultsPage",
+    "url": "https://rentbilly.nl/en/for-rent?location=groningen&property_types=apartment&property_types=studio&rent=0-1500&size=20&page=2",
+    "mainEntity": {
+      "@type": "ItemList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-kijk-in-het-jatstraat-61c-9712se-groningen-p2c85bd",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Nieuwe Kijk in Het Jatstraat 61C 9712SE Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-kijk-in-het-jatstraat-61c-9712se-groningen-p2c85bd",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 962,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-kijk-in-het-jatstraat-61c-9712se-groningen-p2c85bd",
+              "validFrom": "2026-10-17T06:38:20Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Nieuwe Kijk in 't Jatstraat 61c, 9712 SE Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2233295,
+                  "longitude": 6.5588286
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 27,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "url": "https://rentbilly.nl/en/listings/apartment-at-groningen-pf8a9c4",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "apartment at Groningen",
+            "url": "https://rentbilly.nl/en/listings/apartment-at-groningen-pf8a9c4",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1349,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/apartment-at-groningen-pf8a9c4",
+              "validFrom": "2026-10-17T05:32:34Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Muurstraat 5b, 9712 EM Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2207188,
+                  "longitude": 6.5623161
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 48,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-ebbingestraat-59b-9712ne-groningen-pa85991",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Nieuwe Ebbingestraat 59B 9712NE Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-ebbingestraat-59b-9712ne-groningen-pa85991",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1202,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-ebbingestraat-59b-9712ne-groningen-pa85991",
+              "validFrom": "2026-10-15T06:33:44Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Etos, Nieuwe Ebbingestraat 59, 9712 NE Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2241079,
+                  "longitude": 6.5632187
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 45,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "url": "https://rentbilly.nl/en/listings/prachtige-ruime-zonnige-studio-met-2-eigen-balkons-p6e05a2",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Prachtige ruime zonnige studio met 2 eigen balkons",
+            "url": "https://rentbilly.nl/en/listings/prachtige-ruime-zonnige-studio-met-2-eigen-balkons-p6e05a2",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 995,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/prachtige-ruime-zonnige-studio-met-2-eigen-balkons-p6e05a2",
+              "validFrom": "2026-09-28T09:03:45Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Korreweg 232, 9715 AN Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2322316,
+                  "longitude": 6.572642
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 50,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-boumaboulevard-768-groningen-p5d693e",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "MVGM - Te huur: Boumaboulevard 768, groningen",
+            "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-boumaboulevard-768-groningen-p5d693e",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1389,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-boumaboulevard-768-groningen-p5d693e",
+              "validFrom": "2026-10-03T07:01:07Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Boumaboulevard 768, 9723 ZT Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2074029,
+                  "longitude": 6.5897614
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 86,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-papengang-2-b-in-groningen-p647ff7",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Papengang 2 b in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-papengang-2-b-in-groningen-p647ff7",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 980,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-papengang-2-b-in-groningen-p647ff7",
+              "validFrom": "2026-10-09T11:15:12Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Catwalk, Oosterstraat 32, 9711 NV Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2173807,
+                  "longitude": 6.5698397
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 24,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 7,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-ebbingestraat-84b-9712nn-groningen-pa09622",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Nieuwe Ebbingestraat 84B 9712NN Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-ebbingestraat-84b-9712nn-groningen-pa09622",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1129,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-nieuwe-ebbingestraat-84b-9712nn-groningen-pa09622",
+              "validFrom": "2026-10-08T10:58:35Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Polski Smak, Nieuwe Ebbingestraat 84, 9712 NN Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2249289,
+                  "longitude": 6.5620061
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 39,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 8,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-bergstraat-in-groningen-p0d0b24",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Bergstraat in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-bergstraat-in-groningen-p0d0b24",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 933,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-bergstraat-in-groningen-p0d0b24",
+              "validFrom": "2026-10-05T10:12:44Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Bergstraat 29, 9717 LR Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2245845,
+                  "longitude": 6.5536013
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 34,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 9,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-verlengde-nieuwstraat-in-groningen-p1f15f6",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Verlengde Nieuwstraat in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-verlengde-nieuwstraat-in-groningen-p1f15f6",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1281,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-verlengde-nieuwstraat-in-groningen-p1f15f6",
+              "validFrom": "2026-10-09T15:15:47Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Verlengde Nieuwstraat 2b, 9724 HC Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2106132,
+                  "longitude": 6.5816024
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 58,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 10,
+          "url": "https://rentbilly.nl/en/listings/studio-apartment-surface-area-20m2-unfurnished-available-from-2026-11-01-pb47700",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Studio Apartment Surface Area: 20m2 Unfurnished Available from: 2026-11-01",
+            "url": "https://rentbilly.nl/en/listings/studio-apartment-surface-area-20m2-unfurnished-available-from-2026-11-01-pb47700",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 665,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/studio-apartment-surface-area-20m2-unfurnished-available-from-2026-11-01-pb47700",
+              "validFrom": "2026-10-16T05:36:58Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Radijsstraat, 9741 BP Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2290172,
+                  "longitude": 6.5510399
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 20,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 11,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-hoendiep-in-groningen-p760552",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Hoendiep in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-hoendiep-in-groningen-p760552",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1110,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-hoendiep-in-groningen-p760552",
+              "validFrom": "2026-10-12T11:14:48Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Hoendiep 29-1, 9718 TB Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2147695,
+                  "longitude": 6.5477865
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 32,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 3
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 12,
+          "url": "https://rentbilly.nl/en/listings/studio-centrum-p0a5bee",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Studio centrum",
+            "url": "https://rentbilly.nl/en/listings/studio-centrum-p0a5bee",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 975,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/studio-centrum-p0a5bee",
+              "validFrom": "2026-10-01T08:04:09Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Marktstraat 8e, 9712 PC Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2225734,
+                  "longitude": 6.5639187
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 33,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 13,
+          "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-oosterhamrikkade-117-28-groningen-pfb47a2",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "MVGM - Te huur: Oosterhamrikkade 117 28, groningen",
+            "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-oosterhamrikkade-117-28-groningen-pfb47a2",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1064,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-oosterhamrikkade-117-28-groningen-pfb47a2",
+              "validFrom": "2026-10-08T11:47:16Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Oosterhamrikkade 117-53, 9713 KC Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2306908,
+                  "longitude": 6.5800106
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 53,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 14,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-oudeweg-9e-9711tj-groningen-p080359",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Oudeweg 9E 9711TJ Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-oudeweg-9e-9711tj-groningen-p080359",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1153,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-oudeweg-9e-9711tj-groningen-p080359",
+              "validFrom": "2026-10-10T06:51:05Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Oudeweg 9, 9711 TJ Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2185469,
+                  "longitude": 6.5742117
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 35,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 15,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-grote-leliestraat-1-9712sm-groningen-pefc79e",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Grote Leliestraat 1 9712SM Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-grote-leliestraat-1-9712sm-groningen-pefc79e",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1122,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-grote-leliestraat-1-9712sm-groningen-pefc79e",
+              "validFrom": "2026-10-15T06:33:45Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Grote Leliestraat 1, 9712 SM Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2219482,
+                  "longitude": 6.5594921
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 28,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 16,
+          "url": "https://rentbilly.nl/en/listings/woning-te-huur-papengang-1b-9711pa-groningen-p84afc6",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Woning te huur: Papengang 1B 9711PA Groningen",
+            "url": "https://rentbilly.nl/en/listings/woning-te-huur-papengang-1b-9711pa-groningen-p84afc6",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1386,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/woning-te-huur-papengang-1b-9711pa-groningen-p84afc6",
+              "validFrom": "2026-10-08T10:58:36Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Papengang 2, 9711 PA Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2174202,
+                  "longitude": 6.5701144
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 43,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 17,
+          "url": "https://rentbilly.nl/en/listings/appartement-op-woonark-in-het-centrum-p88a85c",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Appartement op  woonark in het centrum",
+            "url": "https://rentbilly.nl/en/listings/appartement-op-woonark-in-het-centrum-p88a85c",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1250,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/appartement-op-woonark-in-het-centrum-p88a85c",
+              "validFrom": "2026-10-18T08:04:05Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Eendrachtskade 1012, 9726 CZ Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2140756,
+                  "longitude": 6.55367
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 60,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 18,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-nieuwe-ebbingestraat-in-groningen-p2edb82",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Nieuwe Ebbingestraat in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-nieuwe-ebbingestraat-in-groningen-p2edb82",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1202,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-nieuwe-ebbingestraat-in-groningen-p2edb82",
+              "validFrom": "2026-10-14T10:15:56Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Etos, Nieuwe Ebbingestraat 59, 9712 NE Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2241079,
+                  "longitude": 6.5632187
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 45,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 19,
+          "url": "https://rentbilly.nl/en/listings/te-huur-appartement-papengang-in-groningen-p058c36",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Te huur: Appartement Papengang in Groningen",
+            "url": "https://rentbilly.nl/en/listings/te-huur-appartement-papengang-in-groningen-p058c36",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1386,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/te-huur-appartement-papengang-in-groningen-p058c36",
+              "validFrom": "2026-10-07T16:14:34Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Papengang 1-2, 9711 PA Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2173663,
+                  "longitude": 6.5702556
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 43,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 2
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 20,
+          "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-boumaboulevard-826-groningen-p406b33",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "MVGM - Te huur: Boumaboulevard 826, groningen",
+            "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-boumaboulevard-826-groningen-p406b33",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1409,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/mvgm-te-huur-boumaboulevard-826-groningen-p406b33",
+              "validFrom": "2026-10-12T12:02:55Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Boumaboulevard 826, 9723 ZT Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2076098,
+                  "longitude": 6.5895093
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 47.66,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 21,
+          "url": "https://rentbilly.nl/en/listings/bovenwoning-korrewegwijk-p7317ff",
+          "item": {
+            "@type": "RealEstateListing",
+            "name": "Bovenwoning korrewegwijk",
+            "url": "https://rentbilly.nl/en/listings/bovenwoning-korrewegwijk-p7317ff",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/InStock",
+              "price": 1100,
+              "priceCurrency": "EUR",
+              "url": "https://rentbilly.nl/en/listings/bovenwoning-korrewegwijk-p7317ff",
+              "validFrom": "2026-10-02T12:04:19Z",
+              "itemOffered": {
+                "@type": "Apartment",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Wiebengacomplex, Petrus Driessenstraat, 9714 CB Groningen, Netherlands",
+                  "addressCountry": "NL",
+                  "addressLocality": "Groningen"
+                },
+                "geo": {
+                  "@type": "GeoCoordinates",
+                  "latitude": 53.2274658,
+                  "longitude": 6.5676849
+                },
+                "floorSize": {
+                  "@type": "QuantitativeValue",
+                  "value": 60,
+                  "unitCode": "MTK"
+                },
+                "numberOfBedrooms": {
+                  "@type": "QuantitativeValue",
+                  "value": 1
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
