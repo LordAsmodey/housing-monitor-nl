@@ -3,7 +3,7 @@ import { PrismaService } from '../database/prisma.service';
 import { ListingsService } from '../listings/listings.service';
 import { parseEnvironment } from '../config/environment';
 import { runRentola } from './rentola-runner';
-import { collect, SourceError, SearchChangedError, RunTimeoutError } from './rentola-core';
+import { SourceError, RunTimeoutError } from './rentola-core';
 
 @Injectable()
 export class RentolaService implements OnModuleInit, OnModuleDestroy {
@@ -27,22 +27,14 @@ export class RentolaService implements OnModuleInit, OnModuleDestroy {
     }).catch((error: unknown) => {
       const category = error instanceof SourceError ? error.category : 'RUN_FAILED';
       require('../../scripts/telemetry.cjs').init().report(error, 'rentola', category);
-      const details = error instanceof SearchChangedError
-        ? ` order=${error.order} page=${error.page} expected=${JSON.stringify(error.expected)} actual=${JSON.stringify(error.actual)}`
-        : error instanceof RunTimeoutError ? ` progress=${JSON.stringify(error.progress)}` : '';
+      const details = error instanceof RunTimeoutError ? ` progress=${JSON.stringify(error.progress)}` : '';
       this.logger.warn(`Rentola check failed: category=${category}${details}`);
     }).finally(() => { this.active = undefined; });
   }
   tick() {
     if (!this.config.RENTOLA_MONITORING_ENABLED) return Promise.resolve({ skipped: true as const });
     return runRentola(this.db, this.listings, { destination: this.config.TELEGRAM_CHAT_ID,
-      intervalSeconds: this.config.MONITOR_INTERVAL_SECONDS, collector: async options => {
-        const result = await collect(options);
-        if (result.recoveredFrom) this.logger.log(`Rentola search recovered: ${JSON.stringify({
-          order: result.searchOrder, ...result.recoveredFrom, diagnostics: result.diagnostics,
-        })}`);
-        return result;
-      } });
+      intervalSeconds: this.config.MONITOR_INTERVAL_SECONDS });
   }
   async onModuleDestroy() { clearInterval(this.timer); await this.active; }
 }

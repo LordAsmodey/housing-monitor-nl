@@ -1,18 +1,13 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseSearch,parseDetail,collect,independentHousing,allowedDetailUrl,SOURCE_ID,SEARCH_URL,SearchChangedError,RunTimeoutError,RUN_TIMEOUT_MS} from '../src/sources/rentola-core';
+import {parseSearch,parseDetail,collect,independentHousing,allowedDetailUrl,SOURCE_ID,SEARCH_URL,RunTimeoutError,RUN_TIMEOUT_MS,FULL_SCAN_INTERVAL_MS,readCollectionState} from '../src/sources/rentola-core';
 const registry = require('../scripts/search-settings.cjs');
 const fixture = (name = 'search') => readFileSync(`test/fixtures/rentola-${name}.html`,'utf8');
 const defaults = registry.defaults(SOURCE_ID);
 function state(html = fixture()) {return JSON.parse(JSON.parse(html.match(/push\((\[.*\])\)/)![1]!)[1]);}
 function ld(html = fixture()) {return JSON.parse(html.match(/type="application\/ld\+json">(.*?)<\/script>/)![1]!);}
 function render(data:any, schema = ld()) {return `<script type="application/ld+json">${JSON.stringify(schema)}</script><script>self.__next_f.push(${JSON.stringify([1,JSON.stringify(data)])})</script>`;}
-function withOrder(html:string, order:string) {
- const d=state(html), l=ld(html);d.listingsParams.order=order;
- const url=new URL(l.url);url.searchParams.set('order',order);l.url=url.href;
- return render(d,l);
-}
 function single() {
   const d=state(); d.searchPropertiesData.data=d.searchPropertiesData.data.slice(0,1);
   d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:1,totalCount:1,perPage:21};
@@ -21,9 +16,9 @@ function single() {
 }
 const response = (body:string) => new Response(body,{headers:{'content-type':'text/html'}});
 const detail = (item:any, description='Een zelfstandig appartement met eigen keuken en badkamer.') => `<script type="application/ld+json">${JSON.stringify({'@type':'RealEstateListing',url:item.canonicalUrl,name:item.title,description,offers:{price:item.rentPrice,priceCurrency:'EUR',availability:'https://schema.org/InStock',itemOffered:{address:{addressLocality:'Groningen'}}}})}</script>`;
-test('real first and last page validate count, geography and modern/legacy URLs',()=>{
+test('real first and last page validate geography and modern/legacy URLs',()=>{
  const a=parseSearch(fixture()); const b=parseSearch(fixture('last'),14);
- assert.equal(a.totalCount,285); assert.equal(a.totalPages,14); assert.equal(a.ids.length,21); assert.equal(b.ids.length,12);
+ assert.equal(a.ids.length,21); assert.equal(b.ids.length,12);
  assert.equal(a.listings.length,12); assert.equal(b.listings.length,10);
  assert.equal(b.listings.at(-1)!.areaM2,undefined); // estimated area is not a known area
  assert.equal(a.listings[0]!.rentPrice,2150); assert.equal(a.listings[0]!.externalId,'40341090');
@@ -43,10 +38,9 @@ test('real room description overrides misleading apartment category',()=>{
  assert.throws(()=>parseDetail(detail(home).replace('"EUR"','"USD"'),home),/DETAIL_METADATA_MISMATCH/);
  assert.throws(()=>parseDetail('<html/>',home),/DETAIL_STRUCTURE_CHANGED/);
 });
-test('corrupt filters, count, partial data, metadata and duplicates fail closed',()=>{
+test('corrupt filters, metadata and duplicates fail closed',()=>{
  const mutations=[(d:any)=>d.listingsParams.location='1',(d:any)=>d.listingsParams.priceMax='1500',
  (d:any)=>d.listingsParams.order='asc',(d:any)=>d.listingsParams.page='2',
- (d:any)=>d.searchPropertiesData.meta.pagination.totalCount=300,(d:any)=>d.searchPropertiesData.data.pop(),
  (d:any)=>d.searchPropertiesData.data[0].attributes.rentCurrency='USD',
  (d:any)=>d.searchPropertiesData.data[0].relationships.city.data.id='1',
  (d:any)=>d.searchPropertiesData.data[1]=d.searchPropertiesData.data[0]];
@@ -95,7 +89,7 @@ test('unavailable and unknown cards are fully parsed without fetching descriptio
   assert.equal(result.diagnostics.detailCandidates,0);
  }
 });
-test('default Rentola deadline covers a bounded full restart and remains cancellable',async t=>{
+test('default Rentola deadline bounds daily revalidation and remains cancellable',async t=>{
  const budgets:number[]=[];
  t.mock.method(AbortSignal,'timeout',(ms:number)=>{budgets.push(ms);return AbortSignal.abort();});
  await assert.rejects(collect(),RunTimeoutError);
@@ -124,100 +118,122 @@ test('runner rejects invalid source budgets before acquiring a lease',async()=>{
   await assert.rejects(runFunda({}, {}, {destination:'-123',definition:{SOURCE_ID,SEARCH_URL,FILTERS:{},runTimeoutMs}}),/RUN_BUDGET_INVALID/);
  }
 });
-test('collector validates all pages and refuses overlapping or changing results',async()=>{
- const {d,l}=single();d.searchPropertiesData.data=Array(21).fill(null).map((_,i)=>({...d.searchPropertiesData.data[0],id:String(100+i),attributes:{...d.searchPropertiesData.data[0].attributes,slug:`home-p${i}`}}));
- l.mainEntity.itemListElement=d.searchPropertiesData.data.map((p:any)=>({url:`https://rentola.nl/en/listings/${p.attributes.slug}`,item:{...l.mainEntity.itemListElement[0].item,url:`https://rentola.nl/en/listings/${p.attributes.slug}`,offers:{...l.mainEntity.itemListElement[0].item.offers,url:`https://rentola.nl/en/listings/${p.attributes.slug}`}}}));
- d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:2,totalCount:22,perPage:21};const first=render(d,l);
- const last=structuredClone(d);last.listingsParams.page='2';last.searchPropertiesData.data=[d.searchPropertiesData.data[0]];last.searchPropertiesData.meta.pagination.currentPage=2;
- const lastLd=structuredClone(l);lastLd.url=SEARCH_URL+'&page=2';lastLd.mainEntity.itemListElement=[l.mainEntity.itemListElement[0]];
- await assert.rejects(collect({pause:async()=>{},transport:async(url)=>response(String(url)===SEARCH_URL?first:render(last,lastLd))}),/DUPLICATE_CARD/);
- last.searchPropertiesData.meta.pagination.totalCount=23;last.searchPropertiesData.data.push({...last.searchPropertiesData.data[0],id:'999',attributes:{...last.searchPropertiesData.data[0].attributes,slug:'home-p999'}});lastLd.mainEntity.itemListElement.push({...lastLd.mainEntity.itemListElement[0],url:'https://rentola.nl/en/listings/home-p999',item:{...lastLd.mainEntity.itemListElement[0].item,url:'https://rentola.nl/en/listings/home-p999',offers:{...lastLd.mainEntity.itemListElement[0].item.offers,url:'https://rentola.nl/en/listings/home-p999'}}});
- const requests:string[]=[];
- await assert.rejects(collect({pause:async()=>{},transport:async(url)=>{
-  requests.push(String(url));const u=new URL(String(url));
-  return response(withOrder(u.searchParams.has('page')?render(last,lastLd):first,u.searchParams.get('order')!));
- }}), error => {
-  assert.ok(error instanceof SearchChangedError);
-  assert.equal(error.category,'SEARCH_CHANGED_DURING_RUN');
-  assert.equal(error.page,2);
-  assert.deepEqual(error.expected,{totalCount:22,totalPages:2});
-  assert.deepEqual(error.actual,{totalCount:23,totalPages:2});
-  assert.equal(error.order,'rent_asc');
-  return true;
- });
- assert.equal(requests.length,4); // One full restart, never an unbounded retry.
-});
-test('price-order parsing requires the exact sort echo and JSON-LD URL',()=>{
- const sorted=withOrder(fixture(),'rent_asc');
- assert.equal(parseSearch(sorted,1,'rent_asc').totalCount,285);
- assert.throws(()=>parseSearch(sorted),/SEARCH_FILTER_CHANGED/);
- assert.throws(()=>parseSearch(fixture(),1,'rent_asc'),/SEARCH_FILTER_CHANGED/);
- const d=state(sorted),l=ld(sorted);l.url=SEARCH_URL;
- assert.throws(()=>parseSearch(render(d,l),1,'rent_asc'),/SEARCH_STRUCTURE_CHANGED/);
- assert.throws(()=>parseSearch(withOrder(fixture(),'rent_desc'),1,'rent_desc' as any),/SEARCH_FILTER_CHANGED/);
-});
-function recoverableSearch() {
- const d=state(),l=ld();d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:2,totalCount:22,perPage:21};
- const next=state(fixture('last')),nextLd=ld(fixture('last'));
- next.listingsParams.page='2';next.searchPropertiesData.data=next.searchPropertiesData.data.slice(0,1);
- next.searchPropertiesData.meta.pagination={currentPage:2,totalPages:2,totalCount:22,perPage:21};
- nextLd.url=SEARCH_URL+'&page=2';nextLd.mainEntity.itemListElement=nextLd.mainEntity.itemListElement.slice(0,1);
- const first=render(d,l),last=render(next,nextLd);
- // A mismatch crossing the page-count boundary, as in the production incident.
- d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:3,totalCount:43,perPage:21};
- return {first,last,stale:render(d,l)};
+const clock = new Date('2026-10-19T12:00:00.000Z');
+function pageHtml(page:number, ids:number[], price=900, metadata:Record<string,unknown>={}) {
+ const {d,l}=single(); const property=d.searchPropertiesData.data[0], card=l.mainEntity.itemListElement[0];
+ d.listingsParams.page=String(page);
+ d.searchPropertiesData.data=ids.map(id=>({...structuredClone(property),id:String(id),attributes:{...property.attributes,slug:`home-p${id}`,monthlyRent:price}}));
+ d.searchPropertiesData.meta.pagination={currentPage:page,perPage:21,totalCount:999,totalPages:999,...metadata};
+ l.url=page===1?SEARCH_URL:SEARCH_URL+'&page='+page;
+ l.mainEntity.itemListElement=ids.map(id=>{const item=structuredClone(card);item.url=item.item.url=item.item.offers.url=`https://rentola.nl/en/listings/home-p${id}`;item.item.offers.price=price;return item;});
+ return render(d,l);
 }
-test('inconsistent newest search is discarded; complete price-order scan validates before details',async()=>{
- const {first,last,stale}=recoverableSearch();const requests:string[]=[];const pauses:number[]=[];
- const signal=new AbortController().signal;
- const valid=parseSearch(first).listings;
- const result=await collect({signal,pause:async ms=>{pauses.push(ms);},transport:async(url,options)=>{
-  assert.equal(options!.signal,signal);const u=new URL(String(url));requests.push(u.href);
-  if(u.pathname.startsWith('/en/listings/')){
-   assert.equal(requests.filter(x=>x.includes('/en/rent?')).length,4);
-   const item=valid.find(x=>x.canonicalUrl===u.href);assert.ok(item);return response(detail(item));
-  }
-  const order=u.searchParams.get('order')!;
-  const body=u.searchParams.has('page')?last:order==='desc'?stale:first;
-  return response(withOrder(body,order));
- }});
- assert.deepEqual(requests.slice(0,4),[SEARCH_URL,SEARCH_URL+'&page=2',SEARCH_URL.replace('order=desc','order=rent_asc'),SEARCH_URL.replace('order=desc','order=rent_asc')+'&page=2']);
- assert.equal(pauses.filter(ms=>ms===1000).length,1);
- assert.equal(result.inspected,22);assert.equal(result.total,22);assert.equal(result.pages,2);
- assert.equal(result.searchOrder,'rent_asc');
- assert.deepEqual(result.recoveredFrom,{page:2,expected:{totalCount:43,totalPages:3},actual:{totalCount:22,totalPages:2}});
- // Only the first page has budget-matching candidates in these fixtures.
- const expected=valid.filter(x=>registry.matches(defaults,x,SOURCE_ID)&&x.availabilityStatus==='available');
- assert.deepEqual(result.listings.map(x=>x.externalId),expected.map(x=>x.externalId));
+const range=(start:number,count=21)=>Array.from({length:count},(_,i)=>start+i);
+function transportFor(pages:Record<number,string>, calls:string[]=[], description?:string):typeof fetch {
+ const items=Object.values(pages).flatMap(body=>parseSearch(body,Number(state(body).listingsParams.page)).listings);
+ return async url=>{
+  const u=new URL(String(url));calls.push(u.href);
+  if(u.pathname==='/en/rent') {const body=pages[Number(u.searchParams.get('page')??1)];assert.ok(body,'Unexpected search '+u.href);return response(body);}
+  const item=items.find(x=>x.canonicalUrl===u.href);assert.ok(item);return response(detail(item,description));
+ };
+}
+async function seed(settings=defaults) {
+ const pages={1:pageHtml(1,[1])};
+ return (await collect({settings,now:clock,pause:async()=>{},transport:transportFor(pages)})).collectionState;
+}
+test('count and totalPages never determine validity or end of the crawl',async()=>{
+ const a=pageHtml(1,range(1),900,{totalCount:1,totalPages:0});
+ const b=pageHtml(2,[22],900,{totalCount:'invalid',totalPages:null});
+ const r=await collect({settings:{...defaults,maxRent:1},pause:async()=>{},transport:transportFor({1:a,2:b})});
+ assert.equal(r.inspected,22);assert.equal(r.pages,2);assert.equal(r.mode,'full');assert.equal(r.coverage,'catalog');
+ assert.equal(r.listings.length,0);
 });
-test('restart uses the original deadline and cannot make requests after cancellation',async()=>{
- const {stale,last}=recoverableSearch();const controller=new AbortController();let calls=0;
- await assert.rejects(collect({signal:controller.signal,pause:async ms=>{if(ms===1000)controller.abort();},transport:async(url)=>{
-  calls++;return response(String(url)===SEARCH_URL?stale:last);
- }}),/RUN_TIMEOUT/);
- assert.equal(calls,2);
+test('normal run fetches exactly two full search pages in newest order',async()=>{
+ const previousState=await seed();const calls:string[]=[];
+ const result=await collect({now:clock,previousState,pause:async()=>{},transport:transportFor({1:pageHtml(1,range(1)),2:pageHtml(2,range(22))},calls)});
+ assert.equal(result.mode,'head');assert.equal(result.coverage,'head');assert.equal(result.inspected,42);
+ assert.deepEqual(calls.filter(x=>x.includes('/en/rent?')),[SEARCH_URL,SEARCH_URL+'&page=2']);
+ assert.equal(result.diagnostics.detailsReused,1);assert.equal(result.diagnostics.detailsCompleted,41);
+ assert.equal(result.collectionState.lastFullScanAt,previousState.lastFullScanAt);
 });
-test('invalid fallback pages still fail closed without another restart or detail requests',async()=>{
- const {stale,last}=recoverableSearch();const requests:string[]=[];
- await assert.rejects(collect({pause:async()=>{},transport:async(url)=>{
-  const u=new URL(String(url));requests.push(u.href);
-  if(u.searchParams.get('order')==='rent_asc')return response('Access denied');
-  return response(u.searchParams.has('page')?last:stale);
- }}),/ACCESS_BLOCKED/);
- assert.equal(requests.length,3);
+test('unchanged accepted and rejected descriptions survive restart and are reused',async()=>{
+ const calls:string[]=[];const pages={1:pageHtml(1,[1,2])};
+ const t:typeof fetch=async url=>{calls.push(String(url));if(String(url)===SEARCH_URL)return response(pages[1]);
+  const item=parseSearch(pages[1]).listings.find(x=>x.canonicalUrl===String(url))!;
+  return response(detail(item,item.externalId==='1'?undefined:'Een studentenkamer met gedeelde keuken.'));};
+ const first=await collect({now:clock,pause:async()=>{},transport:t});assert.equal(first.listings.length,1);
+ calls.length=0;
+ const restored=readCollectionState(JSON.parse(JSON.stringify(first.collectionState)));assert.ok(restored);
+ const next=await collect({now:new Date(clock.getTime()+900000),previousState:restored,pause:async()=>{},transport:t});
+ assert.deepEqual(calls,[SEARCH_URL]);assert.deepEqual(next.listings.map(x=>x.externalId),['1']);
+ assert.equal(next.diagnostics.detailsReused,2);assert.equal(next.diagnostics.detailsCompleted,0);
 });
-test('complete pagination succeeds without relying on matched count',async()=>{
- const d=state();const l=ld();d.searchPropertiesData.meta.pagination={currentPage:1,totalPages:2,totalCount:22,perPage:21};
- // Prices above a deliberately low budget avoid detail requests while still validating all cards.
- const next=state(fixture('last'));const nextLd=ld(fixture('last'));
- next.listingsParams.page='2';next.searchPropertiesData.data=next.searchPropertiesData.data.slice(0,1);
- next.searchPropertiesData.meta.pagination={currentPage:2,totalPages:2,totalCount:22,perPage:21};
- nextLd.url=SEARCH_URL+'&page=2';nextLd.mainEntity.itemListElement=nextLd.mainEntity.itemListElement.slice(0,1);
- let requests=0;
- const result=await collect({settings:{...defaults,maxRent:1},pause:async()=>{},transport:async(url)=>{
-   requests++;return response(String(url)===SEARCH_URL?render(d,l):render(next,nextLd));
- }});
- assert.equal(requests,2);assert.equal(result.inspected,22);assert.equal(result.pages,2);assert.equal(result.listings.length,0);
+test('new and changed candidates get fresh details while unchanged ones are reused',async()=>{
+ const previousState=await seed();const calls:string[]=[];
+ const next=await collect({now:clock,previousState,pause:async()=>{},transport:transportFor({1:pageHtml(1,[1,2],950)},calls)});
+ assert.equal(next.diagnostics.detailsCompleted,2);assert.equal(next.diagnostics.detailsReused,0);
+ assert.equal(next.listings[0]!.rentPrice,950);
+});
+test('daily full scan finds deep candidates, rechecks descriptions and prunes absent cache',async()=>{
+ const previousState=await seed();const calls:string[]=[];
+ const r=await collect({now:new Date(clock.getTime()+FULL_SCAN_INTERVAL_MS),previousState,pause:async()=>{},
+  transport:transportFor({1:pageHtml(1,range(2)),2:pageHtml(2,range(23)),3:pageHtml(3,[99])},calls,'Een studentenkamer.')});
+ assert.equal(r.mode,'full');assert.equal(r.pages,3);assert.equal(r.inspected,43);
+ assert.equal(r.diagnostics.detailsCompleted,43);assert.equal(r.listings.length,0);
+ assert.equal(r.collectionState.observations['1'],undefined);
+ assert.equal(r.collectionState.observations['99']!.accepted,false);
+ assert.notEqual(r.collectionState.lastFullScanAt,previousState.lastFullScanAt);
+});
+test('filter changes and explicit baseline force a full scan with fresh descriptions',async()=>{
+ const previousState=await seed();
+ for(const extra of [{settings:{...defaults,maxRent:1400}},{forceFull:true}]) {
+  const result=await collect({now:clock,previousState,...extra,pause:async()=>{},transport:transportFor({1:pageHtml(1,[1])})});
+  assert.equal(result.mode,'full');assert.equal(result.diagnostics.detailsCompleted,1);
+ }
+ assert.equal(readCollectionState({version:100}),undefined);
+});
+test('cross-page overlap is deduplicated, latest availability invalidates the cache',async()=>{
+ const previousState=await seed();const next=pageHtml(2,[21,22]);const d=state(next),l=ld(next);
+ l.mainEntity.itemListElement[0].item.offers.availability='https://schema.org/OutOfStock';
+ const r=await collect({now:clock,previousState,pause:async()=>{},transport:transportFor({1:pageHtml(1,range(1)),2:render(d,l)})});
+ assert.equal(r.inspected,22);assert.equal(r.diagnostics.duplicates,1);
+ assert.equal(r.listings.some(x=>x.externalId==='21'),false);
+ assert.equal(r.collectionState.observations['21'],undefined);
+});
+test('a later excluded category overrides an earlier qualifying card',async()=>{
+ const second=pageHtml(2,[21,22]);const d=state(second),l=ld(second);
+ d.searchPropertiesData.data[0].attributes.propertyType='room';
+ const r=await collect({now:clock,pause:async()=>{},transport:transportFor({1:pageHtml(1,range(1)),2:render(d,l)})});
+ assert.equal(r.listings.some(x=>x.externalId==='21'),false);
+});
+test('unavailable then available must be validated again before admission',async()=>{
+ const previousState=await seed();const body=pageHtml(1,[1]),l=ld(body);
+ l.mainEntity.itemListElement[0].item.offers.availability='https://schema.org/OutOfStock';
+ const unavailable=await collect({now:clock,previousState,pause:async()=>{},transport:transportFor({1:render(state(body),l)})});
+ assert.equal(unavailable.collectionState.observations['1'],undefined);
+ const available=await collect({now:clock,previousState:unavailable.collectionState,pause:async()=>{},transport:transportFor({1:body})});
+ assert.equal(available.diagnostics.detailsCompleted,1);
+});
+test('empty trailing page requires filter echo and matching empty JSON-LD; empty first page remains unconfirmed',async()=>{
+ const empty=pageHtml(2,[],900,{currentPage:1});const d=state(empty);delete d.searchPropertiesData.included;
+ const r=await collect({settings:{...defaults,maxRent:1},pause:async()=>{},transport:transportFor({1:pageHtml(1,range(1)),2:render(d,ld(empty))})});
+ assert.equal(r.inspected,21);assert.equal(r.pages,2);
+ assert.throws(()=>parseSearch(pageHtml(1,[])),/EMPTY_SEARCH_UNCONFIRMED/);
+ assert.throws(()=>parseSearch(render(d,ld(pageHtml(1,[]))),2),/SEARCH_STRUCTURE_CHANGED/);
+});
+test('repeated pages and page limit fail without advancing daily state',async()=>{
+ const first=pageHtml(1,range(1)),repeated=pageHtml(2,range(1));
+ await assert.rejects(collect({pause:async()=>{},transport:transportFor({1:first,2:repeated})}),/PAGINATION_LOOP/);
+ let calls=0;
+ await assert.rejects(collect({settings:{...defaults,maxRent:1},pause:async()=>{},transport:async url=>{
+  calls++;const p=Number(new URL(String(url)).searchParams.get('page')??1);return response(pageHtml(p,range((p-1)*21+1)));
+ }}),/PAGE_LIMIT/);assert.equal(calls,100);
+});
+test('cancellation during search prevents further requests',async()=>{
+ const controller=new AbortController();let calls=0;
+ await assert.rejects(collect({signal:controller.signal,pause:async()=>{controller.abort();},transport:async()=>{
+  calls++;return response(pageHtml(1,range(1)));
+ }}),/RUN_TIMEOUT/);assert.equal(calls,1);
 });
 test('detail requests are bounded to two and settle before a failed run returns',async()=>{
  const {d,l}=single();const p=structuredClone(d.searchPropertiesData.data[0]);p.id='999';p.attributes.slug='home-p999';

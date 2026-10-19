@@ -48,6 +48,15 @@ model Source {
   runs              MonitoringRun[]
   listings          HousingListing[]
   search            SearchConfiguration?
+  collectionState   SourceCollectionState?
+}
+
+// Adapter-owned, versioned state. Updated atomically with listings and outbox.
+model SourceCollectionState {
+  sourceId  String @id
+  source    Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  state     Json
+  updatedAt DateTime @updatedAt
 }
 
 model SiteProfile {
@@ -76,6 +85,7 @@ model MonitoringRun {
   usedLlm           Boolean   @default(false)
   searchRevision    Int?
   searchSnapshot    Json?
+  collectionScope   String?
 
   @@index([sourceId, startedAt])
 }

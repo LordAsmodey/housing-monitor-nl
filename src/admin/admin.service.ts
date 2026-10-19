@@ -102,6 +102,7 @@ export class AdminService {
                   startedAt: r.startedAt,
                   finishedAt: r.finishedAt,
                   listingsFound: r.listingsFound,
+                  collectionScope: r.collectionScope,
                   errorCategory: r.errorCategory,
                   searchRevision: r.searchRevision,
                 })),

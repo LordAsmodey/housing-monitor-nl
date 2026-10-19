@@ -275,6 +275,7 @@ function SourcePanel({
             <tr>
               <th>Начало</th>
               <th>Результат</th>
+              <th>Охват</th>
               <th>Найдено</th>
               <th>Ошибка</th>
             </tr>
@@ -284,6 +285,7 @@ function SourcePanel({
               <tr key={run.id}>
                 <td>{date(run.startedAt)}</td>
                 <td>{labels[run.status] ?? run.status}</td>
+                <td>{run.collectionScope === 'head' ? 'Первые 2 страницы' : run.collectionScope === 'catalog' ? 'Вся выдача' : '—'}</td>
                 <td>{run.listingsFound ?? "—"}</td>
                 <td>
                   <code>{run.errorCategory ?? "—"}</code>

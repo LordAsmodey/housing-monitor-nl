@@ -709,7 +709,7 @@ test('Rentola has an independent baseline, strict availability, admin filters an
   } finally { if (old === undefined) delete process.env.RENTOLA_MONITORING_ENABLED; else process.env.RENTOLA_MONITORING_ENABLED = old; }
   ids.push(id);
   const data = parseSearch(readFileSync('test/fixtures/rentola-search.html','utf8'));
-  const parsed = {listings:data.listings,total:data.totalCount,inspected:data.totalCount,pages:data.totalPages,available:data.listings.length};
+  const parsed = {listings:data.listings,inspected:data.ids.length,pages:1,available:data.listings.length};
   const run = (input:ListingInput[]) => runRentola(db,service,{destination:'-123',collector:async()=>({...parsed,listings:input})});
   const due = () => db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
   const jobs = {listing:{sourceId:id}};

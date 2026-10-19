@@ -11,6 +11,7 @@ export type Run = {
   startedAt: string;
   finishedAt: string | null;
   listingsFound: number | null;
+  collectionScope: string | null;
   errorCategory: string | null;
   searchRevision: number | null;
 };
