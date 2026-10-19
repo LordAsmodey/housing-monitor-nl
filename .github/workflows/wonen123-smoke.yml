@@ -1,0 +1,24 @@
+name: 123Wonen live smoke
+on:
+  pull_request:
+    paths: ['scripts/wonen123-*.cjs', 'scripts/search-modules/wonen123.cjs', 'src/sources/wonen123*.ts', 'test/wonen123.test.ts', '.github/workflows/wonen123-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: wonen123-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node --import tsx --test test/wonen123.test.ts
+      - name: Read and validate all public search pages without database or delivery
+        run: node --import tsx -e 'require("./src/sources/wonen123-core.ts").collect().then(r=>console.log(JSON.stringify({inspected:r.inspected,matched:r.listings.length,available:r.available,pages:r.pages}))).catch(e=>{console.error(e.category||"LIVE_SMOKE_FAILED");process.exitCode=1})'
