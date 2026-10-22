@@ -109,6 +109,9 @@ Groningen, отдельные квартиры и студии до объявл
 Подготовлены команды подключения группы: `npm run telegram:check`,
 `npm run telegram:chats`, `npm run telegram:test`.
 Порядок настройки секретов и получения ID: [docs/telegram.md](docs/telegram.md).
+Команда `/list` (или `/list@Housing_Monitor_NL_bot`) в настроенной группе показывает
+источники, статус мониторинга и последний успешный сбор. Обработчик включён при
+активной Telegram-доставке; `TELEGRAM_COMMANDS_ENABLED=false` отключает его.
 Worker и outbox реализованы; включение и диагностика: [docs/outbox.md](docs/outbox.md).
 
 ## Railway

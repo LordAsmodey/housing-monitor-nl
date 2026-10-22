@@ -4,6 +4,7 @@ import { HealthController } from './health/health.controller';
 import { PrismaService } from './database/prisma.service';
 import { ListingsService } from './listings/listings.service';
 import { OutboxService } from './delivery/outbox.service';
+import { TelegramCommandsService } from './delivery/telegram-commands.service';
 import { FundaService } from './sources/funda.service';
 import { ParariusService } from './sources/pararius.service';
 import { HuurwoningenService } from './sources/huurwoningen.service';
@@ -23,6 +24,6 @@ import { VestedaService } from './sources/vesteda.service';
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
 
-@Module({ controllers: [HealthController, AdminController], providers: [PrismaService, ListingsService, OutboxService, ParariusService, FundaService, HuurwoningenService, WoldringService, VestedaService, GrunoService, LamberinkService, VandermeulenService, MaxxService, RentsolutionsService, Wonen123Service, RotsvastService, GohomeService, RentbillyService, RentolaService, SolideService, AdminService] })
+@Module({ controllers: [HealthController, AdminController], providers: [PrismaService, ListingsService, OutboxService, TelegramCommandsService, ParariusService, FundaService, HuurwoningenService, WoldringService, VestedaService, GrunoService, LamberinkService, VandermeulenService, MaxxService, RentsolutionsService, Wonen123Service, RotsvastService, GohomeService, RentbillyService, RentolaService, SolideService, AdminService] })
 export class AppModule {}
 

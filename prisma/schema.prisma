@@ -142,6 +142,12 @@ model DeliveryGate {
   nextAttemptAt DateTime @default(now())
 }
 
+// Cursor and command replies commit together; replicas serialize polling in PostgreSQL.
+model TelegramUpdateCursor {
+  id     String @id
+  offset Int    @default(0)
+}
+
 // One owner for v1. Future subscriptions can reference searches without owning adapters.
 model SearchConfiguration {
   sourceId        String @id
