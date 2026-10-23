@@ -26,6 +26,7 @@ const environmentSchema = z.object({
   RENTSOLUTIONS_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   MAXX_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   VANDERMEULEN_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
+  IKWILHUREN_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   LAMBERINK_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   GRUNO_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
   VESTEDA_MONITORING_ENABLED: z.enum(['true', 'false']).default('true').transform(v => v === 'true'),
