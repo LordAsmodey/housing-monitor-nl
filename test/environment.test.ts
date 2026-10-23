@@ -64,3 +64,9 @@ test('Rotsvast monitoring defaults to enabled and can be paused explicitly', () 
   assert.equal(parseEnvironment({...valid, ROTSVAST_MONITORING_ENABLED:'false'}).ROTSVAST_MONITORING_ENABLED, false);
   assert.throws(() => parseEnvironment({...valid, ROTSVAST_MONITORING_ENABLED:'yes'}));
 });
+
+test('Ikwilhuren monitoring defaults to enabled and can be paused explicitly', () => {
+  assert.equal(parseEnvironment(valid).IKWILHUREN_MONITORING_ENABLED, true);
+  assert.equal(parseEnvironment({...valid, IKWILHUREN_MONITORING_ENABLED:'false'}).IKWILHUREN_MONITORING_ENABLED, false);
+  assert.throws(() => parseEnvironment({...valid, IKWILHUREN_MONITORING_ENABLED:'yes'}));
+});

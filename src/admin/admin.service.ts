@@ -59,6 +59,7 @@ export class AdminService {
           (module.key === "solide" &&
             process.env.SOLIDE_MONITORING_ENABLED === "false") ||
           (module.key === "gohome" && process.env.GOHOME_MONITORING_ENABLED === "false") ||
+          (module.key === "ikwilhuren" && process.env.IKWILHUREN_MONITORING_ENABLED === "false") ||
           (module.key === "rentbilly" && process.env.RENTBILLY_MONITORING_ENABLED === "false") ||
           (module.key === "rotsvast" &&
             process.env.ROTSVAST_MONITORING_ENABLED === "false") ||
