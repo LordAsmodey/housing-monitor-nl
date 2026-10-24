@@ -1,5 +1,8 @@
 # Rent Solutions
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab81ebbb19c049024bfe64?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 Источник: [выдача Groningen до €1500](https://rent-solutions.nl/woning-aanbod/?_plaats=groningen&_price=0%2C1500).
 Source ID: `rentsolutions:groningen`.
 
@@ -26,4 +29,4 @@ npm run db:validate
 node scripts/rentsolutions-check.cjs
 ```
 
-На 16.10.2026 live smoke: inspected=4, total=4, available=0, pages=1. Все четыре объявления в Groningen сданы. Локально прошли 126 unit-тестов, typecheck, backend/React build и Prisma validate. Добавлен PostgreSQL integration: отключение, независимый baseline, повторный проход, переход unknown → available, дедупликация, площадь и сохранение baseline/lastSuccessAt при ошибке. Запуск временной локальной PostgreSQL заблокирован read-only Docker storage; integration ещё не выполнен. Workflow `rentsolutions-smoke.yml` проверяет живой сайт без БД и отправки сообщений. Production и естественная доставка требуют проверки после выпуска.
+На 16.10.2026 live smoke: inspected=4, total=4, available=0, pages=1. Все четыре объявления в Groningen сданы. Локально прошли 126 unit-тестов, typecheck, backend/React build и Prisma validate. Добавлен PostgreSQL integration: отключение, независимый baseline, повторный проход, переход unknown → available, дедупликация, площадь и сохранение baseline/lastSuccessAt при ошибке. Запуск временной локальной PostgreSQL заблокирован read-only Docker storage; integration ещё не выполнен. Workflow `rentsolutions-smoke.yml` проверяет живой сайт без БД и отправки сообщений. Этот локальный smoke не проверял production и естественную доставку. Последующие CI и production-подтверждения сохранены в архиве Notion; они не являются live-статусом сегодня.

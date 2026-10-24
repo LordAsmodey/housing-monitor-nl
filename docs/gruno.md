@@ -1,5 +1,8 @@
 # Gruno Verhuur
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab81b286a1cb783a20164a?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 [Каталог](https://www.grunoverhuur.nl/woningaanbod/groningen) читается через обычный HTTP,
 без аккаунта или дополнительного browser service. Подключение устроено как Woldring:
 общий `runFunda`, PostgreSQL lease, отдельный baseline и существующий Telegram outbox.

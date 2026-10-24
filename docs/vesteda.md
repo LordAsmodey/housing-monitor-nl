@@ -1,5 +1,8 @@
 # Vesteda
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab81769d81ce16ba836c73?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 Источник `vesteda:groningen-20km-500-1500` подготовлен для scheduler приложения:
 проверка каждые `MONITOR_INTERVAL_SECONDS` (900 секунд по умолчанию), собственные baseline
 и PostgreSQL lease, существующий Telegram outbox. Новый browser service и аккаунт не нужны.

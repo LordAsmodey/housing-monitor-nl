@@ -1,5 +1,8 @@
 # 123Wonen — Groningen
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab8128890cfe65652e7165?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 Источник: https://www.123wonen.nl/huurwoningen/in/groningen
 
 Source ID: `123wonen:groningen-homes`. Реализация: `src/sources/wonen123-core.ts`, runner и NestJS service рядом. Публичный HTTP GET без аккаунта, cookies и browser worker. LLM не используется. Миграций БД нет.

@@ -1,5 +1,8 @@
 # Woldring Verhuur
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab81d494ccf25dc2f3d470?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 Квартиры: https://woldringverhuur.nl/appartementen/ ; студии: https://woldringverhuur.nl/studios/ .
 HTTP source включается автоматически вместе с приложением, проверяется каждые
 `MONITOR_INTERVAL_SECONDS` (900 секунд по умолчанию), отправляет новинки в существующий Telegram outbox.

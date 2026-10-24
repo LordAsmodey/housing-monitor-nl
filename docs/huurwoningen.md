@@ -1,5 +1,8 @@
 # Huurwoningen
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab81a0a21cdc1e43470e18?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 Согласованный поиск: <https://www.huurwoningen.com/in/groningen/?price=0-1500&radius=25&since=1&available_from=within_3_months&filters%5Boffer_type%5D%5B0%5D=homeswap>.
 `available_from=within_3_months` — «Beschikbaar vanaf → Binnen 3 maanden»: доступность для заселения в ближайшие три месяца. Это не свежесть публикации и не срок договора.
 Радиус — 25 км, цена `0-1500`, свежесть `since=1`. Параметр `filters[offer_type][0]=homeswap` сохраняется буквально из пользовательской ссылки: по уточнению пользователя он исключает обмен жилья, который включён по умолчанию. Комнаты и студии дополнительно не исключаются.
