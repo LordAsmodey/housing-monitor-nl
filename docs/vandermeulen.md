@@ -1,5 +1,8 @@
 # Van der Meulen Makelaars
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab818d8ac5cfb5835d1a21?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 Источник: [пользовательская выдача](https://www.vandermeulenmakelaars.nl/huurwoningen/?_plaats=groningen&_status=nieuw&_prijsbereik=10.00%2C1500.00).
 Source ID: `vandermeulen:groningen-nieuw`.
 
@@ -23,4 +26,4 @@ node scripts/vandermeulen-check.cjs
 
 Последняя команда читает сайт без БД и Telegram. Первичная проверка: 1 объявление, Van Starkenborghstraat, €406/месяц, 15 м², 1 комната, Nieuw. Реальные fixtures содержат фильтрованную и пустую выдачи; пагинация дополнительно исследована на реальном каталоге (26 результатов, 3 страницы при снятом статусе), транспортные тесты используют синтетические страницы из реальной карточки.
 
-Локально прошли 112 unit-тестов, TypeScript/build, React build, Prisma validate и live smoke. PostgreSQL integration добавлен; локальный запуск заблокирован read-only storage Docker, проверка выполняется в CI. Production baseline и доставка естественно появившегося нового объявления требуют отдельной проверки после выпуска.
+Локально прошли 112 unit-тестов, TypeScript/build, React build, Prisma validate и live smoke. PostgreSQL integration добавлен; локальный запуск заблокирован read-only storage Docker, проверка выполняется в CI. Этот локальный набор не проверял production baseline и естественную доставку. Последующее подтверждение production baseline сохранено в архиве Notion; естественную доставку нельзя вывести из live smoke.

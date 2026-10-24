@@ -1,5 +1,8 @@
 # Solide Verhuur
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab8147b881c9787a3fd749?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 Источник: [пользовательская выдача](https://solideverhuur.nl/?action=epl_search&post_type=rental&property_location=20&property_price_to=1500).
 Source ID: `solide:groningen-rental`.
 

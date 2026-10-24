@@ -1,5 +1,8 @@
 # Lamberink
 
+[Согласованные требования в Notion](https://app.notion.com/p/402d10c6e6ab81709385d2ce619024e1?pvs=204). Runbook описывает реализацию;
+датированные результаты ниже относятся к конкретным проверкам, а не live-статусу production.
+
 Источник: [арендная выдача Lamberink](https://lamberink.nl/wonen/aanbod?buy_rent=rent&order_by=created_at-desc&page=1).
 Source ID: `lamberink:rental-homes`.
 
