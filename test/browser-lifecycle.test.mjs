@@ -86,3 +86,61 @@ test('heartbeat queued behind work cannot suppress idle cleanup or reset an exis
   await f.lifecycle.maintenance(() => {}); assert.equal(f.hasTimer(), true);
   await f.fire(); assert.equal(f.lifecycle.state(), 'idle');
 });
+
+for (const phase of ['launch', 'collection', 'maintenance', 'suspend']) {
+  test(`operation watchdog detects hung ${phase} without overlapping browser work`, async () => {
+    let release, timedOut, idleCallback;
+    const gate = new Promise(resolve => { release = resolve; });
+    const expired = new Promise(resolve => { timedOut = resolve; });
+    const events = [];
+    const lifecycle = createBrowserLifecycle({
+      timeoutMs: 60000, operationTimeoutMs: 20,
+      launch: async () => { if (phase === 'launch') await gate; return {}; },
+      suspend: async () => { if (phase === 'suspend') await gate; },
+      setTimer: cb => { idleCallback = cb; return 1; }, clearTimer: () => {},
+      onEvent: event => events.push(event), onOperationTimeout: timedOut,
+    });
+    let work;
+    if (phase === 'launch') work = lifecycle.run(() => {});
+    else {
+      await lifecycle.run(() => {});
+      if (phase === 'suspend') { lifecycle.start(); idleCallback(); }
+      else work = phase === 'maintenance' ? lifecycle.maintenance(() => gate) : lifecycle.run(() => gate);
+    }
+    await expired;
+    assert.equal(lifecycle.state(), 'failed');
+    assert.ok(events.includes('browser-operation-timeout'));
+    let queuedStarted = false;
+    const queued = assert.rejects(lifecycle.run(() => { queuedStarted = true; }), /BROWSER_UNAVAILABLE/);
+    await Promise.resolve();
+    assert.equal(queuedStarted, false);
+    release(); await work; await queued;
+    assert.equal(lifecycle.state(), 'failed'); // A late completion must not restore health.
+    await lifecycle.close();
+  });
+}
+
+test('completed and rejected operations cancel their watchdog deadlines', async () => {
+  let expirations = 0;
+  const lifecycle = createBrowserLifecycle({
+    launch: async () => ({}), suspend: async () => {}, operationTimeoutMs: 20,
+    onOperationTimeout: () => { expirations++; },
+  });
+  await lifecycle.run(() => {});
+  await assert.rejects(lifecycle.run(() => { throw Error('COLLECTION_FAILED'); }), /COLLECTION_FAILED/);
+  await lifecycle.maintenance(() => {});
+  await new Promise(resolve => setTimeout(resolve, 40));
+  assert.equal(expirations, 0); assert.equal(lifecycle.state(), 'active');
+  await lifecycle.close();
+});
+
+test('time spent waiting for other browser operations does not consume the deadline', async () => {
+  let expirations = 0;
+  const lifecycle = createBrowserLifecycle({
+    launch: async () => ({}), suspend: async () => {}, operationTimeoutMs: 100,
+    onOperationTimeout: () => { expirations++; },
+  });
+  await Promise.all(Array.from({ length: 12 }, () => lifecycle.run(() => new Promise(resolve => setTimeout(resolve, 10)))));
+  assert.equal(expirations, 0); assert.equal(lifecycle.state(), 'active');
+  await lifecycle.close();
+});
