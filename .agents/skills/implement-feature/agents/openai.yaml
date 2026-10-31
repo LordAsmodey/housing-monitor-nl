@@ -1,0 +1,6 @@
+interface:
+  display_name: "Implement Feature"
+  short_description: "Полная реализация мониторинга через команду агентов"
+  default_prompt: "Используй $implement-feature для реализации указанной задачи Housing Monitor NL в режиме оркестратора."
+policy:
+  allow_implicit_invocation: false
