@@ -250,6 +250,11 @@ async function main(options = {}) {
   function onCrash(){emit('renderer-crashed');process.exit(1)}
   function onDisconnect(){emit('browser-disconnected');process.exit(1)}
   const lifecycle = createBrowserLifecycle({ launch, timeoutMs,
+    // Playwright storageState/content/close can hang without observing the
+    // collector's AbortSignal. Restart Funda before its 360s source lease expires.
+    // Other workers keep their current lifecycle behavior.
+    operationTimeoutMs: name === 'Funda' ? 300000 : 0,
+    onOperationTimeout() { process.exit(1); },
     async suspend(handle) {
       if (!handle.statePersisted) { await persist(); handle.statePersisted = true; }
       handle.browser.removeListener('disconnected',onDisconnect); page.removeListener('crash',onCrash);
