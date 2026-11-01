@@ -1,0 +1,4 @@
+# Roles inherit the parent model, permissions and connected MCP servers.
+# Enabling tools does not activate the orchestration workflow: see AGENTS.md.
+[agents]
+enabled = true

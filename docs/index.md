@@ -16,6 +16,7 @@
 | Следующая задача, технический долг | [Backlog](https://app.notion.com/p/402d10c6e6ab815983ddf6700505fc7c?pvs=204) | [roadmap.md](roadmap.md) |
 | Приёмка MVP | [Критерии и границы](https://app.notion.com/p/402d10c6e6ab81ce8707f7bab329ead7?pvs=204) | Проверки затронутых компонентов, `test/`, `test/integration/` |
 | Компактная диагностика и передача задачи | — | Нужный раздел [agent-workflow.md](agent-workflow.md) |
+| Субагенты, команды implement/design и роли | — | [subagents.md](subagents.md), [.codex/agent-context.md](../.codex/agent-context.md) |
 
 При работе с одним источником открывайте одну строку ниже, соответствующий runbook и затронутую реализацию. Другие источники нужны, только если меняется общий код. Сначала используйте уже прочитанные сведения; не перечитывайте неизменившиеся страницы.
 

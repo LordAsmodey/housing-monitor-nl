@@ -1,0 +1,6 @@
+interface:
+  display_name: "Design Feature"
+  short_description: "Прототип мониторинга через дизайнера и ревьюера"
+  default_prompt: "Используй $design-feature для создания и проверки прототипа указанного интерфейса Housing Monitor NL."
+policy:
+  allow_implicit_invocation: false
