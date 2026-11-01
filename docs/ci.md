@@ -54,8 +54,10 @@ npm run db:validate
 ## Статус B02 на 1 ноября 2026
 
 - Код и тесты прошли независимое review. Подтверждены локально: 217 существующих unit tests, 29 проверок guard, `typecheck`, `typecheck:ci`, `build:all`, `db:validate`; CLI merge-result проверен на реальном merge во временном git-репозитории.
-- UI не менялся: frontend review и продуктовый E2E пропущены. Локально в B02 не подтверждены Docker images и DB integration; их выполнение ожидается в hosted CI.
+- Hosted CI подтверждён для [PR #49](https://github.com/LordAsmodey/housing-monitor-nl/pull/49): [run #276](https://github.com/LordAsmodey/housing-monitor-nl/actions/runs/41293671455) завершился успешно по всем шести checks от GitHub Actions (`app_id=15368`). Проверен head `b00f910b51dcb5b856b8593d7944fa64baf40973`; это SHA до последующего обновления документации, а не подтверждение будущего head.
+- [Guard job](https://github.com/LordAsmodey/housing-monitor-nl/actions/runs/41293671455/job/124809949864) подтвердил `refs/pull/49/merge`, merge SHA `852442a32d84eb8987e5f45d83bd4355f5d6a716` и порядок родителей: base `7835efe35f75594a6089f13a206037b5d9539802`, head `b00f910b51dcb5b856b8593d7944fa64baf40973`. Родители дополнительно сверены через commit API.
+- [Check job](https://github.com/LordAsmodey/housing-monitor-nl/actions/runs/41293671455/job/124810014544) подтвердил чистые installs, admin build, шесть миграций на PostgreSQL 17, оба typechecks, 246 unit tests, 39 DB integration tests, backend build и schema validation; failed/skipped — 0. Все четыре Docker build и runtime smoke прошли. UI не менялся: frontend review и продуктовый E2E пропущены.
 - Защита `main` сохранена и повторно проверена: [правило 85658923](https://github.com/LordAsmodey/housing-monitor-nl/settings/branch_protection_rules/85658923), пять существующих checks и policy выше. API read вернул 403, `gh` не авторизован; использован authenticated GitHub UI.
-- Защита integration подготовлена, но ещё не сохранена: ожидается первое появление `pr-target-guard` в PR для выбора шестого required check. Hosted CI и readback integration protection пока не получены. B02 полностью не закрыт.
+- Защита integration с шестью checks подготовлена, но сохранение и readback ещё не подтверждены: GitHub требует повторную Mobile-аутентификацию. B02 полностью не закрыт; PR не слит, выпуск не выполнен.
 
 Результаты B01 от 31 октября в [подготовке v2](plans/platform-v2-preparation.md) остаются отдельным историческим подтверждением и не доказывают CI текущего PR.

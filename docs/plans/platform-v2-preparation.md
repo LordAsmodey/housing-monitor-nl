@@ -68,7 +68,7 @@ Node.js `v24.19.0`, npm `11.17.0`; использованы имеющиеся `
 | Задача | Состояние после подготовки | Следующий проверяемый результат |
 |---|---|---|
 | B01 | Интеграционная и рабочая ветки созданы от актуальной main | Все task PR имеют правильную integration base |
-| B02 | Реализованы guard/merge-result и strict typecheck CI-утилиты; локальные проверки и review пройдены. Защита main сохранена; hosted CI и защита integration ожидаются | Все шесть hosted checks и сохранённая защита integration с readback; [контракт, настройки и статус](../ci.md) |
+| B02 | Guard/merge-result и strict typecheck CI-утилиты реализованы; локальные проверки, review и все шесть hosted checks PR #49 прошли для head `b00f910`. Защита main сохранена; сохранение защиты integration ожидает повторную GitHub-аутентификацию | Сохранённая защита integration с readback и CI актуального head после обновления документации; [контракт, настройки и доказательства](../ci.md) |
 | B03 | Staging не создан и не проверен | Изолированные DB/URL/volumes/secrets, собственные OAuth/bot, fail-closed проверка окружения |
 | B04 | Не реализовано | Integration deploy обновляет только staging; production gate до финальной приёмки |
 | B05 | Правила задач ниже подготовлены; полный release runbook после B04 | Доказанные настройки branch/base/deploy и финального release SHA |
