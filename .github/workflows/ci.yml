@@ -1,14 +1,36 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
 permissions:
   contents: read
 jobs:
+  pr-target-guard:
+    runs-on: ubuntu-latest
+    steps:
+      # Default pull_request checkout is refs/pull/<number>/merge, never head.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck:ci
+      - run: npm run ci:pr-target
+      - name: Validate merge-result against event base and head
+        run: npm run ci:merge-result
+  # Application checks retain the default checkout of the validated event SHA.
   funda-image:
+    needs: pr-target-guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f Dockerfile.browser -t housing-funda:ci .
   application-image:
+    needs: pr-target-guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +44,7 @@ jobs:
           assert.equal(typeof client.searchConfiguration.findUnique,"function");
           void client.$disconnect();'
   huurwoningen-image:
+    needs: pr-target-guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +52,7 @@ jobs:
       - run: docker run --rm --entrypoint node housing-huurwoningen:ci -e 'const fs=require("node:fs"),assert=require("node:assert/strict"); assert.equal(fs.readFileSync("/app/REVISION","utf8").trim(),process.argv[1]); assert.equal(typeof require("patchright").chromium.launchPersistentContext,"function");' "$GITHUB_SHA"
       - run: docker run --rm --init --network none --entrypoint node -v "$PWD/scripts/browser-profile-smoke.cjs:/app/scripts/browser-profile-smoke.cjs:ro" housing-huurwoningen:ci scripts/browser-profile-smoke.cjs
   pararius-image:
+    needs: pr-target-guard
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +60,7 @@ jobs:
       - run: docker run --rm --network none --entrypoint node housing-pararius:ci -e 'const assert=require("node:assert/strict"); assert.equal(typeof require("./scripts/pararius-browser-session.cjs").searchReady,"function"); assert.equal(require("./scripts/pararius-core.cjs").SOURCE_ID,"pararius:groningen-25km-homes");'
       - run: docker run --rm --init --network none --entrypoint node -v "$PWD/scripts/pararius-profile-smoke.cjs:/app/scripts/pararius-profile-smoke.cjs:ro" housing-pararius:ci scripts/pararius-profile-smoke.cjs
   check:
+    needs: pr-target-guard
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://housing:test@localhost:5432/housing
@@ -62,6 +87,7 @@ jobs:
       - run: npm run db:generate
       - run: npm run db:deploy
       - run: npm run typecheck
+      - run: npm run typecheck:ci
       - run: npm test
       - run: npm run test:integration
       - run: npm run build
