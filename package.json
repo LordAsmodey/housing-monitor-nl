@@ -22,6 +22,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:deploy:staging": "node dist/database/staging-migrate.js",
     "test:integration": "node --import tsx --test --test-concurrency=1 test/integration/*.test.ts",
     "outbox:admin": "node --env-file-if-exists=.env scripts/outbox-admin.mjs",
     "outbox:smoke": "node --env-file-if-exists=.env scripts/outbox-smoke.mjs",

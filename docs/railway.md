@@ -1,5 +1,7 @@
 # Railway
 
+Изолированный стенд platform v2 описан в [staging runbook](staging.md). Ниже — production-конфигурация; её команды и credentials не переносить в staging.
+
 ## Конфигурация сервисов
 
 Проект `housing-monitor-nl`, окружение `production`:
