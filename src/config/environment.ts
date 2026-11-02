@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { assertStagingIsolation, isStagingEnvironment } from './staging-isolation';
 
 const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -40,6 +41,7 @@ const environmentSchema = z.object({
 });
 
 export function parseEnvironment(input: Record<string, unknown>) {
+  assertStagingIsolation(input);
   const result = environmentSchema.safeParse(input);
   if (!result.success) {
     // Do not include input values: URLs may contain credentials.
@@ -47,5 +49,14 @@ export function parseEnvironment(input: Record<string, unknown>) {
     throw new Error(`Invalid environment variables: ${keys.join(', ')}`);
   }
   return result.data;
+}
+
+/** Passive staging needs neither Redis nor a legacy Telegram destination. */
+export function parseBootstrapEnvironment(input: Record<string, unknown>) {
+  assertStagingIsolation(input);
+  if (!isStagingEnvironment(input)) return parseEnvironment(input);
+  const port = z.coerce.number().int().min(1).max(65535).safeParse(input.PORT ?? 3000);
+  if (!port.success) throw new Error('Invalid environment variables: PORT');
+  return { PORT: port.data };
 }
 
