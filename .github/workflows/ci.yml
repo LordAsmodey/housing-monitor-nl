@@ -64,6 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://housing:test@localhost:5432/housing
+      V2_RELEASE_APPROVED_SHA: ${{ vars.V2_RELEASE_APPROVED_SHA }}
     services:
       postgres:
         image: postgres:17-bookworm
@@ -82,6 +83,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Run inside the already-required check job, so rejection is FAILED,
+      # not a skipped dependent job that GitHub could accept as successful.
+      - run: npm run ci:v2-release
       - run: npm ci --prefix admin --no-audit --no-fund
       - run: npm run admin:build
       - run: npm run db:generate

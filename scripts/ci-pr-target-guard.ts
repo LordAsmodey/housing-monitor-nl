@@ -70,9 +70,16 @@ export function validateMergeResult(target: PullRequestTarget, ref: string, sha:
   const parents = git(['show', '-s', '--format=%P', 'HEAD']).trim().split(/\s+/);
   if (parents.length !== 2 || parents[0] !== target.baseSha || parents[1] !== target.headSha) throw new Error('Merge commit parents do not match the event base/head SHAs');
 }
+// Approval is a repository variable, never a file supplied by the release PR.
+export function validateV2Release(target: PullRequestTarget, approvedSha: string | undefined): void {
+  if (target.kind !== 'v2-release') return;
+  if (!approvedSha || !/^[a-f0-9]{40}$/.test(approvedSha) || approvedSha !== target.headSha) {
+    throw new Error('V2 release is closed: V2_RELEASE_APPROVED_SHA must equal the accepted integration head SHA');
+  }
+}
 function main(): void {
   const mode = process.argv[2] ?? 'target';
-  if (mode !== 'target' && mode !== 'merge-result') throw new Error('Expected target or merge-result mode');
+  if (mode !== 'target' && mode !== 'merge-result' && mode !== 'release') throw new Error('Expected target, merge-result or release mode');
   if (process.env.GITHUB_EVENT_NAME === 'push') {
     console.log('PR guard: push event; application checks still run.');
     return;
@@ -80,6 +87,7 @@ function main(): void {
   if (process.env.GITHUB_EVENT_NAME !== 'pull_request') throw new Error('Expected pull_request or push event');
   const event: unknown = JSON.parse(readFileSync(string(process.env.GITHUB_EVENT_PATH, 'GITHUB_EVENT_PATH'), 'utf8'));
   const target = evaluatePullRequestTarget(event, string(process.env.GITHUB_REPOSITORY, 'GITHUB_REPOSITORY'));
+  if (mode === 'release') validateV2Release(target, process.env.V2_RELEASE_APPROVED_SHA);
   if (mode === 'merge-result') validateMergeResult(target, string(process.env.GITHUB_REF, 'GITHUB_REF'), string(process.env.GITHUB_SHA, 'GITHUB_SHA'),
     (args) => execFileSync('git', args, { encoding: 'utf8' }));
   const evidence = `PR #${target.number}: ${target.kind}; ${target.headRef} → ${target.baseRef}\n` +
