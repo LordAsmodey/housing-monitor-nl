@@ -1,6 +1,6 @@
 # Platform v2 staging
 
-Проверено 2 ноября 2026. **B03 выполнена частично:** отдельный пассивный API и БД работают; bot/OAuth-конфигурация и полная приёмка изоляции ещё заблокированы. Production не изменялся. B04 (автоматический deployment integration → staging и production release gate) не реализована.
+Проверено 2 ноября 2026. **B03 завершена:** отдельный пассивный API и БД работают; выделенная тестовая конфигурация подготовлена, HTTP-изоляция и локальные проверки подтверждены. OAuth-вход и Telegram webhook ещё не реализованы и принимаются в I01/T02/O06. Production не изменялся. B04 (автоматический deployment integration → staging и production release gate) не реализована.
 
 ## Ресурсы и выпущенный кандидат
 
@@ -46,14 +46,23 @@
 | Railway Docker build | `npm ci`, `db:generate`, `build:all` прошли на deployed SHA |
 | Реальная staging migration/readiness | Guarded pre-deploy успешен; `/health/ready` — 1/1 succeeded; API и Postgres `SUCCESS`, по одной running replica, без issues/pending work |
 | Пассивные runtime boundaries | Независимый E2E readback подтвердил только `StagingModule` и маршруты `/health/live`, `/health/ready`; admin/source/delivery modules не инициализировались |
-| Локальные Prisma/typecheck/build/integration | Заблокированы отсутствующим generated client/engine: загрузка `binaries.prisma.sh` отвергнута сетевой политикой HTTP 403. Удалённая сборка и миграция не заменяют integration suite |
-| Прямые публичные HTTP/admin-404 probes | Не выполнены из-за сетевой политики среды; отсутствие admin API подтверждено кодом и runtime route mapping, а не наблюдаемым HTTP 404 |
+| Локальные Prisma/typecheck/build/integration | `db:generate`, `db:validate`, `typecheck`, `typecheck:ci`, `build:all` — exit 0; 39/39 integration tests — exit 0 на одноразовой PostgreSQL 17, отдельный контейнер/БД `b03_test`, localhost:55450. Все 6 миграций применены с нуля; production/staging БД не использовались |
+| Прямые публичные HTTP/admin-404 probes | `/health/live` — 200, `/health/ready` — 200; реальные admin routes `/api/admin/session`, `/api/admin/overview` — 404; запланированный `/api/v1/auth/google/callback` — 404 |
 | Frontend tests | SKIPPED: UI не менялся |
 
 Мок-тесты мигратора проверяют отказ и изоляцию процесса, а не применение SQL. Code review одобрен после одного исправления порядка загрузки legacy-инструментации; новые тесты прошли отдельное review.
 
-## Что осталось для B03
+## Выделенная конфигурация интеграций B03
 
-Файл тестовых Telegram/Google credentials находится на домашнем MacBook пользователя и в текущей среде недоступен. В Railway эти credentials не настроены; их изоляция от production и выделенная конфигурация с запланированными callback/webhook URL не проверены. Не добавлять их вслепую в текущий сервис: пассивный guard намеренно откажет в запуске.
+Повторная проверка 02.11.2026 выполнена на MacBook с доступным `.env.staging.local`. Исходный игнорируемый файл имеет права `0600` и сохраняет localhost callback. Отдельный игнорируемый `.env.staging.integrations.local` (также `0600`) содержит тестовые Google/Telegram credentials, свежий криптографически случайный webhook secret (32 байта) и запланированные URL:
 
-Следующий шаг — безопасно предоставить выделенную тестовую конфигурацию через secret store и вне пассивного API проверить принадлежность credentials отдельным bot/OAuth-приложениям, отсутствие production credentials и запланированные staging callback/webhook URL. Текущий guard сохраняет запрет интеграций в пассивном API. Реализация входа, Telegram linking и webhook относится к последующим A/I/T-задачам и не требуется для проверки выделенной конфигурации B03. Затем выполнить оставшиеся HTTP/изоляционные проверки и integration suite в разрешённой среде; после закрытия критериев B03 переходить к зависимой B04. [Общий план](plans/multi-user-platform-v2.md) остаётся источником порядка задач.
+- `GOOGLE_REDIRECT_URI=https://api-staging-887b.up.railway.app/api/v1/auth/google/callback`
+- `TELEGRAM_WEBHOOK_URL=https://api-staging-887b.up.railway.app/api/v1/telegram/webhook`
+
+Эти файлы — локальное закрытое хранилище конфигурации, не артефакт Git/CI. Не добавлять их в пассивный Railway API: guard продолжает запрещать integration secrets. При реализации соответствующих runtime roles перенести конфигурацию в закрытые variables выделенного сервиса; не загружать legacy `.env`.
+
+Telegram token и username отличаются от legacy `.env`; read-only `getMe` подтвердил отдельного `Housing_Monitor_NL_V2_bot` и совпадение username. `getWebhookInfo` вернул пустой URL и 0 pending updates. Сообщения не отправлялись, polling не запускался, webhook не менялся. Delivery и commands выключены. Production chat ID отсутствует в тестовой конфигурации.
+
+Google Client ID имеет формат `*.apps.googleusercontent.com`, client secret присутствует; в legacy `.env` Google credentials отсутствуют. Создание отдельного тестового OAuth-клиента, localhost callback и test user ранее подтверждены пользователем ([контекст подготовки](plans/platform-v2-preparation.md)). Это подтверждение происхождения и локальная проверка конфигурации, а не независимый аудит Google Console или успешный OAuth flow. Новый HTTPS callback подготовлен в файле, но его регистрация в Google Console не подтверждена; выполнить её при I01 перед запуском входа. Не использовать для проверки токена endpoint, который создаёт/обновляет webhook или отправляет сообщение.
+
+B03 закрывает базовую конфигурацию и изоляцию пассивного стенда. Регистрация HTTPS callback, активация webhook и OAuth/linking end-to-end остаются в I01/T02/O06; отсутствие этих ещё не реализованных endpoints не выдаётся за приёмку интеграций. B04 — следующий отдельный шаг: автоматический deployment integration → staging и production release gate. [Общий план](plans/multi-user-platform-v2.md) определяет зависимости.
