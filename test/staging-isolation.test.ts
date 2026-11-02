@@ -7,6 +7,8 @@ import { assertStagingIsolation, isStagingEnvironment, STAGING_TARGET } from '..
 import { parseBootstrapEnvironment } from '../src/config/environment';
 import { runStagingMigration } from '../src/database/staging-migrate';
 
+type MigrationSpawnOptions = { cwd: string; env: NodeJS.ProcessEnv; stdio: string };
+
 const valid = (): NodeJS.ProcessEnv => ({
   DEPLOYMENT_MODE: 'staging',
   RAILWAY_PROJECT_ID: STAGING_TARGET.projectId,
@@ -104,7 +106,7 @@ test('migration refuses invalid/legacy targets before filesystem or child execut
 
 test('migration child receives isolated schema cwd and only explicit environment; temporary files are removed', () => {
   let isolatedFolder: string | undefined;
-  const spawn = mock.method(childProcess, 'spawnSync', (executable, args, options) => {
+  const spawn = mock.method(childProcess, 'spawnSync', (executable: string, args: string[], options: MigrationSpawnOptions) => {
     assert.equal(executable, process.execPath);
     assert.deepEqual(args.slice(1, 4), ['migrate', 'deploy', '--schema']);
     isolatedFolder = options.cwd;
@@ -128,7 +130,7 @@ test('migration child failures remain nonzero, redact raw output and clean isola
   let isolatedFolder: string | undefined;
   const messages: string[] = [];
   const error = mock.method(console, 'error', (message: string) => { messages.push(message); });
-  const spawn = mock.method(childProcess, 'spawnSync', (_executable, _args, options) => {
+  const spawn = mock.method(childProcess, 'spawnSync', (_executable: string, _args: string[], options: MigrationSpawnOptions) => {
     isolatedFolder = options.cwd;
     return { status: 1, signal: null, stderr: 'postgresql://private-password@production', stdout: 'sensitive-sql' };
   });
