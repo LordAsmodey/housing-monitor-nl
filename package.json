@@ -14,6 +14,7 @@
     "typecheck:ci": "tsc -p tsconfig.ci.json",
     "ci:pr-target": "node --import tsx scripts/ci-pr-target-guard.ts target",
     "ci:merge-result": "node --import tsx scripts/ci-pr-target-guard.ts merge-result",
+    "ci:v2-release": "node --import tsx scripts/ci-pr-target-guard.ts release",
     "test": "node --import tsx --test test/*.test.ts test/*.test.mjs",
     "telegram:check": "node --env-file-if-exists=.env scripts/telegram-setup.mjs check",
     "telegram:chats": "node --env-file-if-exists=.env scripts/telegram-setup.mjs chats",

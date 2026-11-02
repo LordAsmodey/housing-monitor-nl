@@ -1,6 +1,6 @@
 # Platform v2 staging
 
-Проверено 2 ноября 2026. **B03 завершена:** отдельный пассивный API и БД работают; выделенная тестовая конфигурация подготовлена, HTTP-изоляция и локальные проверки подтверждены. OAuth-вход и Telegram webhook ещё не реализованы и принимаются в I01/T02/O06. Production не изменялся. B04 (автоматический deployment integration → staging и production release gate) не реализована.
+Проверено 2 ноября 2026. **B03 завершена:** отдельный пассивный API и БД работают; выделенная тестовая конфигурация подготовлена, HTTP-изоляция и локальные проверки подтверждены. OAuth-вход и Telegram webhook ещё не реализованы и принимаются в I01/T02/O06. Production не изменялся. B04: integration → staging настроен; CI gate будущего release PR подготовлен в рабочей ветке. Приёмка автодеплоя после merge B04 ещё требуется.
 
 ## Ресурсы и выпущенный кандидат
 
@@ -13,10 +13,10 @@
 | PostgreSQL service | `6be222a4-4c78-4d08-853a-a7d4c3cd599b` |
 | DB volume | `46a2b7c0-7488-4132-8c16-83b45c4cc57c`, 500 MB, `/var/lib/postgresql/data` |
 | DB target | `postgres.railway.internal:5432`; database/user `housing_v2_staging` |
-| Deployed SHA | `9741d2e37377b20626304e725bf261114daaf113` |
-| API deployment | `d9f7f404-4bc7-4fec-ad2a-d3a5aa508d76`, `SUCCESS` в `2026-11-02T07:02:29.492Z` |
+| Deployed SHA | `e268d8aa25b62a09a3bb58b808ee30e3292ed373` |
+| API deployment | `8539f883-db34-45c0-a645-108a2f810e24`, `SUCCESS` в `2026-11-02T15:33:37.576Z` |
 
-Созданы новые ресурсы и пароль БД; production variables, данные и browser state не копировались. Пароль хранится только в Railway Variables. Публичный endpoint БД не создавался; browser services отсутствуют. Source привязан к точному SHA рабочей ветки `codex/b03-v2-staging`: последующие push не запускают deployment. Commit `db512b6` меняет только типы теста и в работающий образ не входит. Целевая base task PR — `codex/platform-v2`.
+Созданы новые ресурсы и пароль БД; production variables, данные и browser state не копировались. Пароль хранится только в Railway Variables. Публичный endpoint БД не создавался; browser services отсутствуют. В B04 Source переключён на `codex/platform-v2`, SHA pin снят; autodeploy включён, `source.checkSuites=true` (Wait for CI). Работающий образ включает merge B03. Целевая base task PR — `codex/platform-v2`.
 
 ## Запуск и миграции
 
@@ -65,4 +65,19 @@ Telegram token и username отличаются от legacy `.env`; read-only `g
 
 Google Client ID имеет формат `*.apps.googleusercontent.com`, client secret присутствует; в legacy `.env` Google credentials отсутствуют. Создание отдельного тестового OAuth-клиента, localhost callback и test user ранее подтверждены пользователем ([контекст подготовки](plans/platform-v2-preparation.md)). Это подтверждение происхождения и локальная проверка конфигурации, а не независимый аудит Google Console или успешный OAuth flow. Новый HTTPS callback подготовлен в файле, но его регистрация в Google Console не подтверждена; выполнить её при I01 перед запуском входа. Не использовать для проверки токена endpoint, который создаёт/обновляет webhook или отправляет сообщение.
 
-B03 закрывает базовую конфигурацию и изоляцию пассивного стенда. Регистрация HTTPS callback, активация webhook и OAuth/linking end-to-end остаются в I01/T02/O06; отсутствие этих ещё не реализованных endpoints не выдаётся за приёмку интеграций. B04 — следующий отдельный шаг: автоматический deployment integration → staging и production release gate. [Общий план](plans/multi-user-platform-v2.md) определяет зависимости.
+B03 закрывает базовую конфигурацию и изоляцию пассивного стенда. Регистрация HTTPS callback, активация webhook и OAuth/linking end-to-end остаются в I01/T02/O06; отсутствие этих ещё не реализованных endpoints не выдаётся за приёмку интеграций. Настройки и границы проверки B04 описаны ниже. [Общий план](plans/multi-user-platform-v2.md) определяет зависимости.
+
+
+## B04: integration deployment и gate выпуска v2
+
+2 ноября 2026 изменён только API в выделенном проекте `housing-monitor-nl-v2-staging` / environment `staging`. Readback подтвердил `source.branch=codex/platform-v2`, отсутствие `commitSha`, `checkSuites=true`; UI — «Auto deploys when pushed to GitHub». Staged patch затрагивал только source API; после применения pending changes отсутствуют. Pre-deploy остался `npm run db:deploy:staging`; ID/DB guard B03 проверяет цель до запуска Prisma. Production Railway, `main`, его автодеплой, secrets и миграции не менялись.
+
+Применение source-настроек запустило deployment текущего integration SHA из таблицы выше: `WAITING` → `BUILDING` → `SUCCESS`. HTTP probes после deployment: `/health/live` и `/health/ready` — 200; `/api/admin/session` и `/api/admin/overview` — 404. Это проверка применения настроек, **не доказательство автоматического trigger от нового merge**. После merge PR B04 проверить новый deployment с branch `codex/platform-v2`, совпадение deployed SHA с merge SHA, успешные CI/pre-deploy/readiness. До этого B04 не считать полностью принятой.
+
+CI gate релиза реализован в `scripts/ci-pr-target-guard.ts`, режим `release`, команда `npm run ci:v2-release`. Он работает внутри существующего обязательного job `check`, перед миграциями CI. Только same-repository PR `codex/platform-v2` → `main` требует repository Actions variable `V2_RELEASE_APPROVED_SHA`, равную полному head SHA integration. Отсутствие, неверный формат, другой или устаревший SHA дают FAILED job `check`. Task PR, integration push и обычные main hotfix PR продолжают штатные проверки. Gate не запускает Railway или миграции production и не содержит deployment credentials.
+
+Read-only проверка существующего branch protection `main` показала: PR required; required checks `check`, `application-image`, `funda-image`, `huurwoningen-image`, `pararius-image`; up-to-date branch required; bypass для administrators запрещён. Repository Actions variables отсутствуют (read-only UI), разрешение `V2_RELEASE_APPROVED_SHA` не задано. Настройки не менялись. Gate размещён внутри `check`: провал prerequisite с последующим SKIPPED required job не используется как блокировка релиза.
+
+Открывать gate только после R09/R11 и явного решения пользователя: записать принятый integration head SHA в repository variable, перезапустить CI release PR, повторно проверить SHA и окно выпуска перед merge. После нового integration commit старое разрешение недействительно; после выпуска удалить variable. Текущий `main` сохраняет свой автодеплой, поэтому **merge release PR является действием запуска production rollout**, включая существующий pre-deploy. Согласовать окно нужно до merge. B05 уточняет полный release/cutover/rollback runbook.
+
+Проверки локального кандидата B04: 259 unit tests, `typecheck`, `typecheck:ci`, `build:all` — PASS. Тесты gate проверяют закрытый/открытый/устаревший SHA, CLI exit code и размещение проверки внутри required job; staging tests подтверждают отказ неверной цели до миграций. Новых миграций нет, SQL/production integration tests для B04 не запускались.

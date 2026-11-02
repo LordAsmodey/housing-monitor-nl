@@ -4,13 +4,26 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
-import { evaluatePullRequestTarget, validateMergeResult } from '../scripts/ci-pr-target-guard';
+import { evaluatePullRequestTarget, validateMergeResult, validateV2Release } from '../scripts/ci-pr-target-guard';
 
 const REPOSITORY = 'owner/housing-monitor-nl';
 const INTEGRATION = 'codex/platform-v2';
 const BASE_SHA = 'a'.repeat(40);
 const HEAD_SHA = 'b'.repeat(40);
 const MERGE_SHA = 'c'.repeat(40);
+test('release gate requires approval of the exact integration SHA', () => {
+  const target = evaluatePullRequestTarget(event(INTEGRATION, 'main'), REPOSITORY);
+  for (const approval of [undefined, '', 'true', BASE_SHA, HEAD_SHA.toUpperCase(), HEAD_SHA + '\n']) {
+    assert.throws(() => validateV2Release(target, approval), /V2 release is closed/);
+  }
+  assert.doesNotThrow(() => validateV2Release(target, HEAD_SHA));
+  assert.throws(() => validateV2Release({ ...target, headSha: MERGE_SHA }, HEAD_SHA));
+});
+test('closed v2 release gate preserves task PRs and ordinary main hotfixes', () => {
+  for (const target of [event(), event('hotfix/login', 'main'), event('main', INTEGRATION)]) {
+    assert.doesNotThrow(() => validateV2Release(evaluatePullRequestTarget(target, REPOSITORY), undefined));
+  }
+});
 function event(head = 'codex/B02-ci-guard', base = INTEGRATION) {
   return {
     number: 42,
@@ -144,8 +157,19 @@ test('CLI enforces target policy and emits auditable summary evidence', () => {
   assert.doesNotMatch(failed.stderr, /\bat .+:\d+:\d+|node:internal/);
 });
 
+test('CLI release gate is closed until the repository approves this head SHA', () => {
+  const release = event(INTEGRATION, 'main');
+  const closed = cli(release, { V2_RELEASE_APPROVED_SHA: '' }, 'release');
+  assert.equal(closed.status, 1);
+  assert.match(closed.stderr, /V2 release is closed/);
+  assert.equal(cli(release, { V2_RELEASE_APPROVED_SHA: HEAD_SHA }, 'release').status, 0);
+  assert.equal(cli(release, { V2_RELEASE_APPROVED_SHA: BASE_SHA }, 'release').status, 1);
+  // Target validation must pass so its required dependent job runs and fails.
+  assert.equal(cli(release, { V2_RELEASE_APPROVED_SHA: '' }, 'target').status, 0);
+});
+
 test('CLI handles push, unsupported events, malformed payloads and unknown modes', () => {
-  for (const mode of ['target', 'merge-result']) {
+  for (const mode of ['target', 'merge-result', 'release']) {
     const push = cli('invalid JSON', { GITHUB_EVENT_NAME: 'push' }, mode);
     assert.equal(push.status, 0, push.stderr);
     assert.match(push.stdout, /push event; application checks still run/);
@@ -208,6 +232,10 @@ test('workflow reruns on retargeting, gates every existing job and uses read-onl
     assert.match(jobs.get(job) ?? '', /^    needs: pr-target-guard$/m, job);
   }
   const guard = jobs.get('pr-target-guard')!;
+  const check = jobs.get('check')!;
+  assert.match(check, /V2_RELEASE_APPROVED_SHA: \$\{\{ vars\.V2_RELEASE_APPROVED_SHA \}\}/);
+  assert.match(check, /npm run ci:v2-release/);
+  assert.ok(check.indexOf('npm run ci:v2-release') < check.indexOf('npm run db:deploy'));
   assert.match(guard, /fetch-depth: 2/);
   assert.ok(guard.indexOf('npm run ci:pr-target') < guard.indexOf('npm run ci:merge-result'));
   assert.match(guard, /npm run typecheck:ci/);
