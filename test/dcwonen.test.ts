@@ -1,0 +1,57 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { parseSearch, parseCard, cardSections, collect, allowedDetailUrl, pageUrl, SOURCE_ID } from '../src/sources/dcwonen-core';
+import { parseEnvironment } from '../src/config/environment';
+const registry = require('../scripts/search-settings.cjs');
+const fixture = (n = 1) => readFileSync(`test/fixtures/dcwonen-page${n}.html`, 'utf8');
+const response = (html: string) => new Response(html, {headers:{'content-type':'text/html'}});
+const pause = async () => {};
+test('DC Wonen parses real pages, stable IDs, advertised prices and area without inventing room counts or dates', () => {
+  const first = parseSearch(fixture());
+  assert.equal(first.total,12); assert.equal(first.pages,3);
+  assert.deepEqual(first.listings[1], {externalId:'45411',canonicalUrl:'https://dcwonen.nl/verhuur/kraneweg-45411',title:'Kraneweg',city:'Groningen',rentPrice:979,areaM2:27,housingType:'appartement',pricingDetails:{baseRent:false},availabilityStatus:'available'});
+  assert.equal(first.listings[4]!.housingType,'kamer');
+  assert.equal(parseSearch(fixture(3),3).listings.length,2);
+  assert.equal(parseEnvironment({DATABASE_URL:'postgresql://u:p@localhost/db',REDIS_URL:'redis://localhost:6379',TELEGRAM_CHAT_ID:'-123',DCWONEN_MONITORING_ENABLED:'false'}).DCWONEN_MONITORING_ENABLED,false);
+});
+test('DC Wonen validates counts, pagination, metadata, blocked responses and URLs', () => {
+  assert.throws(()=>parseSearch('Just a moment'), /ACCESS_BLOCKED/);
+  assert.throws(()=>parseSearch('<title>Verhuur | DC Wonen</title>'),/SEARCH_STRUCTURE_CHANGED/);
+  assert.throws(()=>parseSearch(fixture(),2),/PAGINATION_CHANGED/);
+  assert.throws(()=>parseSearch(fixture().replaceAll('12 resultaten','16 resultaten')),/PAGINATION_CHANGED/);
+  assert.throws(()=>parseSearch(fixture().replace(cardSections(fixture())[0]!,'')),/INCOMPLETE_SEARCH/);
+  assert.throws(()=>parseSearch(fixture().replaceAll('s-push-url="https://dcwonen.nl/verhuur/page/2"','s-push-url="https://evil.test/verhuur/page/2"')),/PAGINATION_CHANGED/);
+  const card=cardSections(fixture())[1]!;
+  assert.throws(()=>parseCard(card.replace('979,00','prijs op aanvraag')),/INVALID_PRICE/);
+  assert.throws(()=>parseCard(card.replace('27m²','onbekend')),/CARD_STRUCTURE_CHANGED/);
+  assert.equal(parseCard(card.replace('Toon details','Verhuurd')).availabilityStatus,'unavailable');
+  for(const url of ['http://dcwonen.nl/verhuur/test-1','https://evil.test/verhuur/test-1','https://user@dcwonen.nl/verhuur/test-1','https://dcwonen.nl/verhuur/test-1?x=1','https://dcwonen.nl/verhuur/test-1#x']) assert.throws(()=>allowedDetailUrl(url));
+});
+test('DC Wonen traverses every page before geographic/type and editable server filters', async () => {
+  const requested:string[]=[];
+  const transport:typeof fetch=async u=>{requested.push(String(u));return response(fixture(Number(String(u).split('/').pop())));};
+  const result=await collect({transport,pause});
+  assert.equal(result.inspected,12); assert.equal(result.pages,3);
+  assert.deepEqual(requested,[1,2,3].map(pageUrl));
+  assert.deepEqual(result.listings.map(x=>x.externalId),['45411','45014','44677','44528']);
+  assert.equal(result.listings.every(x=>x.city==='Groningen'),true);
+  const filters=registry.defaults(SOURCE_ID);
+  assert.equal(registry.matches(filters,{rentPrice:1500},SOURCE_ID),true);
+  assert.equal(registry.matches(filters,{rentPrice:1501},SOURCE_ID),false);
+  assert.equal(registry.matches({...filters,maxRent:1000},result.listings[1],SOURCE_ID),false);
+  assert.equal(registry.matches({...filters,minArea:30},result.listings[0],SOURCE_ID),false);
+  assert.equal(registry.queryUrl(SOURCE_ID,pageUrl(1),filters),pageUrl(1));
+});
+test('DC Wonen rejects page failures, changing totals, duplicate IDs and invalid transport', async () => {
+  const run=(transport:typeof fetch)=>collect({transport,pause});
+  await assert.rejects(run(async()=>new Response('',{status:429})),/RATE_LIMIT/);
+  await assert.rejects(run(async()=>new Response('',{status:403})),/ACCESS_BLOCKED/);
+  await assert.rejects(run(async()=>new Response('',{status:302,headers:{location:'https://evil.test'}})),/HTTP_STATUS/);
+  await assert.rejects(run(async()=>new Response('{}',{headers:{'content-type':'application/json'}})),/CONTENT_TYPE/);
+  await assert.rejects(run(async()=>{throw Error('network');}),/HTTP_TRANSPORT/);
+  await assert.rejects(run(async u=>response(String(u).endsWith('/1')?fixture():fixture(2).replaceAll('12 resultaten','11 resultaten'))),/SEARCH_CHANGED_DURING_RUN/);
+  await assert.rejects(run(async u=>{const n=Number(String(u).split('/').pop()); return response(n===2?fixture(2).replace(cardSections(fixture(2))[0]!,cardSections(fixture())[0]!):fixture(n));}),/DUPLICATE_CARD/);
+  const controller=new AbortController();controller.abort();
+  await assert.rejects(collect({signal:controller.signal,pause}),/RUN_TIMEOUT/);
+});

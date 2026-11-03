@@ -46,6 +46,7 @@
 | RentBilly | [Notion](https://app.notion.com/p/402d10c6e6ab81fa886bf37027b53770?pvs=204) | [rentbilly.md](rentbilly.md) | `src/sources/rentbilly-core.ts, src/sources/rentbilly-runner.ts` |
 | GoHome | [Notion](https://app.notion.com/p/402d10c6e6ab81129bffc11b1dc8cca6?pvs=204) | [gohome.md](gohome.md) | `src/sources/gohome-core.ts, src/sources/gohome-runner.ts` |
 | ikwilhuren.nu | [Notion](https://app.notion.com/p/402d10c6e6ab81a68d09f88f50940c2e?pvs=204) | [ikwilhuren.md](ikwilhuren.md) | `src/sources/ikwilhuren-core.ts, src/sources/ikwilhuren-runner.ts` |
+| DC Wonen | Условия пользователя от 03.11.2026; отдельной страницы Notion пока нет | [dcwonen.md](dcwonen.md) | `src/sources/dcwonen-core.ts, src/sources/dcwonen-runner.ts` |
 
 Поисковые фильтры индивидуальны. Не переносите радиус/свежесть Funda или запрет комнат на остальные сайты. Сохранённые настройки приложения могут отличаться от исходных значений в требованиях.
 

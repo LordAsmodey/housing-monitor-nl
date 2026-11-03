@@ -1055,3 +1055,40 @@ test('Ikwilhuren has an independent baseline, strict availability, admin filters
   assert.equal(after.status,'DEGRADED'); assert.deepEqual(after.baselineAt,before.baselineAt); assert.deepEqual(after.lastSuccessAt,before.lastSuccessAt);
   assert.equal(await db.notificationOutbox.count({where:jobs}),1);
 });
+
+test('DC Wonen uses independent baseline, available-only budget filters, deduplication and failure rollback', async () => {
+  const { runDcwonen } = await import('../../src/sources/dcwonen-runner');
+  const { DcwonenService } = await import('../../src/sources/dcwonen.service');
+  const { collect, SOURCE_ID: id, SourceError } = await import('../../src/sources/dcwonen-core');
+  const { readFileSync } = await import('node:fs');
+  const old = process.env.DCWONEN_MONITORING_ENABLED;
+  try {
+    process.env.DCWONEN_MONITORING_ENABLED = 'false';
+    assert.equal((await new DcwonenService(db,service).tick()).skipped,true);
+    assert.equal(await db.source.count({where:{id}}),0);
+  } finally { if(old===undefined) delete process.env.DCWONEN_MONITORING_ENABLED; else process.env.DCWONEN_MONITORING_ENABLED=old; }
+  ids.push(id);
+  const parsed = await collect({pause:async()=>{}, transport:async u=>new Response(readFileSync(`test/fixtures/dcwonen-page${String(u).split('/').pop()}.html`,'utf8'),{headers:{'content-type':'text/html'}})});
+  const run = (listings:ListingInput[]) => runDcwonen(db,service,{destination:'-123',collector:async()=>({...parsed,listings})});
+  const due = () => db.source.update({where:{id},data:{nextCheckAt:new Date(0)}});
+  const jobs = {listing:{sourceId:id}};
+  assert.equal((await run(parsed.listings) as any).baseline,true);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  await due(); await run(parsed.listings);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),0);
+  const extra = (externalId:string, rentPrice:number, availabilityStatus:'available'|'unknown'='available') => ({...parsed.listings[0]!,externalId,canonicalUrl:`https://dcwonen.nl/verhuur/test-${externalId}`,rentPrice,availabilityStatus});
+  const batch = [...parsed.listings,extra('90001',1500),extra('90002',1501),extra('90003',1000,'unknown')];
+  await due(); await run(batch);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const job=await db.notificationOutbox.findFirstOrThrow({where:jobs});
+  assert.match(job.payload,/Цена в объявлении: €1500/);
+  await due(); await run(batch);
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+  const before = await db.source.findUniqueOrThrow({where:{id}});
+  await due();
+  await assert.rejects(runDcwonen(db,service,{destination:'-123',collector:async()=>{throw new SourceError('INCOMPLETE_SEARCH');}}),/INCOMPLETE_SEARCH/);
+  const after=await db.source.findUniqueOrThrow({where:{id}});
+  assert.equal(after.lastSuccessAt?.getTime(),before.lastSuccessAt?.getTime());
+  assert.equal(after.baselineAt?.getTime(),before.baselineAt?.getTime());
+  assert.equal(await db.notificationOutbox.count({where:jobs}),1);
+});
