@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {sections} from '../src/sources/rotsvast-core';
 import {parseSearch,parseCard,parseDetail,parseFeed,collect,distanceKm,allowedDetailUrl,SOURCE_ID,FEED_URL,SEARCH_URL} from '../src/sources/ikwilhuren-core';
 const fixture = ()=>JSON.parse(readFileSync('test/fixtures/ikwilhuren.json','utf8'));
 const registry = require('../scripts/search-settings.cjs');
@@ -71,4 +72,17 @@ test('explicitly unavailable search cards are excluded without following archive
   const f=fixture();let calls=0;
   const r=await collect({pause:async()=>{},transport:async(url:any)=>{calls++;assert.ok(url===FEED_URL||url===SEARCH_URL);return new Response(url===FEED_URL?JSON.stringify(f.feed):single(f.card.replace('Te huur','Gereserveerd')),{headers:{'content-type':url===FEED_URL?'application/json':'text/html'}})}});
   assert.equal(r.inspected,1);assert.equal(r.listings.length,0);assert.equal(calls,2);
+});
+
+test('missing optional description excludes only that candidate and preserves structural checks',async()=>{
+  const f=fixture(),card=parseCard(f.card);
+  const blocks=sections(f.detail,'object-description');
+  const withoutDescription=f.detail.replace(blocks[0]!,'');
+  assert.equal(parseDetail(withoutDescription,card).independent,false);
+  const r=await collect({pause:async()=>{},transport:async(url:any)=>new Response(
+    url===FEED_URL?JSON.stringify(f.feed):url===SEARCH_URL?single(f.card):withoutDescription,
+    {headers:{'content-type':url===FEED_URL?'application/json':'text/html'}})});
+  assert.equal(r.inspected,1);assert.equal(r.listings.length,0);
+  for(const html of [withoutDescription.replace('Kenmerken','Unknown'),f.detail.replace(blocks[1]!,''),withoutDescription.replace('data-lat','data-old-lat'),withoutDescription.replace('1.053','1.054')])
+    assert.throws(()=>parseDetail(html,card));
 });

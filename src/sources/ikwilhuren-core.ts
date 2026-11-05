@@ -126,6 +126,11 @@ export function parseDetail(html: string, card: ListingInput) {
   const lat = Number(coords[0]![1]), lng = Number(coords[0]![2]);
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < 50 || lat > 54 || lng < 3 || lng > 8) throw new SourceError('DETAIL_COORDINATES_INVALID');
   const descriptions = sections(html,'object-description');
+  // Some valid detail pages omit Omschrijving and contain only Kenmerken.
+  // Without a description we cannot confirm independent housing, but the
+  // missing optional content must not abort the entire catalog scan.
+  if (descriptions.length === 1 && text(descriptions[0]!.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ?? '') === 'Kenmerken')
+    return {item,independent:false as const,lat,lng};
   if (descriptions.length !== 2) throw new SourceError('DETAIL_STRUCTURE_CHANGED');
   const description = text(descriptions[0]!);
   const independent = ['Appartement','Eengezinswoning','Woonhuis'].includes(loc[2]!) && description.length > 20 && !/\b(?:kamerverhuur|studentenkamer|onzelfstandig|gedeeld(?:e)?|gemeenschappelijk(?:e)?|shared (?:kitchen|bathroom|facilities)|rooms? for rent|kamers? te huur)\b/i.test(description);
