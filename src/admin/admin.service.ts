@@ -54,6 +54,7 @@ export class AdminService {
           (module.key !== "huurwoningen" || Boolean(process.env.HUURWONINGEN_BROWSER_ORIGIN)) &&
           (module.key !== "pararius" || Boolean(process.env.PARARIUS_BROWSER_ORIGIN));
         const runtimeEnabled = !(
+          (module.key === "dcwonen" && process.env.DCWONEN_MONITORING_ENABLED === "false") ||
           (module.key === "vesteda" &&
             process.env.VESTEDA_MONITORING_ENABLED === "false") ||
           (module.key === "solide" &&
