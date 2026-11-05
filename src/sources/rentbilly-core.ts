@@ -140,6 +140,28 @@ export async function collect({ settings = registry.defaults(SOURCE_ID), transpo
   pause = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)) }:
   { settings?: Settings; transport?: typeof fetch; signal?: AbortSignal; pause?: (ms: number) => Promise<void> } = {}) {
   registry.validate(SOURCE_ID, settings);
+  // Discard an inconsistent scan in full. Never merge pages across attempts:
+  // deduplicating their union could silently hide missing properties.
+  let scan: Awaited<ReturnType<typeof collectSearch>> | undefined;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try { scan = await collectSearch(settings, transport, signal, pause); break; }
+    catch (error) {
+      if (!(error instanceof SourceError) ||
+          !['SEARCH_CHANGED_DURING_RUN', 'DUPLICATE_CARD'].includes(error.category) || attempt === 2) throw error;
+      if (signal.aborted) throw new SourceError('RUN_TIMEOUT');
+      await pause(1000);
+    }
+  }
+  const {cards, total, pages, inspected} = scan!;
+  const listings: ListingInput[] = [];
+  for (const card of cards.filter(x => registry.matches(settings, x, SOURCE_ID))) {
+    await pause(500);
+    const item = parseDetail(await fetchHtml(card.canonicalUrl, transport, signal, pause), card);
+    if (item) listings.push(item);
+  }
+  return {listings, inspected, total, pages, available:listings.filter(x => x.availabilityStatus === 'available').length};
+}
+async function collectSearch(settings: Settings, transport: typeof fetch, signal: AbortSignal, pause: (ms: number) => Promise<void>) {
   const cards: ListingInput[] = []; const ids = new Set<string>(); const urls = new Set<string>();
   let pages = 1, total = 0;
   for (let page = 1; page <= pages; page++) {
@@ -154,13 +176,7 @@ export async function collect({ settings = registry.defaults(SOURCE_ID), transpo
     cards.push(...result.listings);
   }
   if (ids.size !== total) throw new SourceError('INCOMPLETE_SEARCH');
-  const listings: ListingInput[] = [];
-  for (const card of cards.filter(x => registry.matches(settings, x, SOURCE_ID))) {
-    await pause(500);
-    const item = parseDetail(await fetchHtml(card.canonicalUrl, transport, signal, pause), card);
-    if (item) listings.push(item);
-  }
-  return {listings, inspected:ids.size, total, pages, available:listings.filter(x => x.availabilityStatus === 'available').length};
+  return {cards, total, pages, inspected:ids.size};
 }
 async function fetchHtml(target: string, transport: typeof fetch, signal: AbortSignal, pause: (ms: number) => Promise<void>) {
   let response: Response | undefined;

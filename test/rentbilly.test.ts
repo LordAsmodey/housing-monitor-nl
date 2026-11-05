@@ -91,3 +91,38 @@ test('full collector visits every page, enforces global identity and keeps only 
  duplicate.ld.mainEntity.itemListElement[0]=pages[0].ld.mainEntity.itemListElement[0];
  await assert.rejects(collect({pause:async()=>{},transport:async(u)=>response(render(String(u).endsWith('page=2')?duplicate:pages[0]))}),/DUPLICATE_CARD/);
 });
+
+test('inconsistent pagination restarts from page one and discards all previous cards',async()=>{
+ for(const category of ['SEARCH_CHANGED_DURING_RUN','DUPLICATE_CARD']) {
+  let attempts=0,details=0;const requests:number[]=[];
+  const r=await collect({pause:async()=>{},transport:async(u)=>{
+   const url=new URL(String(u));
+   if(url.pathname.includes('/listings/')) {details++;return response(render(fixture('detail')));}
+   const page=Number(url.searchParams.get('page')||'1');requests.push(page);
+   if(page===1) {attempts++;return response(render(attempts===1?fixture():single()));}
+   const d=fixture('page2');
+   if(category==='SEARCH_CHANGED_DURING_RUN')d.searchPropertiesData.meta.pagination.totalCount=83;
+   else {const first=fixture();d.searchPropertiesData.data[0]=first.searchPropertiesData.data[0];d.ld.mainEntity.itemListElement[0]=first.ld.mainEntity.itemListElement[0];}
+   return response(render(d));
+  }});
+  assert.deepEqual(requests,[1,2,1]);assert.equal(details,1);
+  assert.equal(r.inspected,1);assert.equal(r.listings.length,1);assert.equal(r.pages,1);
+ }
+});
+test('persistent pagination drift exhausts three scans without reading details',async()=>{
+ let attempts=0;
+ await assert.rejects(collect({pause:async()=>{},transport:async(u)=>{
+  const url=new URL(String(u));assert.equal(url.pathname,'/en/for-rent');
+  if(!url.searchParams.has('page')) {attempts++;return response(render(fixture()));}
+  const d=fixture('page2');d.searchPropertiesData.meta.pagination.totalCount=83;return response(render(d));
+ }}),/SEARCH_CHANGED_DURING_RUN/);
+ assert.equal(attempts,3);
+});
+test('scan retries share the original abort signal and stop before another request',async()=>{
+ const controller=new AbortController();let requests=0;
+ await assert.rejects(collect({signal:controller.signal,pause:async(ms)=>{if(ms===1000)controller.abort();},transport:async(u)=>{
+  requests++;if(!new URL(String(u)).searchParams.has('page'))return response(render(fixture()));
+  const d=fixture('page2');d.searchPropertiesData.meta.pagination.totalCount=83;return response(render(d));
+ }}),/RUN_TIMEOUT/);
+ assert.equal(requests,2);
+});
