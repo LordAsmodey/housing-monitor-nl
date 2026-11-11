@@ -33,7 +33,7 @@ export function allowedDetailUrl(value: string, id: string) {
   let url: URL;
   try { url = new URL(value, 'https://lamberink.nl'); } catch { throw new SourceError('INVALID_URL'); }
   if (url.protocol !== 'https:' || url.hostname !== 'lamberink.nl' || url.port || url.username || url.password || url.search || url.hash ||
-      !/^\/wonen\/aanbod\/[a-z0-9-]+$/.test(url.pathname) || !url.pathname.endsWith('-' + id.toLowerCase())) {
+      !/^\/wonen\/(?:aanbod|verkocht-verhuurd)\/[a-z0-9-]+$/.test(url.pathname) || !url.pathname.endsWith('-' + id.toLowerCase())) {
     throw new SourceError('URL_NOT_ALLOWED');
   }
   return url.href;
@@ -52,10 +52,14 @@ export function parseSearch(input: unknown) {
     return home.data;
   }).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
   const listings: ListingInput[] = validated.map(x => {
+    const canonicalUrl = allowedDetailUrl(x.url, x.object_code);
     const status = x.availability_status.toLowerCase().replace(/[\s_-]+/g, '');
-    const unavailable = !x.is_available || x.is_sold_or_rented || x.is_forbidden ||
+    // The complete API catalog retains rented homes after moving their detail URL
+    // to the archive. Keep those identities, but never notify archived listings.
+    const unavailable = new URL(canonicalUrl).pathname.startsWith('/wonen/verkocht-verhuurd/') ||
+      !x.is_available || x.is_sold_or_rented || x.is_forbidden ||
       ['verhuurd', 'verkocht', 'verhuurdondervoorbehoud', 'verkochtondervoorbehoud', 'onderoptie', 'onderbod', 'ingetrokken'].includes(status);
-    return { externalId: x.object_code, canonicalUrl: allowedDetailUrl(x.url, x.object_code),
+    return { externalId: x.object_code, canonicalUrl,
       title: x.short_title, address: x.short_title, city: x.place, rentPrice: x.rent_price,
       areaM2: x.usable_area_living_function, ...(x.amount_of_rooms === null ? {} : { rooms: x.amount_of_rooms }),
       ...(x.publish_date === null ? {} : { publishedAt: new Date(x.publish_date) }),

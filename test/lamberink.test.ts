@@ -50,10 +50,36 @@ test('availability uses explicit status and restrictive flags, never the mislead
 test('detail URLs must be HTTPS, same origin, expected path and object identity', () => {
   const path = '/wonen/aanbod/de-voorreep-11-erica-en102438';
   assert.equal(allowedDetailUrl(path, 'EN102438'), 'https://lamberink.nl' + path);
+  const archived = path.replace('/aanbod/', '/verkocht-verhuurd/');
+  assert.equal(allowedDetailUrl(archived, 'EN102438'), 'https://lamberink.nl' + archived);
   for (const url of ['https://localhost'+path, 'http://lamberink.nl'+path, 'https://user:pass@lamberink.nl'+path,
-    path+'?redirect=x', path+'#x', '//evil.test'+path, '/wonen/aanbod/other-en102439', '/api/EN102438']) {
+    path+'?redirect=x', path+'#x', '//evil.test'+path, '/wonen/aanbod/other-en102439', '/api/EN102438',
+    'https://evil.test'+archived, archived+'?redirect=x', archived+'#x',
+    '/wonen/verkocht-verhuurd/other-en102439', '/wonen/other/de-voorreep-11-erica-en102438']) {
     assert.throws(() => allowedDetailUrl(url, 'EN102438'));
   }
+});
+test('rented homes moved to the archive do not invalidate the complete catalog or become available', () => {
+  const x = fixture();
+  const rented = x.objects.find((item: any) => item.object_code === 'EN102438');
+  rented.url = 'https://lamberink.nl/wonen/verkocht-verhuurd/de-voorreep-11-erica-en102438';
+  rented.availability_status = 'verhuurd';
+  rented.is_available = false;
+  rented.is_sold_or_rented = true;
+  const result = parseSearch(x);
+  assert.equal(result.inspected, x.count);
+  assert.equal(result.listings.length, 3);
+  assert.equal(result.available, 1);
+  assert.equal(result.listings[0]!.externalId, rented.object_code);
+  assert.equal(result.listings[0]!.canonicalUrl, rented.url);
+  assert.equal(result.listings[0]!.availabilityStatus, 'unavailable');
+  // Archive location is restrictive even while the API flags are inconsistent.
+  rented.availability_status = 'beschikbaar';
+  rented.is_available = true;
+  rented.is_sold_or_rented = false;
+  assert.equal(parseSearch(x).listings[0]!.availabilityStatus, 'unavailable');
+  rented.url = rented.url.replace('/verkocht-verhuurd/', '/aanbod/');
+  assert.equal(parseSearch(x).listings[0]!.availabilityStatus, 'available');
 });
 test('one request reads the complete API payload; query paging is entirely client-side', async () => {
   let calls = 0;
